@@ -833,22 +833,50 @@ const TABS = [
 ]
 
 // ── INVITE GATE ───────────────────────────────────────────────────────────────
-const VALID_CODES = (import.meta.env.VITE_INVITE_CODES || 'femsaidia-preview').split(',').map(c => c.trim().toLowerCase())
+import { createClient } from '@supabase/supabase-js'
+const _sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY)
 
 function InviteGate({ children }) {
   const stored = sessionStorage.getItem('femsaidia_access')
   const [unlocked, setUnlocked] = useState(!!stored)
   const [code, setCode]         = useState('')
   const [error, setError]       = useState('')
+  const [loading, setLoading]   = useState(false)
 
-  const tryCode = () => {
-    if (VALID_CODES.includes(code.trim().toLowerCase())) {
-      sessionStorage.setItem('femsaidia_access', '1')
-      setUnlocked(true)
-    } else {
+  const tryCode = async () => {
+    if (!code.trim()) return
+    setLoading(true)
+    setError('')
+    const { data } = await _sb
+      .from('invite_codes')
+      .select('id, uses_limit, uses_count, expires_at')
+      .eq('code', code.trim().toLowerCase())
+      .eq('active', true)
+      .single()
+
+    if (!data) {
       setError('Invalid access code. Please check your invitation.')
       setCode('')
+      setLoading(false)
+      return
     }
+    if (data.expires_at && new Date(data.expires_at) < new Date()) {
+      setError('This access code has expired.')
+      setCode('')
+      setLoading(false)
+      return
+    }
+    if (data.uses_limit && data.uses_count >= data.uses_limit) {
+      setError('This access code has reached its usage limit.')
+      setCode('')
+      setLoading(false)
+      return
+    }
+    // Increment uses
+    await _sb.from('invite_codes').update({ uses_count: (data.uses_count||0) + 1 }).eq('id', data.id)
+    sessionStorage.setItem('femsaidia_access', '1')
+    setUnlocked(true)
+    setLoading(false)
   }
 
   if (unlocked) return children
@@ -889,13 +917,13 @@ function InviteGate({ children }) {
           {error && (
             <p style={{ fontSize:11, color:'#8A1030', marginBottom:10, fontFamily:"'Nunito Sans',sans-serif" }}>{error}</p>
           )}
-          <button onClick={tryCode}
+          <button onClick={tryCode} disabled={loading}
             style={{
               width:'100%', fontFamily:"'Nunito Sans',sans-serif", fontSize:13,
-              fontWeight:700, padding:'11px', background:'#8A1030',
-              color:'#F0D0D8', border:'none', cursor:'pointer', letterSpacing:'.04em',
+              fontWeight:700, padding:'11px', background: loading ? '#7A4A60' : '#8A1030',
+              color:'#F0D0D8', border:'none', cursor: loading ? 'wait' : 'pointer', letterSpacing:'.04em',
             }}>
-            Access platform →
+            {loading ? 'Checking...' : 'Access platform →'}
           </button>
         </div>
         <p style={{ fontSize:11, color:'#7A4A60', textAlign:'center', marginTop:16, fontFamily:"'Nunito Sans',sans-serif" }}>

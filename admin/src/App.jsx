@@ -627,10 +627,169 @@ function AnalyticsTab() {
 }
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
+// ── ACCESS CODES ─────────────────────────────────────────────────────────────
+function AccessCodesTab() {
+  const [codes, setCodes]   = useState([])
+  const [loading, setLoading] = useState(true)
+  const [form, setForm]     = useState({ code:'', label:'', expires_at:'', uses_limit:'' })
+  const [adding, setAdding] = useState(false)
+
+  const load = async () => {
+    setLoading(true)
+    const { data } = await supabase.from('invite_codes').select('*').order('created_at', { ascending:false })
+    setCodes(data || [])
+    setLoading(false)
+  }
+
+  useEffect(() => { load() }, [])
+
+  const generate = () => {
+    const words = ['savher','justice','femke','saidia','ngec','shield','voice','arise']
+    const word  = words[Math.floor(Math.random()*words.length)]
+    const num   = Math.floor(1000+Math.random()*9000)
+    setForm(f => ({ ...f, code:`${word}-${num}` }))
+  }
+
+  const add = async () => {
+    if (!form.code || !form.label) return
+    setAdding(true)
+    await supabase.from('invite_codes').insert([{
+      code:       form.code.trim().toLowerCase(),
+      label:      form.label.trim(),
+      active:     true,
+      expires_at: form.expires_at || null,
+      uses_limit: form.uses_limit ? parseInt(form.uses_limit) : null,
+    }])
+    setForm({ code:'', label:'', expires_at:'', uses_limit:'' })
+    setAdding(false)
+    load()
+  }
+
+  const toggle = async (id, active) => {
+    await supabase.from('invite_codes').update({ active: !active }).eq('id', id)
+    load()
+  }
+
+  const remove = async (id) => {
+    if (!confirm('Delete this code?')) return
+    await supabase.from('invite_codes').delete().eq('id', id)
+    load()
+  }
+
+  const copy = (code) => {
+    navigator.clipboard.writeText(code)
+  }
+
+  const inputSt = {
+    fontFamily:"'Nunito Sans',sans-serif", fontSize:13, color:TXT,
+    background:'#EAD8D8', border:`1px solid ${BD}`, padding:'8px 12px',
+    outline:'none', flex:1,
+  }
+
+  return (
+    <div className="fade-up">
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:20 }}>
+        <div>
+          <p className="label" style={{ marginBottom:6 }}>Preview access management</p>
+          <h2 className="serif" style={{ fontSize:26, fontWeight:700, color:TXT }}>Access codes</h2>
+          <p style={{ fontSize:12, color:MUT, marginTop:6, fontFamily:"'Nunito Sans',sans-serif", maxWidth:500 }}>
+            Create and manage invite codes for femsaidiakenya.org. Share a code with each reviewer — they enter it on the invite gate to access the platform.
+          </p>
+        </div>
+        <button className="btn btn-ghost" onClick={load}><RefreshCw size={13}/> Refresh</button>
+      </div>
+
+      {/* Add new code */}
+      <div className="card" style={{ padding:20, marginBottom:16 }}>
+        <div className="section-head"><span>Create new code</span></div>
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'flex-end' }}>
+          <div style={{ flex:1, minWidth:200 }}>
+            <p style={{ fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase', marginBottom:4 }}>Code</p>
+            <div style={{ display:'flex', gap:6 }}>
+              <input style={inputSt} value={form.code} onChange={e=>setForm(f=>({...f,code:e.target.value}))} placeholder="e.g. ngec-2026"/>
+              <button className="btn btn-ghost" style={{ padding:'8px 12px', fontSize:11, whiteSpace:'nowrap' }} onClick={generate}>Generate</button>
+            </div>
+          </div>
+          <div style={{ flex:1, minWidth:160 }}>
+            <p style={{ fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase', marginBottom:4 }}>Label (who is this for)</p>
+            <input style={{...inputSt, width:'100%'}} value={form.label} onChange={e=>setForm(f=>({...f,label:e.target.value}))} placeholder="e.g. NGEC Kenya"/>
+          </div>
+          <div style={{ minWidth:140 }}>
+            <p style={{ fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase', marginBottom:4 }}>Expires (optional)</p>
+            <input style={{...inputSt, width:'100%'}} type="date" value={form.expires_at} onChange={e=>setForm(f=>({...f,expires_at:e.target.value}))}/>
+          </div>
+          <div style={{ minWidth:100 }}>
+            <p style={{ fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase', marginBottom:4 }}>Max uses</p>
+            <input style={{...inputSt, width:'100%'}} type="number" value={form.uses_limit} onChange={e=>setForm(f=>({...f,uses_limit:e.target.value}))} placeholder="∞"/>
+          </div>
+          <button className="btn btn-primary" onClick={add} disabled={adding || !form.code || !form.label} style={{ whiteSpace:'nowrap' }}>
+            {adding ? 'Adding...' : '+ Add code'}
+          </button>
+        </div>
+      </div>
+
+      {/* Codes table */}
+      {loading ? <p style={{ color:MUT, fontSize:12 }}>Loading...</p> : (
+        <table className="tbl">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Label</th>
+              <th>Status</th>
+              <th>Uses</th>
+              <th>Expires</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {codes.map(c => (
+              <tr key={c.id}>
+                <td>
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <code style={{ fontFamily:'monospace', fontSize:13, color:A, fontWeight:700 }}>{c.code}</code>
+                    <button onClick={()=>copy(c.code)} style={{ background:'none', border:'none', cursor:'pointer', color:MUT, fontSize:10, fontFamily:"'Nunito Sans',sans-serif" }}>
+                      Copy
+                    </button>
+                  </div>
+                </td>
+                <td style={{ fontSize:13, color:TXT }}>{c.label}</td>
+                <td>
+                  <span className={`badge ${c.active ? 'status-approved' : 'status-rejected'}`}>
+                    {c.active ? 'Active' : 'Revoked'}
+                  </span>
+                </td>
+                <td style={{ fontSize:13, color:MUT }}>
+                  {c.uses_count || 0}{c.uses_limit ? ` / ${c.uses_limit}` : ''}
+                </td>
+                <td style={{ fontSize:12, color:MUT }}>
+                  {c.expires_at ? new Date(c.expires_at).toLocaleDateString('en-KE') : '—'}
+                </td>
+                <td>
+                  <div style={{ display:'flex', gap:4 }}>
+                    <button className={`btn ${c.active ? 'btn-warning' : 'btn-success'}`} style={{ padding:'4px 10px', fontSize:11 }}
+                      onClick={()=>toggle(c.id, c.active)}>
+                      {c.active ? 'Revoke' : 'Restore'}
+                    </button>
+                    <button className="btn btn-danger" style={{ padding:'4px 10px', fontSize:11 }}
+                      onClick={()=>remove(c.id)}>
+                      Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  )
+}
+
 const TABS = [
   { id:'submissions', label:'Submissions', icon:<Flag size={14}/> },
   { id:'profiles',    label:'Profiles',    icon:<Users size={14}/> },
   { id:'analytics',   label:'Analytics',   icon:<BarChart2 size={14}/> },
+  { id:'codes',       label:'Access codes', icon:<Users size={14}/> },
 ]
 
 export default function App() {
@@ -701,6 +860,7 @@ export default function App() {
         {tab==='submissions' && <SubmissionsTab/>}
         {tab==='profiles'    && <ProfilesTab/>}
         {tab==='analytics'   && <AnalyticsTab/>}
+        {tab==='codes'       && <AccessCodesTab/>}
       </main>
 
       <footer style={{borderTop:`1px solid ${BD}`,padding:'14px 32px',
