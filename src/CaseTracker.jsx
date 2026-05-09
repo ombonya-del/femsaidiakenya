@@ -40,51 +40,82 @@ const COUNTIES = [
   'Kakamega','Nyeri','Nandi','Embu','Other',
 ]
 
-// ── JUSTICE GAUGE ─────────────────────────────────────────────────────────────
-function JusticeGauge({ cases }) {
-  const total     = cases.length
-  if (!total) return null
+// ── JUSTICE FUNNEL ────────────────────────────────────────────────────────────
+function JusticeFunnel({ cases }) {
+  if (!cases.length) return null
 
-  const groups = {
-    'Justice served':    cases.filter(c => JUSTICE_GROUPS.justice.includes(c.status)).length,
-    'In court process':  cases.filter(c => JUSTICE_GROUPS.process.includes(c.status)).length,
-    'Investigated':      cases.filter(c => JUSTICE_GROUPS.active.includes(c.status)).length,
-    'Reported only':     cases.filter(c => JUSTICE_GROUPS.pending.includes(c.status)).length,
-    'No justice':        cases.filter(c => JUSTICE_GROUPS.failed.includes(c.status)).length,
-  }
+  const total        = cases.length
+  const investigated = cases.filter(c => ['investigated','charged','trial','convicted','acquitted'].includes(c.status)).length
+  const charged      = cases.filter(c => ['charged','trial','convicted','acquitted'].includes(c.status)).length
+  const trial        = cases.filter(c => ['trial','convicted','acquitted'].includes(c.status)).length
+  const convicted    = cases.filter(c => c.status === 'convicted').length
+  const noAction     = cases.filter(c => ['no_action','cold','dismissed','reported'].includes(c.status)).length
 
-  const colors = ['#166534','#2563EB','#CA8A04','#7A4A60','#8A1030']
+  const stages = [
+    { label:'Reported',     n:total,        color:'#7A4A60', desc:'Total femicide cases on record' },
+    { label:'Investigated', n:investigated, color:'#CA8A04', desc:'Police investigation opened' },
+    { label:'Charged',      n:charged,      color:'#2563EB', desc:'Suspect charged in court' },
+    { label:'Trial',        n:trial,        color:'#7C3AED', desc:'Case reached active trial' },
+    { label:'Convicted',    n:convicted,    color:'#166534', desc:'Guilty verdict, sentence issued' },
+  ]
 
   return (
     <div>
-      {/* Stacked bar */}
-      <div style={{ display:'flex', height:28, width:'100%', overflow:'hidden', marginBottom:12 }}>
-        {Object.entries(groups).map(([label, count], i) => (
-          count > 0 && (
-            <div key={i}
-              style={{
-                width:`${(count/total)*100}%`,
-                background:colors[i],
-                display:'flex', alignItems:'center', justifyContent:'center',
-                minWidth:count>0?20:0,
-                transition:'width .4s',
-              }}
-              title={`${label}: ${count}`}>
-              {count > 1 && <span style={{ fontSize:10, color:'#fff', fontWeight:700, fontFamily:"'Nunito Sans',sans-serif" }}>{count}</span>}
+      {/* Funnel visualization */}
+      <div style={{ display:'flex', alignItems:'flex-end', gap:3, height:120, marginBottom:16 }}>
+        {stages.map((s, i) => {
+          const pct = total > 0 ? (s.n / total) : 0
+          const h   = Math.max(24, Math.round(pct * 120))
+          return (
+            <div key={i} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-end', gap:4 }}>
+              <div style={{ fontFamily:"'Lora',serif", fontSize:16, fontWeight:700, color:s.color }}>{s.n}</div>
+              <div style={{
+                width:'100%', height:h,
+                background:s.color, opacity: 0.85 + (i*0.03),
+                display:'flex', alignItems:'flex-start', justifyContent:'center', paddingTop:4,
+              }}>
+                {s.n > 0 && <span style={{ fontSize:9, color:'#fff', fontWeight:700, fontFamily:"'Nunito Sans',sans-serif" }}>
+                  {Math.round(pct*100)}%
+                </span>}
+              </div>
+              <div style={{ fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif", textAlign:'center', letterSpacing:'.04em', fontWeight:700 }}>
+                {s.label}
+              </div>
             </div>
           )
-        ))}
+        })}
       </div>
-      {/* Legend */}
-      <div style={{ display:'flex', flexWrap:'wrap', gap:12 }}>
-        {Object.entries(groups).map(([label, count], i) => (
-          <span key={i} style={{ display:'flex', alignItems:'center', gap:5 }}>
-            <span style={{ width:10, height:10, background:colors[i], display:'inline-block', flexShrink:0 }}/>
-            <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT }}>
-              {label} <strong style={{ color:TXT }}>{count}</strong>
-              <span style={{ color:MUT }}> ({Math.round((count/total)*100)}%)</span>
-            </span>
-          </span>
+
+      {/* Justice gap callout */}
+      <div style={{ background:'#C4B0B8', border:`1px solid ${A}`, padding:'12px 16px', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:12 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <div style={{ fontFamily:"'Lora',serif", fontSize:32, fontWeight:700, color:A }}>{noAction}</div>
+          <div>
+            <p style={{ fontSize:13, fontWeight:700, color:TXT, fontFamily:"'Nunito Sans',sans-serif" }}>cases with no justice</p>
+            <p style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>
+              No charges filed · case dismissed · gone cold · no action taken
+            </p>
+          </div>
+        </div>
+        <div style={{ textAlign:'right' }}>
+          <div style={{ fontFamily:"'Lora',serif", fontSize:24, fontWeight:700, color:A }}>
+            {total > 0 ? Math.round((noAction/total)*100) : 0}%
+          </div>
+          <p style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>justice gap</p>
+        </div>
+      </div>
+
+      {/* Stage descriptions */}
+      <div style={{ display:'flex', gap:2, marginTop:2 }}>
+        {stages.map((s,i) => (
+          <div key={i} style={{ flex:1, background:CRD, border:`1px solid ${BD}`, borderTop:`3px solid ${s.color}`, padding:'8px 10px' }}>
+            <p style={{ fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif", lineHeight:1.5 }}>{s.desc}</p>
+            {i > 0 && total > 0 && (
+              <p style={{ fontSize:10, fontWeight:700, color:s.color, fontFamily:"'Nunito Sans',sans-serif", marginTop:4 }}>
+                {stages[i-1].n - s.n} lost at this stage
+              </p>
+            )}
+          </div>
         ))}
       </div>
     </div>
@@ -148,8 +179,9 @@ export default function CaseTrackerTab() {
           </button>
         </div>
         <p style={{ fontSize:13, color:MUT, marginTop:8, fontFamily:"'Nunito Sans',sans-serif", fontWeight:300, lineHeight:1.8, maxWidth:720 }}>
-          A live database of femicide and gender-based violence cases in Kenya — tracking each case from initial report
-          through to legal outcome. Updated by the FemSaidia Kenya admin team from verified news, court and CSO sources.
+          A manually curated database tracking femicide cases in Kenya from first report through to legal outcome —
+          or the devastating absence of one. Each case is verified from news, NGEC reports, court records and CSO sources.
+          The justice funnel shows exactly how many cases drop out at every stage of the system.
         </p>
       </div>
 
@@ -180,10 +212,16 @@ export default function CaseTrackerTab() {
         </div>
         <div>
           <p style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase', marginBottom:10, fontWeight:600 }}>Justice status breakdown — all cases</p>
-          <JusticeGauge cases={cases}/>
+          <JusticeFunnel cases={cases}/>
           <p style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif", marginTop:10, fontStyle:'italic' }}>
             {noActionCount} cases ({cases.length ? Math.round((noActionCount/cases.length)*100) : 0}%) have no known legal action — suspects free, families without justice.
           </p>
+          <div style={{ marginTop:10, padding:'8px 12px', background:'#C4B0B8', border:`1px solid ${BD}`, fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif", lineHeight:1.6 }}>
+            <strong style={{ color:TXT }}>Data source:</strong> Cases sourced from NGEC reports, verified news sources, CSO data and court records.
+            Each case is manually verified by the FemSaidia Kenya admin team.
+            <strong style={{ color:A }}> This is not an automated count</strong> — it reflects cases we have been able to document and verify.
+            Real numbers are significantly higher.
+          </div>
         </div>
       </div>
 
