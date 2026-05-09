@@ -1,0 +1,146 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Nunito+Sans:wght@300;400;600;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root { width: 100%; min-height: 100vh; }
+
+body {
+  background: #F0E8E8;
+  font-family: 'Nunito Sans', system-ui, sans-serif;
+  font-size: 14px;
+  color: #180410;
+}
+
+.serif { font-family: 'Lora', Georgia, serif; }
+
+.label {
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: #7A4A60;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* Nav tabs */
+.nav-tab {
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  padding: 12px 18px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  color: #8A1030;
+  font-weight: 600;
+  transition: color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.nav-tab:hover { color: #5A0820; }
+.nav-tab.active { color: #5A0820; border-bottom-color: #5A0820; font-weight: 700; }
+
+/* Cards */
+.card { background: #E0CCCC; border: 1px solid #C4AABB; }
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #C4AABB;
+  margin-bottom: 14px;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 11px;
+  color: #7A4A60;
+  letter-spacing: 0.06em;
+}
+
+/* Buttons */
+.btn {
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.04em;
+  transition: opacity 0.15s;
+}
+.btn:hover { opacity: 0.85; }
+.btn-primary { background: #8A1030; color: #F0D0D8; }
+.btn-success { background: #1A6A2A; color: #D0F0D8; }
+.btn-warning { background: #8A5010; color: #F0D8C0; }
+.btn-danger  { background: #6A0010; color: #F0C8C8; }
+.btn-ghost   { background: #C4AABB; color: #180410; border: 1px solid #B89AAA; }
+
+/* Input */
+.input {
+  width: 100%;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 13px;
+  color: #180410;
+  background: #EAD8D8;
+  border: 1px solid #C4AABB;
+  padding: 9px 12px;
+  outline: none;
+}
+.input:focus { border-color: #8A1030; }
+
+/* Badge */
+.badge {
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 10px;
+  padding: 2px 8px;
+  border: 1px solid;
+  display: inline-block;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+
+/* Table */
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl th {
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7A4A60;
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 2px solid #C4AABB;
+  background: #D4BCBC;
+}
+.tbl td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #C4AABB;
+  font-size: 13px;
+  vertical-align: top;
+}
+.tbl tr:hover td { background: #DEC8C8; }
+
+/* Tier colors */
+.tier-reported     { background: #E8D0C8; border-color: #B07060; color: #6A1008; }
+.tier-corroborated { background: #DCC8B8; border-color: #A07040; color: #5A2808; }
+.tier-convicted    { background: #C8D8C0; border-color: #60A050; color: #1A4810; }
+
+/* Status colors */
+.status-pending    { background: #E8D8C0; border-color: #A08040; color: #5A4010; }
+.status-approved   { background: #C8D8C0; border-color: #60A050; color: #1A4810; }
+.status-rejected   { background: #E8D0C8; border-color: #B07060; color: #6A1008; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.4s ease forwards; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-thumb { background: #C4AABB; }
