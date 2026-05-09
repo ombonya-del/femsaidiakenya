@@ -336,4 +336,13 @@ export const RESOURCES = [
     url: 'https://www.femicidecount.org',
     urgent: false,
   },
+  {
+    category: 'Guide',
+    t: 'Unmasking the Dark Side of Online Dating: Protecting Yourself from Danger and Finding Love Safely (KICTANet)',
+    y: 2024,
+    url: 'https://www.kictanet.or.ke/unmasking-the-dark-side-of-online-dating-protecting-yourself-from-danger-and-finding-love-safely/',
+    featured: true,
+    pdf: false,
+  },
+
 ]
