@@ -222,6 +222,109 @@ export default function SocialsSentimentTab() {
         </p>
       </div>
 
+      {/* Video resources grid */}
+      {articles.filter(a=>a.content_type==='video').length > 0 && (
+        <div className="card" style={{ padding:24, marginTop:2, marginBottom:2 }}>
+          <div className="section-head">
+            <span>Video resources · documentaries, features & interviews</span>
+            <span style={{ color:'#DC2626', fontSize:11, fontFamily:"'Nunito Sans',sans-serif", fontWeight:700 }}>
+              ▶ {articles.filter(a=>a.content_type==='video').length} videos
+            </span>
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(240px, 1fr))', gap:2 }}>
+            {articles.filter(a=>a.content_type==='video').map((v,i) => {
+              const sc = SentimentColors[v.sentiment] || SentimentColors.neutral
+              return (
+                <a key={i} href={v.article_url} target="_blank" rel="noopener noreferrer"
+                  style={{ textDecoration:'none', display:'block', background:'#BC9EAE', border:`1px solid ${BD}`, overflow:'hidden' }}
+                  onMouseEnter={e=>e.currentTarget.style.borderColor=A}
+                  onMouseLeave={e=>e.currentTarget.style.borderColor=BD}>
+
+                  {/* Thumbnail */}
+                  <div style={{ position:'relative', paddingTop:'56.25%', background:'#A89AAA', overflow:'hidden' }}>
+                    {v.thumbnail_url ? (
+                      <img src={v.thumbnail_url} alt={v.article_title}
+                        style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover' }}/>
+                    ) : (
+                      <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                        <span style={{ fontSize:32, color:'#7A5068' }}>▶</span>
+                      </div>
+                    )}
+                    {/* Play overlay */}
+                    <div style={{
+                      position:'absolute', inset:0,
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                      background:'rgba(138,16,48,0.2)',
+                      transition:'background .2s',
+                    }}>
+                      <div style={{
+                        width:40, height:40, borderRadius:'50%',
+                        background:'rgba(138,16,48,0.85)',
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                      }}>
+                        <span style={{ color:'#fff', fontSize:16, marginLeft:3 }}>▶</span>
+                      </div>
+                    </div>
+                    {/* Sentiment badge */}
+                    <div style={{ position:'absolute', top:8, left:8 }}>
+                      <span className="badge" style={{ background:sc.bg, borderColor:sc.bc, color:sc.tc, fontSize:9 }}>
+                        {sc.label}
+                      </span>
+                    </div>
+                    {/* Tech badge */}
+                    {v.tech_facilitated && (
+                      <div style={{ position:'absolute', top:8, right:8 }}>
+                        <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700, background:'#8A4010', color:'#fff', padding:'2px 6px' }}>
+                          Tech
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Card body */}
+                  <div style={{ padding:'12px 14px' }}>
+                    <div style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif", marginBottom:5, display:'flex', alignItems:'center', gap:6 }}>
+                      <span style={{ fontSize:10, background:'#DC2626', color:'#fff', padding:'1px 5px', fontWeight:700, fontFamily:"'Nunito Sans',sans-serif" }}>▶ VIDEO</span>
+                      <span>{v.source_name}</span>
+                    </div>
+                    <div style={{
+                      fontWeight:700, fontSize:12, color:TXT, lineHeight:1.4,
+                      fontFamily:"'Nunito Sans',sans-serif", marginBottom:6,
+                      display:'-webkit-box', WebkitLineClamp:2,
+                      WebkitBoxOrient:'vertical', overflow:'hidden',
+                    }}>
+                      {v.article_title}
+                    </div>
+                    <p style={{
+                      fontSize:11, color:MUT, lineHeight:1.6,
+                      fontFamily:"'Nunito Sans',sans-serif",
+                      display:'-webkit-box', WebkitLineClamp:2,
+                      WebkitBoxOrient:'vertical', overflow:'hidden',
+                    }}>
+                      {v.article_snippet}
+                    </p>
+                    <div style={{ marginTop:8, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                      <span style={{ fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>
+                        {v.published_at ? new Date(v.published_at).toLocaleDateString('en-KE') : ''}
+                      </span>
+                      <div style={{ display:'flex', gap:4 }}>
+                        <span style={{ fontSize:10, fontWeight:700, color:A, fontFamily:"'Nunito Sans',sans-serif" }}>
+                          Miso: {v.misogyny_score}/10
+                        </span>
+                        <span style={{ fontSize:10, color:MUT }}>·</span>
+                        <span style={{ fontSize:10, fontWeight:700, color:A2, fontFamily:"'Nunito Sans',sans-serif" }}>
+                          GBV: {v.gbv_relevance}/10
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Article feed */}
       <div className="card" style={{ padding:24, marginTop:2 }}>
         <div className="section-head">

@@ -5,6 +5,7 @@ import ReportTab from './Report.jsx'
 import PartnersTab from './Partners.jsx'
 import SocialsSentimentTab from './SocialsSentiment.jsx'
 import TechTrackerTab from './TechTracker.jsx'
+import CaseTrackerTab from './CaseTracker.jsx'
 import {
   AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine
@@ -830,6 +831,7 @@ const TABS = [
   {id:'partners',        label:'Partners'},
   {id:'sentiment',       label:'Socials & Sentiment'},
   {id:'tech-tracker',    label:'Tech Tracker'},
+  {id:'cases',           label:'Case Tracker', red:true},
 ]
 
 // ── INVITE GATE ───────────────────────────────────────────────────────────────
@@ -980,6 +982,7 @@ export default function App(){
         {activeTab==='partners'        && <PartnersTab/>}
         {activeTab==='sentiment'       && <SocialsSentimentTab/>}
         {activeTab==='tech-tracker'    && <TechTrackerTab/>}
+        {activeTab==='cases'           && <CaseTrackerTab/>}
       </main>
       <footer style={{borderTop:`1px solid ${BD}`,padding:'18px 32px',display:'flex',justifyContent:'space-between',alignItems:'center',background:HDR,width:'100%'}}>
         <p style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>FemSaidia Kenya · femsaidiakenya.org · 2026</p>
