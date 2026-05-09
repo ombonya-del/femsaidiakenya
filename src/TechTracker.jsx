@@ -223,8 +223,20 @@ export default function TechTrackerTab() {
             return (
               <div key={a.id} style={{ padding:'14px 0', borderBottom: i < filtered.length-1 ? `1px solid ${BD}` : 'none' }}>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12 }}>
+                  {a.thumbnail_url && (
+                    <a href={a.article_url} target="_blank" rel="noopener noreferrer" style={{ flexShrink:0, display:'block', position:'relative' }}>
+                      <img src={a.thumbnail_url} alt={a.article_title} style={{ width:110, height:62, objectFit:'cover', display:'block' }}/>
+                      {a.content_type==='video' && (
+                        <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.35)' }}>
+                          <span style={{ fontSize:18, color:'#fff' }}>▶</span>
+                        </div>
+                      )}
+                    </a>
+                  )}
                   <div style={{ flex:1 }}>
                     <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:6, flexWrap:'wrap' }}>
+                      {a.content_type==='video' && <span style={{ fontSize:10, background:'#DC2626', color:'#fff', padding:'1px 6px', fontFamily:"'Nunito Sans',sans-serif", fontWeight:700 }}>▶ VIDEO</span>}
+                      {a.content_type==='podcast' && <span style={{ fontSize:10, background:'#7C3AED', color:'#fff', padding:'1px 6px', fontFamily:"'Nunito Sans',sans-serif", fontWeight:700 }}>🎧 PODCAST</span>}
                       {(a.tech_platforms || []).map((p,pi) => (
                         <span key={pi} style={{ display:'inline-flex', alignItems:'center', gap:4, fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700, padding:'2px 8px', background:PLATFORM_COLORS[p] || A, color:'#fff' }}>
                           {p}

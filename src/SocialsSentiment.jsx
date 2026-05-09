@@ -62,6 +62,12 @@ const SentimentColors = {
   positive: { bg:'#C8D8C0', bc:'#60A050', tc:'#1A4810', label:'Positive'  },
 }
 
+const ContentTypeIcon = ({ type }) => {
+  if (type === 'video')   return <span style={{ fontSize:10, background:'#DC2626', color:'#fff', padding:'1px 6px', fontFamily:"'Nunito Sans',sans-serif", fontWeight:700, letterSpacing:'.04em' }}>▶ VIDEO</span>
+  if (type === 'podcast') return <span style={{ fontSize:10, background:'#7C3AED', color:'#fff', padding:'1px 6px', fontFamily:"'Nunito Sans',sans-serif", fontWeight:700, letterSpacing:'.04em' }}>🎧 PODCAST</span>
+  return <span style={{ fontSize:10, background:'#374151', color:'#fff', padding:'1px 6px', fontFamily:"'Nunito Sans',sans-serif", fontWeight:700, letterSpacing:'.04em' }}>📰 ARTICLE</span>
+}
+
 function ChartTip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
@@ -103,7 +109,9 @@ export default function SocialsSentimentTab() {
 
   const filtered = filter === 'all'
     ? articles
-    : articles.filter(a => a.sentiment === filter)
+    : filter === 'video' || filter === 'podcast'
+      ? articles.filter(a => a.content_type === filter)
+      : articles.filter(a => a.sentiment === filter)
 
   const techCount = articles.filter(a => a.tech_facilitated).length
   const highMiso  = articles.filter(a => a.misogyny_score >= 7).length
@@ -218,8 +226,8 @@ export default function SocialsSentimentTab() {
       <div className="card" style={{ padding:24, marginTop:2 }}>
         <div className="section-head">
           <span>Scanned articles · classified by Claude AI</span>
-          <span style={{ display:'flex', gap:6 }}>
-            {['all','alarming','negative','neutral','positive'].map(f => (
+          <span style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+            {['all','alarming','negative','neutral','positive','video','podcast'].map(f => (
               <button key={f} onClick={()=>setFilter(f)}
                 style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
                   padding:'3px 10px', border:`1px solid ${filter===f?A:BD}`,
