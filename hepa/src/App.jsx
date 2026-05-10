@@ -321,13 +321,13 @@ function CheckInScreen({ contacts, onBack }) {
 
     const msg = `🚨 CHECK-IN MISSED\n\nThis is an automated hepa alert.\n\n${locText}\n\nI did not check in by the agreed time. Please check on me immediately.\n\nCall police: 999\nDCI Gender Desk: 0800 722 203`
 
-    // Send WhatsApp (with location link)
+    // Send WhatsApp first (with location link)
     window.open(`https://wa.me/${intlPhone}?text=${encodeURIComponent(msg)}`, '_blank')
 
-    // Also open SMS as fallback
+    // Send SMS after a longer delay so WhatsApp has time to open
     setTimeout(() => {
-      window.open(`sms:${phone}?body=${encodeURIComponent(msg)}`, '_blank')
-    }, 1500)
+      window.location.href = `sms:${phone}?body=${encodeURIComponent(msg)}`
+    }, 3000)
   }
 
   const start = () => {
