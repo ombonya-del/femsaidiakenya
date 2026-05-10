@@ -443,14 +443,14 @@ function SetupScreen({ onSave, initial }) {
   }
 
   return (
-    <div style={{minHeight:'100vh',background:'#0A2D1A',display:'flex',flexDirection:'column'}}>
-      <div style={{padding:'40px 24px 20px',paddingTop:'calc(env(safe-area-inset-top,0px) + 40px)'}}>
+    <div style={{height:'100vh',background:'#0A2D1A',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <div style={{padding:'40px 24px 20px',paddingTop:'calc(env(safe-area-inset-top,0px) + 40px)',flexShrink:0}}>
         <div style={{fontFamily:"'Lora',serif",fontSize:32,fontWeight:700,color:'#FF5C28',marginBottom:6}}>Hepa</div>
         <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.7}}>
           Set up takes 60 seconds. Your information never leaves your phone.
         </div>
       </div>
-      <div className="setup-wrap" style={{flex:1}}>
+      <div className="setup-wrap" style={{flex:1,overflowY:'auto',WebkitOverflowScrolling:'touch'}}>
         <label className="setup-label">Your name</label>
         <input className="setup-input" value={name} onChange={e=>setName(e.target.value)} placeholder="Your first name"/>
 
