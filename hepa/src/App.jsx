@@ -310,6 +310,26 @@ function CheckInScreen({ contacts, onBack }) {
   const [remaining, setRemaining] = useState(null)
   const intervalRef = useRef(null)
 
+  const fireCheckinAlert = (location) => {
+    const phone = contacts[0]?.phone.replace(/\s+/g, '')
+    if (!phone) return
+    const intlPhone = phone.startsWith('0') ? '254' + phone.slice(1) : phone
+
+    const locText = location
+      ? `My location: https://maps.google.com/?q=${location.lat},${location.lng}`
+      : 'Location unavailable — call me and contact police immediately.'
+
+    const msg = `🚨 CHECK-IN MISSED\n\nThis is an automated hepa alert.\n\n${locText}\n\nI did not check in by the agreed time. Please check on me immediately.\n\nCall police: 999\nDCI Gender Desk: 0800 722 203`
+
+    // Send WhatsApp (with location link)
+    window.open(`https://wa.me/${intlPhone}?text=${encodeURIComponent(msg)}`, '_blank')
+
+    // Also open SMS as fallback
+    setTimeout(() => {
+      window.open(`sms:${phone}?body=${encodeURIComponent(msg)}`, '_blank')
+    }, 1500)
+  }
+
   const start = () => {
     const now = new Date()
     const target = new Date()
@@ -323,11 +343,15 @@ function CheckInScreen({ contacts, onBack }) {
         if (r <= 1000) {
           clearInterval(intervalRef.current)
           setActive(false)
-          // Trigger panic
-          const phone = contacts[0]?.phone.replace(/\s+/g, '')
-          if (phone) {
-            const wa = `https://wa.me/${phone.startsWith('0')? '254'+phone.slice(1):phone}?text=${encodeURIComponent('🚨 CHECK-IN MISSED — This is an automated alert from hepa. No check-in was received by the agreed time. Please check on me immediately and call 999 if needed.')}`
-            window.open(wa, '_blank')
+          // Get location then fire alert
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+              pos => fireCheckinAlert({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+              ()  => fireCheckinAlert(null),
+              { timeout: 5000 }
+            )
+          } else {
+            fireCheckinAlert(null)
           }
           return 0
         }
@@ -357,7 +381,7 @@ function CheckInScreen({ contacts, onBack }) {
       </div>
       <div style={{padding:'0 16px'}}>
         <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.7,marginBottom:20}}>
-          Set a time by which you will check in. If you don't — hepa automatically sends a WhatsApp alert to your trusted contact with a request to call police.
+          Set a time by which you will check in. If you don't — hepa automatically sends a <strong style={{color:'rgba(255,255,255,0.7)'}}>WhatsApp message and SMS</strong> to your trusted contact, with your GPS location and a request to call police immediately.
         </p>
 
         {!active ? (
@@ -385,8 +409,8 @@ function CheckInScreen({ contacts, onBack }) {
           <div className="checkin-card checkin-active">
             <div className="checkin-label">⏱ Alert fires in</div>
             <div className="checkin-time">{fmt(remaining || 0)}</div>
-            <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.4)',margin:'8px 0 16px'}}>
-              If you do not cancel this timer, {contacts[0]?.name || 'your contact'} will be alerted automatically.
+            <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.4)',margin:'8px 0 16px',lineHeight:1.6}}>
+              If you do not cancel, {contacts[0]?.name || 'your contact'} receives a <strong style={{color:'rgba(255,255,255,0.6)'}}>WhatsApp + SMS alert with your GPS location</strong> automatically.
             </p>
             <button className="hepa-btn" onClick={cancel}
               style={{background:'rgba(255,255,255,0.1)',marginTop:0}}>
