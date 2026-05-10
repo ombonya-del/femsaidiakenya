@@ -129,7 +129,7 @@ function Calculator({ onReveal }) {
     }
   }
 
-  // Long press on = to reveal Hepa
+  // Long press on = to reveal hepa
   const startLongPress = () => {
     progressRef.current = 0
     setPressProgress(0)
@@ -207,7 +207,7 @@ function Calculator({ onReveal }) {
           onClick={inputDecimal} onContextMenu={e=>e.preventDefault()}>
           .
         </button>
-        {/* Equals — long press triggers Hepa */}
+        {/* Equals — long press triggers hepa */}
         <button
           className={`calc-btn orange equals${longPressInterval?' pressing':''}`}
           style={{ position:'relative', overflow:'hidden' }}
@@ -245,7 +245,7 @@ function PanicScreen({ contacts, onDismiss }) {
     ? `https://maps.google.com/?q=${location.lat},${location.lng}`
     : 'Location not available'
 
-  const message = `🚨 EMERGENCY — I need help immediately!\n\nThis is an automated alert from Hepa.\n${location ? `My location: ${locationUrl}` : 'Location unavailable — call me NOW'}\n\nCall police: 999\nDCI Gender Desk: 0800 722 203`
+  const message = `🚨 EMERGENCY — I need help immediately!\n\nThis is an automated alert from hepa.\n${location ? `My location: ${locationUrl}` : 'Location unavailable — call me NOW'}\n\nCall police: 999\nDCI Gender Desk: 0800 722 203`
 
   const sendAlert = () => {
     if (contacts.length > 0) {
@@ -326,7 +326,7 @@ function CheckInScreen({ contacts, onBack }) {
           // Trigger panic
           const phone = contacts[0]?.phone.replace(/\s+/g, '')
           if (phone) {
-            const wa = `https://wa.me/${phone.startsWith('0')? '254'+phone.slice(1):phone}?text=${encodeURIComponent('🚨 CHECK-IN MISSED — This is an automated alert from Hepa. No check-in was received by the agreed time. Please check on me immediately and call 999 if needed.')}`
+            const wa = `https://wa.me/${phone.startsWith('0')? '254'+phone.slice(1):phone}?text=${encodeURIComponent('🚨 CHECK-IN MISSED — This is an automated alert from hepa. No check-in was received by the agreed time. Please check on me immediately and call 999 if needed.')}`
             window.open(wa, '_blank')
           }
           return 0
@@ -357,7 +357,7 @@ function CheckInScreen({ contacts, onBack }) {
       </div>
       <div style={{padding:'0 16px'}}>
         <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.7,marginBottom:20}}>
-          Set a time by which you will check in. If you don't — Hepa automatically sends a WhatsApp alert to your trusted contact with a request to call police.
+          Set a time by which you will check in. If you don't — hepa automatically sends a WhatsApp alert to your trusted contact with a request to call police.
         </p>
 
         {!active ? (
@@ -445,7 +445,7 @@ function SetupScreen({ onSave, initial }) {
   return (
     <div style={{minHeight:'100vh',background:'#0A2D1A',overflowY:'auto',WebkitOverflowScrolling:'touch'}}>
       <div style={{padding:'40px 24px 20px',paddingTop:'calc(env(safe-area-inset-top,0px) + 40px)'}}>
-        <div style={{fontFamily:"'Lora',serif",fontSize:32,fontWeight:700,color:'#FF5C28',marginBottom:6}}>Hepa</div>
+        <div style={{fontFamily:"'Lora',serif",fontSize:32,fontWeight:700,color:'#FF5C28',marginBottom:6}}>hepa</div>
         <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.7}}>
           Set up takes 60 seconds. Your information never leaves your phone.
         </div>
@@ -467,11 +467,11 @@ function SetupScreen({ onSave, initial }) {
 
         <div style={{marginTop:24,padding:16,background:'rgba(255,92,40,0.08)',borderRadius:12,border:'1px solid rgba(255,92,40,0.15)'}}>
           <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.5)',lineHeight:1.7}}>
-            <strong style={{color:'#FF5C28'}}>To open Hepa:</strong> open the Calculator app and hold the <strong style={{color:'#fff'}}>=</strong> button for 3 seconds. This keeps Hepa hidden from anyone who picks up your phone.
+            <strong style={{color:'#FF5C28'}}>To open hepa:</strong> open the Calculator app and hold the <strong style={{color:'#fff'}}>=</strong> button for 3 seconds. This keeps hepa hidden from anyone who picks up your phone.
           </p>
         </div>
 
-        <button className="hepa-btn" onClick={save} style={{marginTop:24}}>Save and open Hepa →</button>
+        <button className="hepa-btn" onClick={save} style={{marginTop:24}}>Save and open hepa →</button>
         <div style={{height:60}}/>
       </div>
     </div>
@@ -527,7 +527,7 @@ export default function App() {
     setUserData(data)
   }
 
-  // Reveal Hepa from calculator
+  // Reveal hepa from calculator
   const reveal = () => {
     setScreen('reveal')
     setTimeout(() => {
@@ -574,7 +574,7 @@ export default function App() {
 
   if (screen === 'reveal') return (
     <div className="hepa-reveal">
-      <div style={{fontFamily:"'Lora',serif",fontSize:48,fontWeight:700,color:'#FF5C28',animation:'fadeIn .4s .3s both'}}>Hepa</div>
+      <div style={{fontFamily:"'Lora',serif",fontSize:48,fontWeight:700,color:'#FF5C28',animation:'fadeIn .4s .3s both'}}>hepa</div>
     </div>
   )
 
@@ -617,7 +617,7 @@ export default function App() {
       {/* Header */}
       <div className="hepa-header">
         <div className="hepa-logo">
-          Hepa
+          hepa
           <span>Get away · Stay safe</span>
         </div>
         <button className="hepa-calc-btn" onClick={()=>setScreen('calc')}>

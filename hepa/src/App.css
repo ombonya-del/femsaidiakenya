@@ -10,8 +10,8 @@ html, body, #root {
   user-select: none;
 }
 
-/* Lock scroll only for calculator and hepa home */
-.calc-root, .hepa-root {
+/* Lock scroll only for calculator */
+.calc-root {
   height: 100vh;
   overflow: hidden;
 }
@@ -137,6 +137,7 @@ body {
   flex-direction: column;
   padding-bottom: env(safe-area-inset-bottom, 20px);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .hepa-header {
