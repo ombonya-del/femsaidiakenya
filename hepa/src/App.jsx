@@ -443,14 +443,14 @@ function SetupScreen({ onSave, initial }) {
   }
 
   return (
-    <div style={{height:'100vh',background:'#0A2D1A',display:'flex',flexDirection:'column',overflow:'hidden'}}>
-      <div style={{padding:'40px 24px 20px',paddingTop:'calc(env(safe-area-inset-top,0px) + 40px)',flexShrink:0}}>
+    <div style={{minHeight:'100vh',background:'#0A2D1A',overflowY:'auto',WebkitOverflowScrolling:'touch'}}>
+      <div style={{padding:'40px 24px 20px',paddingTop:'calc(env(safe-area-inset-top,0px) + 40px)'}}>
         <div style={{fontFamily:"'Lora',serif",fontSize:32,fontWeight:700,color:'#FF5C28',marginBottom:6}}>Hepa</div>
         <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.7}}>
           Set up takes 60 seconds. Your information never leaves your phone.
         </div>
       </div>
-      <div className="setup-wrap" style={{flex:1,overflowY:'auto',WebkitOverflowScrolling:'touch'}}>
+      <div className="setup-wrap" style={{paddingTop:0}}>
         <label className="setup-label">Your name</label>
         <input className="setup-input" value={name} onChange={e=>setName(e.target.value)} placeholder="Your first name"/>
 
@@ -472,7 +472,7 @@ function SetupScreen({ onSave, initial }) {
         </div>
 
         <button className="hepa-btn" onClick={save} style={{marginTop:24}}>Save and open Hepa →</button>
-        <div style={{height:40}}/>
+        <div style={{height:60}}/>
       </div>
     </div>
   )
