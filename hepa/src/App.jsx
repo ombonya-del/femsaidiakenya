@@ -304,8 +304,8 @@ function PanicScreen({ contacts, onDismiss }) {
 
 // ── CHECK-IN SCREEN ───────────────────────────────────────────────────────────
 function CheckInScreen({ contacts, onBack }) {
-  const [hours, setHours] = useState('22')
-  const [minutes, setMinutes] = useState('00')
+  const [hours, setHours] = useState(() => localStorage.getItem('hepa_checkin_h') || '22')
+  const [minutes, setMinutes] = useState(() => localStorage.getItem('hepa_checkin_m') || '00')
   const [active, setActive] = useState(false)
   const [remaining, setRemaining] = useState(null)
   const intervalRef = useRef(null)
@@ -389,13 +389,13 @@ function CheckInScreen({ contacts, onBack }) {
             <div className="checkin-label">Check in by</div>
             <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:20}}>
               <input type="number" value={hours} min="0" max="23"
-                onChange={e=>setHours(e.target.value.padStart(2,'0'))}
+                onChange={e=>{ const v=e.target.value.padStart(2,'0'); setHours(v); localStorage.setItem('hepa_checkin_h',v); }}
                 style={{width:70,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.1)',
                   borderRadius:10,padding:'10px',fontSize:32,color:'#fff',
                   fontFamily:"'Nunito Sans',sans-serif",textAlign:'center',outline:'none'}}/>
               <span style={{color:'#fff',fontSize:32,fontWeight:700}}>:</span>
               <input type="number" value={minutes} min="0" max="59"
-                onChange={e=>setMinutes(e.target.value.padStart(2,'0'))}
+                onChange={e=>{ const v=e.target.value.padStart(2,'0'); setMinutes(v); localStorage.setItem('hepa_checkin_m',v); }}
                 style={{width:70,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.1)',
                   borderRadius:10,padding:'10px',fontSize:32,color:'#fff',
                   fontFamily:"'Nunito Sans',sans-serif",textAlign:'center',outline:'none'}}/>
