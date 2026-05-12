@@ -177,6 +177,37 @@ function DashboardTab(){
 
       <ADHCard/>
 
+      {/* ── HEPA BANNER ── */}
+      <div style={{
+        background:'#0A2D1A', padding:'20px 24px', marginBottom:2, marginTop:2,
+        display:'flex', justifyContent:'space-between', alignItems:'center',
+        flexWrap:'wrap', gap:16,
+      }}>
+        <div>
+          <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:6}}>
+            <div style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,color:'#FF5C28'}}>hepa</div>
+            <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:'rgba(255,255,255,0.5)',letterSpacing:'.12em',textTransform:'uppercase',fontWeight:700}}>Safety app · Get away · Stay safe</div>
+          </div>
+          <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.6)',lineHeight:1.7,maxWidth:560}}>
+            A safety app disguised as a calculator. Panic button, shake-to-alert, GPS location sharing, check-in timer and offline survival guide. 
+            Also available as a USSD shortcode — <strong style={{color:'rgba(255,255,255,0.9)'}}>*384*89056#</strong> — on any phone, any network, no data needed.
+          </p>
+        </div>
+        <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+          <a href="https://hepa.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
+            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,
+              padding:'10px 20px',background:'#FF5C28',color:'#fff',textDecoration:'none',
+              letterSpacing:'.04em',whiteSpace:'nowrap'}}>
+            Install hepa →
+          </a>
+          <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.5)',
+            padding:'10px 0',display:'flex',alignItems:'center',gap:6}}>
+            <span style={{fontSize:16}}>📞</span>
+            Dial <strong style={{color:'#FF5C28'}}>*384*89056#</strong>
+          </div>
+        </div>
+      </div>
+
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:2,marginBottom:2,marginTop:2}}>
         {[
           {v:'600+', l:'Reported cases',        s:'2023–2025 · verified',                   c:A},
