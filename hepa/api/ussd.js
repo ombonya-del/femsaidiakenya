@@ -1,243 +1,240 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// hepa — Africa's Talking USSD Handler
-// Vercel Serverless Function
-// Endpoint: https://hepa.femsaidiakenya.org/api/ussd
-// ─────────────────────────────────────────────────────────────────────────────
+// hepa USSD Handler — Africa's Talking
+// https://hepa.femsaidiakenya.org/api/ussd
 
-export default function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
+export const config = { api: { bodyParser: true } }
+
+export default async function handler(req, res) {
+  // Handle both GET and POST
+  if (req.method !== 'POST' && req.method !== 'GET') {
+    return res.status(405).send('Method not allowed')
   }
 
-  const { sessionId, serviceCode, phoneNumber, text } = req.body
+  // Africa's Talking sends form-urlencoded — parse from body or query
+  const sessionId   = req.body?.sessionId   || req.query?.sessionId   || ''
+  const serviceCode = req.body?.serviceCode || req.query?.serviceCode || ''
+  const phoneNumber = req.body?.phoneNumber || req.query?.phoneNumber || ''
+  const text        = req.body?.text        !== undefined ? req.body.text : (req.query?.text || '')
+  const networkCode = req.body?.networkCode || req.query?.networkCode || ''
 
-  // Parse menu navigation
-  // text is empty on first dial, then accumulates: "1", "1*2", "1*2*1" etc
-  const input = text ? text.split('*') : []
+  console.log(`USSD: phone=${phoneNumber} text="${text}"`)
+
+  const input = text !== '' ? text.split('*') : []
   const level = input.length
   const last  = input[level - 1] || ''
 
   let response = ''
 
-  // ── LEVEL 0: Main menu ────────────────────────────────────────────────────
-  if (text === '' || text === undefined) {
+  // ── MAIN MENU ────────────────────────────────────────────────────────────
+  if (text === '') {
     response = `CON Karibu hepa - Usalama wako ni muhimu
-Hepa: Get Away, Stay Safe
 
 1. Nina hatari SASA HIVI
 2. Nambari za dharura
 3. Vidokezo vya usalama
-4. Ninataka kuondoka - mpango wa kutoroka
+4. Ninataka kuondoka salama
 5. Ripoti tukio`
   }
 
-  // ── OPTION 1: I am in danger RIGHT NOW ───────────────────────────────────
+  // ── 1. DANGER NOW ────────────────────────────────────────────────────────
   else if (input[0] === '1' && level === 1) {
     response = `CON HATARI - Chagua hatua:
 
-1. Piga simu 999 (Polisi wa dharura)
-2. Piga simu DCI - Kitengo cha Jinsia
-3. Piga simu GVRC
-4. Tuma ujumbe wa dharura kwa mtu wangu wa kuamini
+1. Piga simu 999 (Polisi)
+2. Piga DCI - Kitengo cha Jinsia
+3. Piga GVRC Kenya
+4. Ujumbe wa dharura - copy na tuma
 5. Rudi menyu kuu`
   }
-
   else if (input[0] === '1' && input[1] === '1') {
-    response = `END Piga simu SASA: 999
+    response = `END Piga sasa: 999 au 112
 
-Unaweza kuacha simu wazi - 
-Wasimamizi watasikia na kukusaidia.
-
-Kaa mahali pa watu wengi.
-Fanya kelele. Usiogope.`
+Unaweza kuacha simu wazi.
+Wasimamizi watasikia.
+Nenda mahali pa watu wengi.
+Fanya kelele. Usibishane.`
   }
-
   else if (input[0] === '1' && input[1] === '2') {
-    response = `END Piga simu DCI - Kitengo cha Jinsia:
-0800 722 203
+    response = `END DCI - Kitengo cha Jinsia:
+Piga: 0800 722 203
 
 Nambari hii ni BURE.
 Inapatikana saa 24.
-DCI wanaweza kukusaidia hata kama polisi wa karibu hawakusikiliza.`
+DCI ni huru na polisi wa mtaa.`
   }
-
   else if (input[0] === '1' && input[1] === '3') {
-    response = `END Piga simu GVRC:
-0800 723 253
+    response = `END GVRC Kenya:
+Piga: 0800 723 253
 
 Gender Violence Recovery Centre.
-Msaada wa matibabu, kisaikolojia na kisheria.
-BURE. Saa 24.`
+Msaada wa matibabu, kisaikolojia
+na kisheria. BURE. Saa 24.`
   }
-
   else if (input[0] === '1' && input[1] === '4') {
-    response = `END Tuma ujumbe huu kwa mtu wangu wa kuamini:
+    response = `END Nakili ujumbe huu na tuma:
 
-"HEPA ALERT: Ninahitaji msaada SASA. 
-Piga simu polisi: 999
-DCI: 0800 722 203"
+"HATARI: Ninahitaji msaada SASA.
+Piga polisi: 999
+DCI: 0800 722 203
+[Tuma mahali pako kwa WhatsApp]"`
+  }
+  else if (input[0] === '1' && input[1] === '5') {
+    response = `CON Karibu hepa - Usalama wako ni muhimu
 
-Nakili ujumbe huu na umtumie mtu unayemwamini SASA.`
+1. Nina hatari SASA HIVI
+2. Nambari za dharura
+3. Vidokezo vya usalama
+4. Ninataka kuondoka salama
+5. Ripoti tukio`
   }
 
-  // ── OPTION 2: Emergency numbers ───────────────────────────────────────────
+  // ── 2. EMERGENCY NUMBERS ─────────────────────────────────────────────────
   else if (input[0] === '2' && level === 1) {
     response = `CON Nambari za dharura - Kenya:
 
 1. Polisi: 999 / 112
-2. DCI Kitengo cha Jinsia: 0800 722 203
+2. DCI Jinsia: 0800 722 203
 3. GVRC: 0800 723 253
 4. Usikimye: 0800 723 253
 5. FIDA Kenya: 0719 638 006
 6. Kituo Cha Sheria: 0800 720 434`
   }
-
   else if (input[0] === '2') {
-    const numbers = {
+    const nums = {
       '1': 'Polisi wa Dharura\nPiga: 999 au 112',
       '2': 'DCI - Kitengo cha Jinsia\nPiga: 0800 722 203\n(BURE, Saa 24)',
       '3': 'GVRC Kenya\nPiga: 0800 723 253\n(BURE, Saa 24)',
-      '4': 'Usikimye Helpline\nPiga: 0800 723 253\n(BURE, Saa 24)',
-      '5': 'FIDA Kenya - Msaada wa Kisheria\nPiga: 0719 638 006',
-      '6': 'Kituo Cha Sheria\nPiga: 0800 720 434\n(BURE)',
+      '4': 'Usikimye Helpline\nPiga: 0800 723 253\n(BURE)',
+      '5': 'FIDA Kenya\nPiga: 0719 638 006\n(Msaada wa kisheria bure)',
+      '6': 'Kituo Cha Sheria\nPiga: 0800 720 434\n(Msaada wa kisheria bure)',
     }
-    response = `END ${numbers[last] || 'Nambari haipatikani'}`
+    response = `END ${nums[last] || 'Chaguo halipatikani'}`
   }
 
-  // ── OPTION 3: Safety tips ─────────────────────────────────────────────────
+  // ── 3. SAFETY TIPS ───────────────────────────────────────────────────────
   else if (input[0] === '3' && level === 1) {
     response = `CON Vidokezo vya usalama:
 
-1. Wakati wa hatari - hatua za sasa hivi
-2. Kabla ya kukutana na mgeni (app ya dating)
+1. Hatua za sasa hivi - hatari
+2. Kukutana na mgeni (dating)
 3. Dalili za mpenzi wa hatari
-4. Polisi wakisema "ni jambo la familia"`
+4. Polisi wakisema "ni familia"`
   }
-
   else if (input[0] === '3' && input[1] === '1') {
-    response = `END Hatua za SASA HIVI:
+    response = `END Hatua za SASA:
 
 1. Piga 999 - acha simu wazi
-2. Tuma mahali pako kwa WhatsApp kwa mtu wa kuamini
+2. Tuma mahali pako - WhatsApp Live Location
 3. Nenda mahali pa watu wengi
-4. Fanya kelele - vunja kioo, piga kelele
-5. USIBISHANE - usalama wako ndio muhimu`
+4. Fanya kelele - vunja kioo
+5. Usibishane - usalama wako ni muhimu`
   }
-
   else if (input[0] === '3' && input[1] === '2') {
     response = `END Kabla ya kukutana na mgeni:
 
-1. Mwambie mtu anayekuamini - nani, wapi, lini
-2. Shiriki mahali pako kwa WhatsApp - Live Location
-3. Kataa kukutana nyumbani au Airbnb - mahali pa watu tu
-4. Usiache kinywaji chako bila uangalizi
-5. Panga neno la siri na rafiki - akipokea, apige polisi`
+1. Mwambie mtu - nani, wapi, lini
+2. Shiriki mahali pako - Live Location
+3. Kataa nyumba/Airbnb - watu wengi tu
+4. Usiache kinywaji chako
+5. Neno la siri na rafiki wa kuamini`
   }
-
   else if (input[0] === '3' && input[1] === '3') {
-    response = `END Dalili za mpenzi wa hatari:
+    response = `END Dalili za hatari:
 
-- Anakudhibiti - simu, mahali, marafiki
-- Anakutishia wewe au familia yako
+- Anakudhibiti simu na mahali pako
+- Anakutishia wewe au familia
 - Amekupiga hata mara moja
-- Amekusonga shingo (hatari sana - ongeza hatari ya kuuawa mara 700%)
-- Anatengana nawe na watu wanaokupenda
-- Jeuri inaongezeka polepole`
+- Amekusonga shingo - HATARI SANA
+- Anatengana nawe na wapendwa`
   }
-
   else if (input[0] === '3' && input[1] === '4') {
-    response = `END Polisi wakisema "ni jambo la familia":
+    response = `END Polisi wakisema "ni familia":
 
-1. Omba nambari ya OB - lazima wakupe
-2. Piga DCI moja kwa moja: 0800 722 203
-3. Wasiliana na NGEC: 020 272 0585
-4. Pata msaada wa kisheria - FIDA: 0719 638 006
-5. Ripoti polisi kwa IPOA: 0800 724 763`
+1. Omba nambari ya OB - lazima
+2. Piga DCI: 0800 722 203
+3. Piga NGEC: 020 272 0585
+4. FIDA Kenya: 0719 638 006
+5. IPOA (malalamiko): 0800 724 763`
   }
 
-  // ── OPTION 4: Leaving plan ────────────────────────────────────────────────
+  // ── 4. LEAVING SAFELY ────────────────────────────────────────────────────
   else if (input[0] === '4' && level === 1) {
     response = `CON Mpango wa kutoroka salama:
 
-ONYO: Wakati wa kutoroka ni HATARI zaidi.
-Panga kabla ya kwenda.
+ONYO: Wakati wa kutoroka ni hatari.
+Panga KABLA ya kwenda.
 
-1. Kabla ya kutoroka - maandalizi
+1. Maandalizi ya kutoroka
 2. Siku ya kutoroka - hatua
-3. Baada ya kutoroka - jiepushe naye
-4. Haki zako kisheria (Amri ya Ulinzi)`
+3. Baada ya kutoroka
+4. Amri ya Ulinzi - haki yako`
   }
-
   else if (input[0] === '4' && input[1] === '1') {
-    response = `END Kabla ya kutoroka - maandalizi:
+    response = `END Maandalizi ya kutoroka:
 
-1. Jitayarisha mfuko wa dharura kwa siri:
-   - Kitambulisho, hati za watoto, pesa kidogo
-   - Chaja ya simu, dawa muhimu
-2. Chagua mahali pasipojulikana - si nyumba ya mama au dada
-3. Badilisha nywila zote na toka kwenye vifaa vyote vya pamoja
-4. Pata Amri ya Ulinzi KABLA ya kutoroka - FIDA: 0719 638 006`
+1. Jitayarisha mfuko wa siri:
+   Kitambulisho, hati, pesa, chaja
+2. Chagua mahali asipojua
+3. Badilisha nywila ZOTE kwa siri
+4. Pata Amri ya Ulinzi kwanza
+   FIDA: 0719 638 006 (BURE)`
   }
-
   else if (input[0] === '4' && input[1] === '2') {
     response = `END Siku ya kutoroka:
 
-1. Mwambie mtu MMOJA tu mpango wako kamili
-2. Toka wakati yeye hayupo
+1. Toka akiwa hayupo
+2. Mwambie mtu MMOJA tu
 3. Nenda mahali asipojua
-4. Piga simu polisi ukitoroka ikiwa una Amri ya Ulinzi
-5. Badilisha njia yako ya kawaida - asubuhi, kazini, kanisani`
+4. Badilisha njia yako ya kawaida
+5. Piga polisi ukitoroka - Amri ya Ulinzi`
   }
-
   else if (input[0] === '4' && input[1] === '3') {
-    response = `END Baada ya kutoroka - wiki 4 za kwanza:
+    response = `END Baada ya kutoroka:
 
-- Badilisha njia yako kila siku
-- Mzuie kwenye mitandao yote - lakini hifadhi ushahidi kwanza
-- Arifu kazini, shule, kanisa - asiruhusiwe kukufikia
-- Usikutane naye PEKE YAKO - hata kwa watoto
-- Hifadhi kila ujumbe wa vitisho - tarehe na muda`
+- Badilisha njia kila siku
+- Mzuie mitandaoni - hifadhi ushahidi kwanza
+- Arifu kazini na shule
+- Usikutane naye peke yako kamwe
+- Hifadhi vitisho vyote - tarehe na muda`
   }
-
   else if (input[0] === '4' && input[1] === '4') {
-    response = `END Amri ya Ulinzi - Haki yako:
+    response = `END Amri ya Ulinzi:
 
-Chini ya Sheria ya Ulinzi Dhidi ya Jeuri ya Ndani ya Nyumba 2015:
+Sheria ya 2015 - haki yako:
+- Mahakama inatoa ndani ya masaa 24
+- Anapigwa marufuku kukukaribia
+- Akikiuka = kukamatwa mara moja
 
-- Mahakama inaweza kutoa amri ndani ya masaa 24
-- Inamkataza kukukaribia nyumbani au kazini
-- Ukikiuka = kukamatwa mara moja
-
-FIDA Kenya - BURE: 0719 638 006
-Kituo Cha Sheria - BURE: 0800 720 434`
+FIDA Kenya (BURE): 0719 638 006
+Kituo Cha Sheria: 0800 720 434`
   }
 
-  // ── OPTION 5: Report incident ─────────────────────────────────────────────
+  // ── 5. REPORT ────────────────────────────────────────────────────────────
   else if (input[0] === '5') {
-    response = `END Ripoti tukio la jeuri:
+    response = `END Ripoti tukio:
 
 Tembelea: femsaidiakenya.org
-Kisha bonyeza "Report" kutuma ripoti.
+Bonyeza "Report" kutuma ripoti.
 
 Au wasiliana na:
-- DCI: 0800 722 203
-- NGEC: 020 272 0585
-- FIDA: 0719 638 006
+DCI: 0800 722 203
+NGEC: 020 272 0585
+FIDA: 0719 638 006
 
 Jina lako litabaki siri.`
   }
 
-  // ── FALLBACK ──────────────────────────────────────────────────────────────
+  // ── FALLBACK ─────────────────────────────────────────────────────────────
   else {
     response = `CON hepa - Usalama wako ni muhimu
 
 1. Nina hatari SASA HIVI
 2. Nambari za dharura
 3. Vidokezo vya usalama
-4. Ninataka kuondoka
+4. Ninataka kuondoka salama
 5. Ripoti tukio`
   }
 
-  res.setHeader('Content-Type', 'text/plain')
-  res.status(200).send(response)
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+  res.setHeader('Cache-Control', 'no-cache')
+  return res.status(200).send(response)
 }
