@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
-import { ExternalLink, AlertTriangle, TrendingUp, TrendingDown, Minus, RefreshCw } from 'lucide-react'
+import { ExternalLink, AlertTriangle, TrendingUp, TrendingDown, Minus,
+         RefreshCw, ChevronDown, ChevronUp, X, Cpu, Radio, Play,
+         FileText, Zap, Eye } from 'lucide-react'
 
 const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -11,88 +13,270 @@ const A   = '#8A1030'
 const A2  = '#8A4010'
 const BD  = '#B89AAA'
 const CRD = '#C4AABB'
+const BG  = '#D4BEC4'
 const TXT = '#180410'
 const MUT = '#7A4A60'
 
-// ── MISOGYNY METER GAUGE ──────────────────────────────────────────────────────
+// ── SCORE COLOR ───────────────────────────────────────────────────────────────
+const scoreColor = (s) =>
+  s >= 8 ? '#CC1010' : s >= 6 ? '#C05010' : s >= 4 ? '#CA8A04' : '#2D7A3A'
+
+const scoreLabel = (s) =>
+  s >= 8 ? 'Critical' : s >= 6 ? 'High' : s >= 4 ? 'Elevated' : 'Low'
+
+// ── MISOGYNY GAUGE ────────────────────────────────────────────────────────────
 function MisogynyGauge({ score }) {
-  const pct     = Math.min(100, Math.max(0, score || 0))
-  const angle   = -135 + (pct / 100) * 270
-  const color   = pct >= 70 ? '#8A1030' : pct >= 50 ? '#C05000' : pct >= 30 ? '#CA8A04' : '#166534'
-  const label   = pct >= 70 ? 'Critical' : pct >= 50 ? 'High' : pct >= 30 ? 'Elevated' : 'Moderate'
-
+  const pct   = Math.min(100, Math.max(0, score || 0))
+  const angle = -135 + (pct / 100) * 270
+  const color = pct >= 70 ? '#CC1010' : pct >= 50 ? '#C05010' : pct >= 30 ? '#CA8A04' : '#2D7A3A'
+  const r = 68, cx = 80, cy = 80
+  const toRad = (d) => (d * Math.PI) / 180
+  const arcPt = (deg) => ({
+    x: cx + r * Math.cos(toRad(deg)),
+    y: cy + r * Math.sin(toRad(deg)),
+  })
+  const startDeg = 225, endDeg = startDeg + (pct / 100) * 270
+  const s = arcPt(startDeg), e = arcPt(endDeg)
+  const large = endDeg - startDeg > 180 ? 1 : 0
+  const needlePt = arcPt(angle)
   return (
-    <div style={{ textAlign:'center' }}>
-      <svg viewBox="0 0 200 130" style={{ width:'100%', maxWidth:260 }}>
-        {/* Background arc */}
-        <path d="M 20 110 A 80 80 0 1 1 180 110" fill="none" stroke="#D4C4C4" strokeWidth="16" strokeLinecap="round"/>
-        {/* Score arc */}
-        <path d="M 20 110 A 80 80 0 1 1 180 110" fill="none" stroke={color} strokeWidth="16"
-          strokeLinecap="round"
-          strokeDasharray={`${(pct / 100) * 251} 251`}/>
-        {/* Needle */}
-        <line
-          x1="100" y1="110"
-          x2={100 + 65 * Math.cos((angle - 90) * Math.PI / 180)}
-          y2={110 + 65 * Math.sin((angle - 90) * Math.PI / 180)}
-          stroke={color} strokeWidth="3" strokeLinecap="round"/>
-        <circle cx="100" cy="110" r="6" fill={color}/>
-        {/* Labels */}
-        <text x="16" y="128" fontSize="9" fill={MUT} fontFamily="'Nunito Sans',sans-serif">Low</text>
-        <text x="88" y="28"  fontSize="9" fill={MUT} fontFamily="'Nunito Sans',sans-serif">Mid</text>
-        <text x="168" y="128"fontSize="9" fill={MUT} fontFamily="'Nunito Sans',sans-serif">High</text>
-        {/* Score */}
-        <text x="100" y="90" fontSize="28" fill={color} textAnchor="middle"
-          fontFamily="'Lora',serif" fontWeight="700">{pct}</text>
-        <text x="100" y="106" fontSize="11" fill={MUT} textAnchor="middle"
-          fontFamily="'Nunito Sans',sans-serif">/100</text>
-      </svg>
-      <div style={{ fontFamily:"'Lora',serif", fontSize:18, fontWeight:700, color, marginTop:-8 }}>{label}</div>
-      <p style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif", marginTop:4 }}>
-        Today's misogyny index
-      </p>
-    </div>
+    <svg viewBox="0 0 160 120" style={{ width:180, height:135 }}>
+      <path d={`M ${arcPt(225).x} ${arcPt(225).y} A ${r} ${r} 0 1 1 ${arcPt(495).x} ${arcPt(495).y}`}
+        fill="none" stroke={BD} strokeWidth="10" strokeLinecap="round"/>
+      {pct > 0 && (
+        <path d={`M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y}`}
+          fill="none" stroke={color} strokeWidth="10" strokeLinecap="round"/>
+      )}
+      <line x1={cx} y1={cy} x2={needlePt.x} y2={needlePt.y}
+        stroke={TXT} strokeWidth="2.5" strokeLinecap="round"/>
+      <circle cx={cx} cy={cy} r="5" fill={TXT}/>
+      <text x={cx} y={cy + 22} textAnchor="middle" fontSize="22" fontWeight="700"
+        fill={color} fontFamily="Georgia,serif">{pct}%</text>
+      <text x={cx} y={cy + 36} textAnchor="middle" fontSize="10" fill={MUT}
+        fontFamily="Nunito Sans,sans-serif">{scoreLabel(pct / 10)}</text>
+    </svg>
   )
 }
 
-const SentimentColors = {
-  alarming: { bg:'#E8D0C8', bc:'#B07060', tc:'#6A1008', label:'Alarming'  },
-  negative: { bg:'#DCC8B8', bc:'#A07040', tc:'#5A2808', label:'Negative'  },
-  neutral:  { bg:'#DDD0D0', bc:'#B89AAA', tc:'#5A3050', label:'Neutral'   },
-  positive: { bg:'#C8D8C0', bc:'#60A050', tc:'#1A4810', label:'Positive'  },
-}
-
-const ContentTypeIcon = ({ type }) => {
-  if (type === 'video')   return <span style={{ fontSize:10, background:'#DC2626', color:'#fff', padding:'1px 6px', fontFamily:"'Nunito Sans',sans-serif", fontWeight:700, letterSpacing:'.04em' }}>▶ VIDEO</span>
-  if (type === 'podcast') return <span style={{ fontSize:10, background:'#7C3AED', color:'#fff', padding:'1px 6px', fontFamily:"'Nunito Sans',sans-serif", fontWeight:700, letterSpacing:'.04em' }}>🎧 PODCAST</span>
-  return <span style={{ fontSize:10, background:'#374151', color:'#fff', padding:'1px 6px', fontFamily:"'Nunito Sans',sans-serif", fontWeight:700, letterSpacing:'.04em' }}>📰 ARTICLE</span>
-}
-
-function ChartTip({ active, payload, label }) {
-  if (!active || !payload?.length) return null
+// ── ARTICLE MODAL ─────────────────────────────────────────────────────────────
+function ArticleModal({ article, onClose }) {
+  if (!article) return null
+  const mColor = scoreColor(article.misogyny_score)
   return (
-    <div style={{ background:CRD, color:TXT, border:`1px solid ${BD}`, fontFamily:"'Nunito Sans',sans-serif", fontSize:11, padding:'8px 12px' }}>
-      <div style={{ opacity:.6, marginBottom:4 }}>{label}</div>
-      {payload.map((p,i) => (
-        <div key={i} style={{ color: p.value >= 70 ? A : p.value >= 50 ? A2 : '#166534' }}>
-          Index: <strong>{p.value}</strong>
-          {p.payload.high_alert && ' ⚠ High alert'}
+    <div style={{ position:'fixed', inset:0, background:'rgba(24,4,16,0.7)', zIndex:1000,
+      display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}
+      onClick={onClose}>
+      <div style={{ background:BG, border:`2px solid ${BD}`, maxWidth:680, width:'100%',
+        maxHeight:'85vh', overflowY:'auto', position:'relative' }}
+        onClick={e => e.stopPropagation()}>
+        {/* Modal header */}
+        <div style={{ background:TXT, padding:'16px 20px', display:'flex',
+          justifyContent:'space-between', alignItems:'flex-start', gap:12 }}>
+          <div style={{ flex:1 }}>
+            <div style={{ display:'flex', gap:8, marginBottom:8, flexWrap:'wrap' }}>
+              {article.content_type && (
+                <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
+                  fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase',
+                  padding:'2px 8px', background:'rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.7)' }}>
+                  {article.content_type}
+                </span>
+              )}
+              <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
+                fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase',
+                padding:'2px 8px', background:mColor, color:'#fff' }}>
+                Misogyny {article.misogyny_score}/10
+              </span>
+              {article.tech_facilitated && (
+                <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
+                  fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase',
+                  padding:'2px 8px', background:'#8A4010', color:'#fff' }}>
+                  Tech-facilitated
+                </span>
+              )}
+            </div>
+            <div style={{ fontFamily:"'Lora',serif", fontSize:16, fontWeight:700,
+              color:'#fff', lineHeight:1.4 }}>
+              {article.title || article.url}
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.5)',
+            cursor:'pointer', fontSize:20, padding:0, flexShrink:0 }}>
+            <X size={18}/>
+          </button>
         </div>
-      ))}
+
+        {/* Thumbnail */}
+        {article.thumbnail_url && (
+          <img src={article.thumbnail_url} alt=""
+            style={{ width:'100%', height:200, objectFit:'cover' }}
+            onError={e => e.target.style.display='none'}/>
+        )}
+
+        {/* Intelligence data */}
+        <div style={{ padding:20 }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:2, marginBottom:16 }}>
+            {[
+              { l:'GBV Relevance', v:`${article.gbv_relevance || 0}/10` },
+              { l:'Misogyny Score', v:`${article.misogyny_score || 0}/10`, c:mColor },
+              { l:'Sentiment', v:article.sentiment || '—' },
+            ].map((s,i) => (
+              <div key={i} style={{ background:CRD, padding:'10px 12px' }}>
+                <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
+                  color:MUT, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:4 }}>{s.l}</div>
+                <div style={{ fontFamily:"'Lora',serif", fontSize:18, fontWeight:700,
+                  color:s.c || TXT }}>{s.v}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Platforms */}
+          {article.tech_platforms?.length > 0 && (
+            <div style={{ marginBottom:12 }}>
+              <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
+                color:MUT, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:6 }}>
+                Platforms mentioned
+              </div>
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                {article.tech_platforms.map((p,i) => (
+                  <span key={i} style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                    padding:'3px 10px', background:'#8A4010', color:'#F0D0C0' }}>
+                    {p}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Summary */}
+          {article.summary && (
+            <div style={{ marginBottom:16 }}>
+              <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
+                color:MUT, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:6 }}>
+                Summary
+              </div>
+              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:13,
+                color:TXT, lineHeight:1.7 }}>{article.summary}</p>
+            </div>
+          )}
+
+          {/* Scan date */}
+          {article.scanned_at && (
+            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT, marginBottom:16 }}>
+              Scanned: {new Date(article.scanned_at).toLocaleString('en-KE', { dateStyle:'medium', timeStyle:'short' })}
+            </p>
+          )}
+
+          {/* Open source */}
+          {article.url && (
+            <a href={article.url} target="_blank" rel="noopener noreferrer"
+              style={{ display:'inline-flex', alignItems:'center', gap:6,
+                fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700,
+                padding:'10px 18px', background:A, color:'#fff', textDecoration:'none' }}>
+              <ExternalLink size={13}/> Read full article
+            </a>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
 
+// ── ARTICLE CARD ──────────────────────────────────────────────────────────────
+function ArticleCard({ a, onClick }) {
+  const mColor = scoreColor(a.misogyny_score)
+  const typeIcon = a.content_type === 'video' ? <Play size={11}/> :
+                   a.content_type === 'podcast' ? <Radio size={11}/> : <FileText size={11}/>
+  return (
+    <div onClick={() => onClick(a)}
+      style={{ background:'#C4AABB', border:`1px solid ${BD}`, padding:14,
+        cursor:'pointer', transition:'background .15s', borderLeft:`3px solid ${mColor}` }}
+      onMouseEnter={e => e.currentTarget.style.background='#B89AAA'}
+      onMouseLeave={e => e.currentTarget.style.background='#C4AABB'}>
+
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start',
+        gap:8, marginBottom:6 }}>
+        <div style={{ flex:1 }}>
+          <div style={{ display:'flex', gap:6, alignItems:'center', marginBottom:4, flexWrap:'wrap' }}>
+            <span style={{ display:'inline-flex', alignItems:'center', gap:3,
+              fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+              letterSpacing:'.08em', textTransform:'uppercase', color:MUT }}>
+              {typeIcon} {a.content_type || 'article'}
+            </span>
+            {a.tech_facilitated && (
+              <span style={{ display:'inline-flex', alignItems:'center', gap:3,
+                fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+                padding:'1px 6px', background:'#8A4010', color:'#F0D0C0' }}>
+                <Zap size={9}/> Tech GBV
+              </span>
+            )}
+            {a.sentiment && (
+              <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
+                padding:'1px 6px',
+                background: a.sentiment==='negative' ? '#8A1030' : a.sentiment==='positive' ? '#1A5A2A' : '#5A4A60',
+                color:'#fff' }}>
+                {a.sentiment}
+              </span>
+            )}
+          </div>
+          <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:600,
+            color:TXT, lineHeight:1.5, marginBottom:4 }}>
+            {a.title || a.url}
+          </div>
+        </div>
+        {/* Score badge */}
+        <div style={{ flexShrink:0, width:38, height:38, background:mColor,
+          display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+          <span style={{ fontFamily:"'Lora',serif", fontSize:14, fontWeight:700, color:'#fff',
+            lineHeight:1 }}>{a.misogyny_score}</span>
+          <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:8, color:'rgba(255,255,255,0.7)' }}>/10</span>
+        </div>
+      </div>
+
+      {/* Thumbnail for video */}
+      {a.thumbnail_url && a.content_type === 'video' && (
+        <div style={{ position:'relative', marginBottom:8 }}>
+          <img src={a.thumbnail_url} alt="" style={{ width:'100%', height:90, objectFit:'cover' }}
+            onError={e => e.target.style.display='none'}/>
+          <div style={{ position:'absolute', inset:0, background:'rgba(24,4,16,0.3)',
+            display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <Play size={24} color="#fff" fill="#fff"/>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+          {a.tech_platforms?.slice(0,3).map((p,i) => (
+            <span key={i} style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
+              padding:'1px 6px', background:'rgba(138,64,16,0.15)', color:'#8A4010' }}>
+              {p}
+            </span>
+          ))}
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:4,
+          fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT }}>
+          <Eye size={10}/> View details
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── MAIN TAB ──────────────────────────────────────────────────────────────────
 export default function SocialsSentimentTab() {
-  const [index, setIndex]       = useState([])
-  const [articles, setArticles] = useState([])
-  const [loading, setLoading]   = useState(true)
-  const [filter, setFilter]     = useState('all')
-  const today                   = index[index.length - 1]
-  const yesterday               = index[index.length - 2]
-  const trend                   = today && yesterday
-    ? today.score - yesterday.score
-    : 0
+  const [index,      setIndex]      = useState([])
+  const [articles,   setArticles]   = useState([])
+  const [loading,    setLoading]    = useState(true)
+  const [filter,     setFilter]     = useState('all')
+  const [search,     setSearch]     = useState('')
+  const [modal,      setModal]      = useState(null)
+  const [showAll,    setShowAll]    = useState(false)
+  const [activeBreak, setActiveBreak] = useState(null) // clicked breakdown metric
+
+  const today     = index[index.length - 1]
+  const yesterday = index[index.length - 2]
+  const trend     = today && yesterday ? today.score - yesterday.score : 0
+  const score     = today?.score || 0
 
   useEffect(() => { load() }, [])
 
@@ -100,307 +284,389 @@ export default function SocialsSentimentTab() {
     setLoading(true)
     const [idxRes, artRes] = await Promise.all([
       supabase.from('misogyny_index').select('*').order('date', { ascending:true }).limit(30),
-      supabase.from('sentiment_articles').select('*').order('scanned_at', { ascending:false }).limit(50),
+      supabase.from('sentiment_articles').select('*').order('scanned_at', { ascending:false }).limit(100),
     ])
     setIndex(idxRes.data || [])
     setArticles(artRes.data || [])
     setLoading(false)
   }
 
-  const filtered = filter === 'all'
-    ? articles
-    : filter === 'video' || filter === 'podcast'
-      ? articles.filter(a => a.content_type === filter)
-      : articles.filter(a => a.sentiment === filter)
+  // ── INTELLIGENCE BREAKDOWN METRICS ─────────────────────────────────────────
+  const total       = articles.length
+  const highMiso    = articles.filter(a => a.misogyny_score >= 7)
+  const techGBV     = articles.filter(a => a.tech_facilitated)
+  const negSentiment = articles.filter(a => a.sentiment === 'negative')
+  const gbvRelevant = articles.filter(a => a.gbv_relevance >= 7)
+  const videos      = articles.filter(a => a.content_type === 'video')
+  const podcasts    = articles.filter(a => a.content_type === 'podcast')
+  const news        = articles.filter(a => a.content_type !== 'video' && a.content_type !== 'podcast')
 
-  const techCount = articles.filter(a => a.tech_facilitated).length
-  const highMiso  = articles.filter(a => a.misogyny_score >= 7).length
+  // Platform breakdown
+  const platformCounts = {}
+  articles.forEach(a => (a.tech_platforms || []).forEach(p => {
+    platformCounts[p] = (platformCounts[p] || 0) + 1
+  }))
+  const topPlatforms = Object.entries(platformCounts)
+    .sort(([,a],[,b]) => b - a).slice(0, 6)
 
+  // ── BREAKDOWN METRICS for click-to-filter ──────────────────────────────────
+  const breakdownMetrics = [
+    { id:'highMiso',   label:'High misogyny',    sublabel:'Score ≥ 7/10',   count:highMiso.length,
+      pct:total ? Math.round(highMiso.length/total*100) : 0, color:'#CC1010', data:highMiso },
+    { id:'techGBV',    label:'Tech-facilitated', sublabel:'GBV via platforms', count:techGBV.length,
+      pct:total ? Math.round(techGBV.length/total*100) : 0, color:'#8A4010', data:techGBV },
+    { id:'negSent',    label:'Negative sentiment', sublabel:'Hostile framing', count:negSentiment.length,
+      pct:total ? Math.round(negSentiment.length/total*100) : 0, color:'#5A0818', data:negSentiment },
+    { id:'gbvRel',     label:'High GBV relevance', sublabel:'Relevance ≥ 7/10', count:gbvRelevant.length,
+      pct:total ? Math.round(gbvRelevant.length/total*100) : 0, color:'#1A3F6F', data:gbvRelevant },
+  ]
+
+  // ── FILTERING LOGIC ────────────────────────────────────────────────────────
+  let displayed = articles
+  if (activeBreak) {
+    const bm = breakdownMetrics.find(b => b.id === activeBreak)
+    if (bm) displayed = bm.data
+  } else if (filter !== 'all') {
+    if (filter === 'video')    displayed = videos
+    else if (filter === 'podcast')  displayed = podcasts
+    else if (filter === 'news')     displayed = news
+    else if (filter === 'negative') displayed = negSentiment
+    else if (filter === 'positive') displayed = articles.filter(a => a.sentiment === 'positive')
+    else if (filter === 'tech')     displayed = techGBV
+    else if (filter === 'alert')    displayed = highMiso
+  }
+
+  if (search.trim()) {
+    const q = search.toLowerCase()
+    displayed = displayed.filter(a =>
+      (a.title || '').toLowerCase().includes(q) ||
+      (a.summary || '').toLowerCase().includes(q) ||
+      (a.tech_platforms || []).some(p => p.toLowerCase().includes(q))
+    )
+  }
+
+  const shown = showAll ? displayed : displayed.slice(0, 12)
+
+  // ── RENDER ─────────────────────────────────────────────────────────────────
   return (
     <div className="fade-up" style={{ width:'100%' }}>
 
-      {/* Header */}
-      <div style={{ borderBottom:`1px solid ${BD}`, paddingBottom:20, marginBottom:24 }}>
-        <p className="label" style={{ marginBottom:8, color:A }}>
-          ● Live pulse · Updated every 6 hours
-        </p>
+      {/* ── HEADER ── */}
+      <div style={{ borderBottom:`1px solid ${BD}`, paddingBottom:20, marginBottom:2 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
-          <h1 className="serif" style={{ fontSize:36, fontWeight:700, color:TXT }}>
-            Socials & Sentiment
-          </h1>
-          <button onClick={load} style={{ display:'inline-flex', alignItems:'center', gap:6, fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:600, padding:'8px 14px', border:`1px solid ${BD}`, background:CRD, color:MUT, cursor:'pointer' }}>
+          <div>
+            <p className="label" style={{ marginBottom:8, color:A }}>● Live intelligence · Updated every 6 hours</p>
+            <h1 className="serif" style={{ fontSize:36, fontWeight:700, color:TXT }}>
+              Socials & Sentiment
+            </h1>
+            <p style={{ fontSize:13, color:MUT, marginTop:6, fontFamily:"'Nunito Sans',sans-serif",
+              fontWeight:300 }}>
+              {total} articles, videos and podcasts scanned · Real-time misogyny and GBV intelligence
+            </p>
+          </div>
+          <button onClick={load} style={{ display:'inline-flex', alignItems:'center', gap:6,
+            fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:600,
+            padding:'8px 14px', border:`1px solid ${BD}`, background:CRD, color:MUT, cursor:'pointer' }}>
             <RefreshCw size={12}/> Refresh
           </button>
         </div>
-        <p style={{ fontSize:13, color:MUT, marginTop:8, fontFamily:"'Nunito Sans',sans-serif", fontWeight:300, lineHeight:1.8, maxWidth:680 }}>
-          Real-time sentiment tracking across Kenyan news and online platforms.
-          The Misogyny Index is a composite score (0–100) derived from the level of
-          misogynistic content detected in scanned articles each day.
-        </p>
       </div>
 
-      {/* Top row: Gauge + Stats + Trend */}
-      <div style={{ display:'grid', gridTemplateColumns:'280px 1fr', gap:2, marginBottom:2 }}>
+      {loading ? (
+        <div style={{ padding:40, textAlign:'center', fontFamily:"'Nunito Sans',sans-serif",
+          fontSize:13, color:MUT }}>Loading intelligence feed…</div>
+      ) : (
+        <>
+          {/* ── MISOGYNY INDEX COMMAND PANEL ── */}
+          <div style={{ background:'#B89AAA', border:`2px solid ${A}`, padding:20, marginBottom:2 }}>
+            <div style={{ display:'flex', alignItems:'flex-start', gap:24, flexWrap:'wrap' }}>
 
-        {/* Gauge */}
-        <div className="card" style={{ padding:24, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
-          {loading ? (
-            <p style={{ color:MUT, fontSize:12, fontFamily:"'Nunito Sans',sans-serif" }}>Loading...</p>
-          ) : (
-            <>
-              <MisogynyGauge score={today?.score || 0}/>
-              <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:10 }}>
-                {trend > 0
-                  ? <TrendingUp size={14} color={A}/>
-                  : trend < 0
-                    ? <TrendingDown size={14} color="#166534"/>
-                    : <Minus size={14} color={MUT}/>
-                }
-                <span style={{ fontSize:12, fontFamily:"'Nunito Sans',sans-serif", fontWeight:700,
-                  color: trend > 0 ? A : trend < 0 ? '#166534' : MUT }}>
-                  {trend > 0 ? `+${trend.toFixed(1)}` : trend.toFixed(1)} from yesterday
-                </span>
-              </div>
-              {today?.high_alert && (
-                <div style={{ marginTop:10, background:'#E8D0C8', border:`1px solid #B07060`, padding:'8px 14px', display:'flex', gap:6, alignItems:'center' }}>
-                  <AlertTriangle size={12} color={A}/>
-                  <p style={{ fontSize:11, color:'#6A1008', fontFamily:"'Nunito Sans',sans-serif", fontWeight:700 }}>High alert day</p>
+              {/* Gauge */}
+              <div style={{ textAlign:'center', flexShrink:0 }}>
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                  letterSpacing:'.12em', textTransform:'uppercase', color:A, marginBottom:8 }}>
+                  Misogyny Index · Today
+                </p>
+                <MisogynyGauge score={score}/>
+                <div style={{ display:'flex', alignItems:'center', gap:6, justifyContent:'center',
+                  marginTop:4 }}>
+                  {trend > 0 ? <TrendingUp size={14} color="#CC1010"/> :
+                   trend < 0 ? <TrendingDown size={14} color="#2D7A3A"/> :
+                   <Minus size={14} color={MUT}/>}
+                  <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                    color: trend > 0 ? '#CC1010' : trend < 0 ? '#2D7A3A' : MUT }}>
+                    {trend > 0 ? '+' : ''}{trend.toFixed(1)} from yesterday
+                  </span>
                 </div>
-              )}
-            </>
-          )}
-        </div>
+              </div>
 
-        {/* Stats */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:2 }}>
-          {[
-            { v: articles.length,  l:'Articles scanned today',      s:'Across 5 Kenyan news sources',  c:TXT },
-            { v: highMiso,         l:'High misogyny articles',       s:'Misogyny score ≥ 7/10',         c:A   },
-            { v: techCount,        l:'Tech-facilitated incidents',   s:'Detected in scanned content',   c:A2  },
-            { v: articles.filter(a=>a.gbv_relevance>=8).length, l:'High-relevance GBV articles', s:'GBV relevance ≥ 8/10', c:A },
-          ].map((s,i) => (
-            <div key={i} style={{ background:CRD, border:`1px solid ${BD}`, padding:'20px 22px', borderLeft:`4px solid ${s.c}` }}>
-              <div className="serif" style={{ fontSize:40, fontWeight:700, color:s.c, lineHeight:1 }}>{s.v}</div>
-              <p style={{ fontSize:13, color:TXT, fontWeight:600, marginTop:8, fontFamily:"'Nunito Sans',sans-serif" }}>{s.l}</p>
-              <p style={{ fontSize:11, color:MUT, marginTop:4, fontFamily:"'Nunito Sans',sans-serif" }}>{s.s}</p>
+              {/* What makes up the score */}
+              <div style={{ flex:1, minWidth:280 }}>
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                  letterSpacing:'.12em', textTransform:'uppercase', color:A, marginBottom:10 }}>
+                  What makes up {score}%?  ·  Click to filter articles below
+                </p>
+                <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                  {breakdownMetrics.map(m => (
+                    <div key={m.id}
+                      onClick={() => setActiveBreak(activeBreak === m.id ? null : m.id)}
+                      style={{ cursor:'pointer', padding:'10px 12px',
+                        background: activeBreak === m.id ? m.color : 'rgba(255,255,255,0.25)',
+                        border:`1px solid ${activeBreak === m.id ? m.color : BD}`,
+                        transition:'all .15s' }}>
+                      <div style={{ display:'flex', justifyContent:'space-between',
+                        alignItems:'center', marginBottom:4 }}>
+                        <div>
+                          <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12,
+                            fontWeight:700, color: activeBreak === m.id ? '#fff' : TXT }}>
+                            {m.label}
+                          </span>
+                          <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
+                            color: activeBreak === m.id ? 'rgba(255,255,255,0.7)' : MUT,
+                            marginLeft:8 }}>{m.sublabel}</span>
+                        </div>
+                        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                          <span style={{ fontFamily:"'Lora',serif", fontSize:18, fontWeight:700,
+                            color: activeBreak === m.id ? '#fff' : m.color }}>
+                            {m.pct}%
+                          </span>
+                          <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
+                            color: activeBreak === m.id ? 'rgba(255,255,255,0.7)' : MUT }}>
+                            ({m.count} articles)
+                          </span>
+                        </div>
+                      </div>
+                      {/* Progress bar */}
+                      <div style={{ height:4, background:'rgba(0,0,0,0.1)', borderRadius:2 }}>
+                        <div style={{ height:'100%', width:`${m.pct}%`,
+                          background: activeBreak === m.id ? 'rgba(255,255,255,0.7)' : m.color,
+                          transition:'width .4s ease', borderRadius:2 }}/>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Platform breakdown */}
+              <div style={{ minWidth:180, flexShrink:0 }}>
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                  letterSpacing:'.12em', textTransform:'uppercase', color:A, marginBottom:10 }}>
+                  Platforms in focus
+                </p>
+                {topPlatforms.length > 0 ? topPlatforms.map(([p, c], i) => (
+                  <div key={i} onClick={() => {
+                      setSearch(p)
+                      setActiveBreak(null)
+                      setFilter('all')
+                    }}
+                    style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
+                      padding:'6px 0', borderBottom:`1px solid rgba(184,154,170,0.3)`,
+                      cursor:'pointer' }}>
+                    <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12,
+                      color:TXT, fontWeight:600 }}>{p}</span>
+                    <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                      color:'#8A4010', fontWeight:700 }}>{c}</span>
+                  </div>
+                )) : (
+                  <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                    color:MUT, fontStyle:'italic' }}>No platform data yet</p>
+                )}
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
+                  color:MUT, marginTop:8, lineHeight:1.6 }}>
+                  Click a platform to filter articles below
+                </p>
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 30-day trend chart */}
-      <div className="card" style={{ padding:24, marginBottom:2 }}>
-        <div className="section-head">
-          <span>Misogyny index · 30-day trend</span>
-          <span style={{ color:A }}>Higher = more misogynistic content detected</span>
-        </div>
-        <ResponsiveContainer width="100%" height={200}>
-          <AreaChart data={index} margin={{ left:0, right:12, top:8, bottom:0 }}>
-            <defs>
-              <linearGradient id="mGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor={A} stopOpacity={0.3}/>
-                <stop offset="95%" stopColor={A} stopOpacity={0}/>
-              </linearGradient>
-            </defs>
-            <XAxis dataKey="date"
-              tickFormatter={d => new Date(d).toLocaleDateString('en-KE',{day:'numeric',month:'short'})}
-              tick={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fill:MUT }}
-              tickLine={false} axisLine={{ stroke:BD }} interval={4}/>
-            <YAxis domain={[0,100]}
-              tick={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fill:MUT }}
-              tickLine={false} axisLine={false}/>
-            <Tooltip content={<ChartTip/>}/>
-            <ReferenceLine y={70} stroke={A} strokeDasharray="3 3"
-              label={{ value:'High alert threshold', position:'insideTopLeft', fill:A, fontSize:10, fontFamily:"'Nunito Sans',sans-serif" }}/>
-            <ReferenceLine y={50} stroke={A2} strokeDasharray="2 2"/>
-            <Area type="monotone" dataKey="score" name="Misogyny index"
-              stroke={A} strokeWidth={2} fill="url(#mGrad)" dot={false}/>
-          </AreaChart>
-        </ResponsiveContainer>
-        <p style={{ fontSize:11, color:MUT, marginTop:6, fontFamily:"'Nunito Sans',sans-serif" }}>
-          Red dashed line = high alert threshold (70+) · Orange dashed = elevated (50+)
-        </p>
-      </div>
-
-      {/* Video resources grid */}
-      {articles.filter(a=>a.content_type==='video').length > 0 && (
-        <div className="card" style={{ padding:24, marginTop:2, marginBottom:2 }}>
-          <div className="section-head">
-            <span>Video resources · documentaries, features & interviews</span>
-            <span style={{ color:'#DC2626', fontSize:11, fontFamily:"'Nunito Sans',sans-serif", fontWeight:700 }}>
-              ▶ {articles.filter(a=>a.content_type==='video').length} videos
-            </span>
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(240px, 1fr))', gap:2 }}>
-            {articles.filter(a=>a.content_type==='video').map((v,i) => {
-              const sc = SentimentColors[v.sentiment] || SentimentColors.neutral
-              return (
-                <a key={i} href={v.article_url} target="_blank" rel="noopener noreferrer"
-                  style={{ textDecoration:'none', display:'block', background:'#BC9EAE', border:`1px solid ${BD}`, overflow:'hidden' }}
-                  onMouseEnter={e=>e.currentTarget.style.borderColor=A}
-                  onMouseLeave={e=>e.currentTarget.style.borderColor=BD}>
 
-                  {/* Thumbnail */}
-                  <div style={{ position:'relative', paddingTop:'56.25%', background:'#A89AAA', overflow:'hidden' }}>
-                    {v.thumbnail_url ? (
-                      <img src={v.thumbnail_url} alt={v.article_title}
-                        style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover' }}/>
-                    ) : (
-                      <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                        <span style={{ fontSize:32, color:'#7A5068' }}>▶</span>
-                      </div>
-                    )}
-                    {/* Play overlay */}
-                    <div style={{
-                      position:'absolute', inset:0,
-                      display:'flex', alignItems:'center', justifyContent:'center',
-                      background:'rgba(138,16,48,0.2)',
-                      transition:'background .2s',
-                    }}>
-                      <div style={{
-                        width:40, height:40, borderRadius:'50%',
-                        background:'rgba(138,16,48,0.85)',
-                        display:'flex', alignItems:'center', justifyContent:'center',
-                      }}>
-                        <span style={{ color:'#fff', fontSize:16, marginLeft:3 }}>▶</span>
-                      </div>
-                    </div>
-                    {/* Sentiment badge */}
-                    <div style={{ position:'absolute', top:8, left:8 }}>
-                      <span className="badge" style={{ background:sc.bg, borderColor:sc.bc, color:sc.tc, fontSize:9 }}>
-                        {sc.label}
-                      </span>
-                    </div>
-                    {/* Tech badge */}
-                    {v.tech_facilitated && (
-                      <div style={{ position:'absolute', top:8, right:8 }}>
-                        <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700, background:'#8A4010', color:'#fff', padding:'2px 6px' }}>
-                          Tech
-                        </span>
-                      </div>
-                    )}
+          {/* ── 30-DAY TREND ── */}
+          <div style={{ background:CRD, border:`1px solid ${BD}`, padding:16, marginBottom:2 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
+              marginBottom:12 }}>
+              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                letterSpacing:'.1em', textTransform:'uppercase', color:A }}>
+                30-day Misogyny Index trend
+              </p>
+              <div style={{ display:'flex', gap:16 }}>
+                {[
+                  { label:'Peak', val:`${Math.max(...index.map(d=>d.score||0))}%` },
+                  { label:'Average', val:`${Math.round(index.reduce((s,d)=>s+(d.score||0),0)/(index.length||1))}%` },
+                  { label:'Today', val:`${score}%` },
+                ].map((s,i) => (
+                  <div key={i} style={{ textAlign:'center' }}>
+                    <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
+                      color:MUT, letterSpacing:'.08em', textTransform:'uppercase' }}>{s.label}</div>
+                    <div style={{ fontFamily:"'Lora',serif", fontSize:16, fontWeight:700,
+                      color:TXT }}>{s.val}</div>
                   </div>
-
-                  {/* Card body */}
-                  <div style={{ padding:'12px 14px' }}>
-                    <div style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif", marginBottom:5, display:'flex', alignItems:'center', gap:6 }}>
-                      <span style={{ fontSize:10, background:'#DC2626', color:'#fff', padding:'1px 5px', fontWeight:700, fontFamily:"'Nunito Sans',sans-serif" }}>▶ VIDEO</span>
-                      <span>{v.source_name}</span>
-                    </div>
-                    <div style={{
-                      fontWeight:700, fontSize:12, color:TXT, lineHeight:1.4,
-                      fontFamily:"'Nunito Sans',sans-serif", marginBottom:6,
-                      display:'-webkit-box', WebkitLineClamp:2,
-                      WebkitBoxOrient:'vertical', overflow:'hidden',
-                    }}>
-                      {v.article_title}
-                    </div>
-                    <p style={{
-                      fontSize:11, color:MUT, lineHeight:1.6,
-                      fontFamily:"'Nunito Sans',sans-serif",
-                      display:'-webkit-box', WebkitLineClamp:2,
-                      WebkitBoxOrient:'vertical', overflow:'hidden',
-                    }}>
-                      {v.article_snippet}
-                    </p>
-                    <div style={{ marginTop:8, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                      <span style={{ fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>
-                        {v.published_at ? new Date(v.published_at).toLocaleDateString('en-KE') : ''}
-                      </span>
-                      <div style={{ display:'flex', gap:4 }}>
-                        <span style={{ fontSize:10, fontWeight:700, color:A, fontFamily:"'Nunito Sans',sans-serif" }}>
-                          Miso: {v.misogyny_score}/10
-                        </span>
-                        <span style={{ fontSize:10, color:MUT }}>·</span>
-                        <span style={{ fontSize:10, fontWeight:700, color:A2, fontFamily:"'Nunito Sans',sans-serif" }}>
-                          GBV: {v.gbv_relevance}/10
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </a>
-              )
-            })}
+                ))}
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={110}>
+              <AreaChart data={index} margin={{ top:4, right:4, left:-20, bottom:0 }}>
+                <defs>
+                  <linearGradient id="misoGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={A} stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor={A} stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="date" tick={{ fontSize:9, fill:MUT, fontFamily:"'Nunito Sans',sans-serif" }}
+                  tickFormatter={d => d?.slice(5)} interval={6}/>
+                <YAxis tick={{ fontSize:9, fill:MUT }} domain={[0, 100]}/>
+                <Tooltip
+                  contentStyle={{ background:TXT, border:'none', borderRadius:0,
+                    fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:'#fff' }}
+                  formatter={(v) => [`${v}%`, 'Misogyny Index']}
+                  labelStyle={{ color:'rgba(255,255,255,0.6)' }}/>
+                <ReferenceLine y={70} stroke="#CC1010" strokeDasharray="3 3"
+                  label={{ value:'Critical', fill:'#CC1010', fontSize:9, fontFamily:"'Nunito Sans',sans-serif" }}/>
+                <Area type="monotone" dataKey="score" stroke={A} strokeWidth={2}
+                  fill="url(#misoGrad)" dot={false} activeDot={{ r:4 }}/>
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
-        </div>
+
+          {/* ── CONTENT TYPE STATS ── */}
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:2, marginBottom:2 }}>
+            {[
+              { icon:<FileText size={16}/>, label:'News articles', count:news.length,
+                id:'news', color:A },
+              { icon:<Play size={16}/>, label:'Videos scanned', count:videos.length,
+                id:'video', color:'#1A3F6F' },
+              { icon:<Radio size={16}/>, label:'Podcasts scanned', count:podcasts.length,
+                id:'podcast', color:'#1A5A2A' },
+            ].map(s => (
+              <div key={s.id}
+                onClick={() => {
+                  setActiveBreak(null)
+                  setFilter(filter === s.id ? 'all' : s.id)
+                }}
+                style={{ background: filter === s.id ? s.color : CRD,
+                  border:`1px solid ${filter === s.id ? s.color : BD}`,
+                  padding:'14px 16px', cursor:'pointer',
+                  display:'flex', alignItems:'center', gap:12, transition:'all .15s' }}>
+                <span style={{ color: filter === s.id ? '#fff' : s.color }}>{s.icon}</span>
+                <div>
+                  <div style={{ fontFamily:"'Lora',serif", fontSize:24, fontWeight:700,
+                    color: filter === s.id ? '#fff' : TXT }}>{s.count}</div>
+                  <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                    color: filter === s.id ? 'rgba(255,255,255,0.7)' : MUT }}>
+                    {s.label} {filter === s.id ? '· click to clear' : '· click to filter'}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* ── INTELLIGENCE FEED ── */}
+          <div style={{ background:'#B89AAA', border:`1px solid ${BD}`, padding:'14px 16px',
+            marginBottom:2 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
+              marginBottom:12, flexWrap:'wrap', gap:8 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <Cpu size={14} color={A}/>
+                <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                  letterSpacing:'.1em', textTransform:'uppercase', color:A }}>
+                  Intelligence feed
+                </span>
+                {(activeBreak || filter !== 'all' || search) && (
+                  <button onClick={() => { setActiveBreak(null); setFilter('all'); setSearch('') }}
+                    style={{ display:'inline-flex', alignItems:'center', gap:4,
+                      fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                      padding:'3px 8px', background:'rgba(138,16,48,0.1)',
+                      border:`1px solid ${A}`, color:A, cursor:'pointer' }}>
+                    <X size={10}/> Clear filters
+                  </button>
+                )}
+              </div>
+              <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT }}>
+                {displayed.length} results
+              </span>
+            </div>
+
+            {/* Filter chips */}
+            <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:10 }}>
+              {[
+                { id:'all',      label:'All' },
+                { id:'alert',    label:'🚨 High Alert', count:highMiso.length },
+                { id:'tech',     label:'⚡ Tech GBV', count:techGBV.length },
+                { id:'negative', label:'Negative sentiment', count:negSentiment.length },
+                { id:'positive', label:'Positive' },
+                { id:'video',    label:'▶ Videos', count:videos.length },
+                { id:'podcast',  label:'🎙 Podcasts', count:podcasts.length },
+              ].map(f => (
+                <button key={f.id}
+                  onClick={() => { setFilter(f.id); setActiveBreak(null) }}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:600,
+                    padding:'4px 10px', cursor:'pointer',
+                    background: filter === f.id && !activeBreak ? A : 'rgba(255,255,255,0.4)',
+                    border:`1px solid ${filter === f.id && !activeBreak ? A : BD}`,
+                    color: filter === f.id && !activeBreak ? '#fff' : TXT }}>
+                  {f.label}{f.count != null ? ` (${f.count})` : ''}
+                </button>
+              ))}
+            </div>
+
+            {/* Search */}
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search articles, platforms, topics…"
+              style={{ width:'100%', padding:'8px 12px', fontFamily:"'Nunito Sans',sans-serif",
+                fontSize:12, background:'rgba(255,255,255,0.5)', border:`1px solid ${BD}`,
+                color:TXT, outline:'none', marginBottom:12, boxSizing:'border-box' }}/>
+
+            {/* Active breakdown label */}
+            {activeBreak && (() => {
+              const bm = breakdownMetrics.find(b => b.id === activeBreak)
+              return bm ? (
+                <div style={{ padding:'8px 12px', background:bm.color, marginBottom:10,
+                  display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                  <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                    color:'#fff', fontWeight:700 }}>
+                    Filtered by: {bm.label} — {bm.count} articles
+                  </span>
+                  <button onClick={() => setActiveBreak(null)}
+                    style={{ background:'none', border:'none', color:'rgba(255,255,255,0.7)',
+                      cursor:'pointer' }}>
+                    <X size={14}/>
+                  </button>
+                </div>
+              ) : null
+            })()}
+
+            {/* Article grid */}
+            {shown.length === 0 ? (
+              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT,
+                fontStyle:'italic', padding:'20px 0' }}>
+                No articles match this filter. The scanner runs every 6 hours.
+              </p>
+            ) : (
+              <>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                  {shown.map((a, i) => (
+                    <ArticleCard key={a.id || i} a={a} onClick={setModal}/>
+                  ))}
+                </div>
+                {displayed.length > 12 && (
+                  <button onClick={() => setShowAll(!showAll)}
+                    style={{ display:'flex', alignItems:'center', gap:6, margin:'12px auto 0',
+                      fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                      padding:'8px 16px', background:'transparent',
+                      border:`1px solid ${BD}`, color:MUT, cursor:'pointer' }}>
+                    {showAll ? <ChevronUp size={13}/> : <ChevronDown size={13}/>}
+                    {showAll ? 'Show less' : `Show all ${displayed.length} articles`}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        </>
       )}
 
-      {/* Article feed */}
-      <div className="card" style={{ padding:24, marginTop:2 }}>
-        <div className="section-head">
-          <span>Scanned articles · classified by Claude AI</span>
-          <span style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-            {['all','alarming','negative','neutral','positive','video','podcast'].map(f => (
-              <button key={f} onClick={()=>setFilter(f)}
-                style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-                  padding:'3px 10px', border:`1px solid ${filter===f?A:BD}`,
-                  background:filter===f?A:CRD, color:filter===f?'#F0D0D8':MUT,
-                  cursor:'pointer', letterSpacing:'.04em', textTransform:'capitalize' }}>
-                {f}
-              </button>
-            ))}
-          </span>
-        </div>
+      {/* ── ARTICLE MODAL ── */}
+      {modal && <ArticleModal article={modal} onClose={() => setModal(null)}/>}
 
-        {loading ? (
-          <p style={{ color:MUT, fontSize:12 }}>Loading articles...</p>
-        ) : filtered.length === 0 ? (
-          <p style={{ color:MUT, fontSize:12, fontFamily:"'Nunito Sans',sans-serif" }}>No articles found for this filter.</p>
-        ) : (
-          filtered.map((a, i) => {
-            const sc = SentimentColors[a.sentiment] || SentimentColors.neutral
-            return (
-              <div key={a.id} style={{ padding:'14px 0', borderBottom: i < filtered.length-1 ? `1px solid ${BD}` : 'none' }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12 }}>
-                  <div style={{ flex:1 }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6, flexWrap:'wrap' }}>
-                      <span className="badge" style={{ background:sc.bg, borderColor:sc.bc, color:sc.tc }}>{sc.label}</span>
-                      <span style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>{a.source_name}</span>
-                      <span style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>
-                        {a.published_at ? new Date(a.published_at).toLocaleDateString('en-KE') : ''}
-                      </span>
-                      {a.tech_facilitated && (
-                        <span className="badge" style={{ background:'#DCC8B8', borderColor:'#A07040', color:'#5A2808' }}>
-                          Tech: {a.tech_platforms?.join(', ')}
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ fontWeight:700, fontSize:14, color:TXT, marginBottom:5, fontFamily:"'Nunito Sans',sans-serif" }}>{a.article_title}</div>
-                    <p style={{ fontSize:12, color:MUT, lineHeight:1.7, fontFamily:"'Nunito Sans',sans-serif" }}>{a.article_snippet}</p>
-                  </div>
-                  <div style={{ display:'flex', flexDirection:'column', gap:4, flexShrink:0, alignItems:'flex-end' }}>
-                    <a href={a.article_url} target="_blank" rel="noopener noreferrer"
-                      style={{ color:A, display:'inline-flex', alignItems:'center', gap:3, fontSize:11, fontFamily:"'Nunito Sans',sans-serif", fontWeight:600, textDecoration:'none' }}>
-                      Read <ExternalLink size={10}/>
-                    </a>
-                    <div style={{ display:'flex', gap:4 }}>
-                      <div style={{ textAlign:'center', background:CRD, border:`1px solid ${BD}`, padding:'3px 7px' }}>
-                        <div style={{ fontSize:13, fontWeight:700, color:A, fontFamily:"'Nunito Sans',sans-serif" }}>{a.misogyny_score}</div>
-                        <div style={{ fontSize:9, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>miso</div>
-                      </div>
-                      <div style={{ textAlign:'center', background:CRD, border:`1px solid ${BD}`, padding:'3px 7px' }}>
-                        <div style={{ fontSize:13, fontWeight:700, color:A2, fontFamily:"'Nunito Sans',sans-serif" }}>{a.gbv_relevance}</div>
-                        <div style={{ fontSize:9, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>GBV</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )
-          })
-        )}
-      </div>
-
-      {/* Methodology note */}
-      <div style={{ paddingTop:14, marginTop:14, borderTop:`1px solid ${BD}` }}>
-        <p className="label" style={{ marginBottom:6 }}>Methodology</p>
-        <p style={{ fontSize:11, color:MUT, lineHeight:2, fontFamily:"'Nunito Sans',sans-serif" }}>
-          Articles are fetched every 6 hours from Nation Africa, Standard Media, The Star Kenya, Citizen Digital and Capital FM.
-          Each article is classified by Claude AI on GBV relevance (0–10), misogyny level (0–10), sentiment, and tech-facilitation detection.
-          The Misogyny Index is the daily mean misogyny score scaled to 0–100.
-          Scores above 70 trigger a High Alert flag. Data is indicative and may contain classification errors.
-        </p>
-      </div>
     </div>
   )
 }
