@@ -15,7 +15,9 @@ Deno.serve(async (req: Request) => {
   // ── LANGUAGE SELECTION ─────────────────────────────────────────────────
   if (text === '') return ok(
 `CON Karibu/Welcome to hepa
-Chagua lugha/Choose language:
+Gharama: Ksh 1.25/ombi
+Cost: Ksh 1.25/session
+
 1. Kiswahili
 2. English
 0. Cancel/Futa`)
