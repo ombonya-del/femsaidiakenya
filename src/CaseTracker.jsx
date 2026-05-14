@@ -210,13 +210,14 @@ export default function CaseTrackerTab() {
             ))}
           </div>
         </div>
-        <div>
-          <p style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase', marginBottom:10, fontWeight:600 }}>Justice status breakdown — all cases</p>
+        <div style={{ background:'#B89AAA', border:`2px solid ${A}`, padding:20 }}>
+          <p style={{ fontSize:10, color:A, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.12em', textTransform:'uppercase', marginBottom:4, fontWeight:700 }}>Justice status breakdown</p>
+          <p style={{ fontSize:18, fontFamily:"'Lora',serif", fontWeight:700, color:TXT, marginBottom:16, borderBottom:`1px solid ${BD}`, paddingBottom:12 }}>Where do cases end up?</p>
           <JusticeFunnel cases={cases}/>
           <p style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif", marginTop:10, fontStyle:'italic' }}>
             {noActionCount} cases ({cases.length ? Math.round((noActionCount/cases.length)*100) : 0}%) have no known legal action — suspects free, families without justice.
           </p>
-          <div style={{ marginTop:10, padding:'8px 12px', background:'#C4B0B8', border:`1px solid ${BD}`, fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif", lineHeight:1.6 }}>
+          <div style={{ marginTop:10, padding:'8px 12px', background:'#C4AABB', border:`1px solid ${BD}`, fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif", lineHeight:1.6 }}>
             <strong style={{ color:TXT }}>Data source:</strong> Cases sourced from NGEC reports, verified news sources, CSO data and court records.
             Each case is manually verified by the FemSaidia Kenya admin team.
             <strong style={{ color:A }}> This is not an automated count</strong> — it reflects cases we have been able to document and verify.

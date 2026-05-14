@@ -1,1028 +1,399 @@
-import { useState } from 'react'
-import RedFlagTab from './RedFlag.jsx'
-import PetitionTab from './Petition.jsx'
-import ReportTab from './Report.jsx'
-import PartnersTab from './Partners.jsx'
-import SocialsSentimentTab from './SocialsSentiment.jsx'
-import TechTrackerTab from './TechTracker.jsx'
-import SurvivalGuideTab from './SurvivalGuide.jsx'
-import CaseTrackerTab from './CaseTracker.jsx'
-import {
-  AreaChart, Area, BarChart, Bar,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine
-} from 'recharts'
-import { Lock, ExternalLink, AlertTriangle, Download, Play, FileText, Scale, Database, Newspaper } from 'lucide-react'
-import { INCIDENTS, DOCUMENTS, RESOURCES } from './data.js'
-import './App.css'
+// hepa USSD — Bilingual SW/EN
+// Navigation state simulator — correct back at every level
+// Supabase Edge Function — Africa's Talking
 
-const A   = '#8A1030'
-const A2  = '#8A4010'
-const BD  = '#B89AAA'
-const BG  = '#D4BEC4'
-const CRD = '#C4AABB'
-const TXT = '#180410'
-const MUT = '#7A4A60'
-const HDR = '#C8AFBA'
+Deno.serve(async (req: Request) => {
+  const fd   = await req.formData().catch(() => null)
+  const body = fd ? Object.fromEntries(fd.entries()) : {}
+  const text = (body.text ?? '') as string
+  const inp  = text !== '' ? text.split('*') : []
 
-const TREND = [
-  {m:"J'23",f:12,n:28},{m:"F'23",f:10,n:25},{m:"M'23",f:15,n:34},
-  {m:"A'23",f:13,n:30},{m:"M'23",f:17,n:40},{m:"J'23",f:15,n:38},
-  {m:"J'23",f:19,n:45},{m:"A'23",f:22,n:51},{m:"S'23",f:20,n:48},
-  {m:"O'23",f:24,n:57},{m:"N'23",f:28,n:63},{m:"D'23",f:31,n:70},
-  {m:"J'24",f:97,n:88},{m:"F'24",f:42,n:94},{m:"M'24",f:37,n:88},
-  {m:"A'24",f:33,n:82},{m:"M'24",f:29,n:76},{m:"J'24",f:32,n:79},
-  {m:"J'24",f:27,n:73},{m:"A'24",f:31,n:78},{m:"S'24",f:34,n:82},
-  {m:"O'24",f:38,n:87},{m:"N'24",f:41,n:91},{m:"D'24",f:44,n:95},
-]
+  // Language from first press: 2=English, else Swahili
+  const e   = inp[0] === '2'
+  const nav = inp.slice(1)
 
-const COUNTIES = [
-  {n:'Nairobi',c:142,r:0},{n:'Kiambu',c:67,r:1},{n:'Mombasa',c:54,r:1},
-  {n:'Nakuru',c:48,r:1},{n:'Kisumu',c:31,r:2},{n:'Kajiado',c:27,r:2},
-  {n:'Kwale',c:24,r:2},{n:'Machakos',c:22,r:2},{n:"Murang'a",c:20,r:2},
-  {n:'Kilifi',c:18,r:2},{n:'Uasin G.',c:15,r:3},{n:'Trans N.',c:13,r:3},
-  {n:'Meru',c:12,r:3},{n:'Kakamega',c:11,r:3},{n:'Nyeri',c:10,r:3},
-  {n:'Nandi',c:7,r:4},{n:'Embu',c:6,r:4},{n:'Kirinyaga',c:5,r:4},
-  {n:'Bungoma',c:5,r:4},{n:'Homa Bay',c:4,r:4},{n:'Nyamira',c:3,r:4},
-  {n:'Laikipia',c:3,r:5},{n:'Baringo',c:3,r:5},{n:'Narok',c:3,r:5},
-  {n:'Kericho',c:2,r:5},{n:'Bomet',c:2,r:5},{n:'Siaya',c:2,r:5},
-  {n:'Vihiga',c:2,r:5},{n:'Busia',c:2,r:5},{n:'Migori',c:1,r:5},
-  {n:'Kisii',c:1,r:5},{n:'Nyandarua',c:1,r:5},{n:'Taita-T.',c:1,r:5},
-  {n:'Kitui',c:1,r:5},{n:'Makueni',c:1,r:5},{n:'Samburu',c:0,r:5},
-  {n:'Lamu',c:0,r:5},{n:'Tana R.',c:0,r:5},{n:'Garissa',c:0,r:5},
-  {n:'Wajir',c:0,r:5},{n:'Mandera',c:0,r:5},{n:'Marsabit',c:0,r:5},
-  {n:'Isiolo',c:0,r:5},{n:'Turkana',c:0,r:5},{n:'W. Pokot',c:0,r:5},
-  {n:'Elgeyo',c:0,r:5},{n:'Tharaka',c:0,r:5},
-]
+  // ── LANGUAGE SELECTION ─────────────────────────────────────────────────
+  if (text === '') return ok(
+`CON Karibu/Welcome to hepa
+Gharama: Ksh 1.25/ombi
+Cost: Ksh 1.25/session
 
-const RISK = [
-  {label:'Critical',      bg:'#B07080', fg:'#200010'},
-  {label:'High',          bg:'#C08898', fg:'#280818'},
-  {label:'Elevated',      bg:'#C09878', fg:'#281808'},
-  {label:'Medium',        bg:'#C0B080', fg:'#282000'},
-  {label:'Low',           bg:'#90B898', fg:'#102818'},
-  {label:'Gap / minimal', bg:'#C8B8C0', fg:'#7A5068'},
-]
+1. Kiswahili
+2. English
+0. Cancel/Futa`)
 
-const TOP = COUNTIES.filter(c=>c.c>0).sort((a,b)=>b.c-a.c).slice(0,12).map(c=>({name:c.n,cases:c.c}))
+  // Cancel at language screen
+  if (inp[0] === '0') return ok(
+`END Asante. Thank you.
+Piga tena/Dial again: *384*89056#`)
 
-const SC = {
-  'open':          {bg:'#C89AAA',bc:'#8A1030',tc:'#4A0818'},
-  'arrested':      {bg:'#98B8A0',bc:'#1A6A2A',tc:'#0A3A18'},
-  'investigation': {bg:'#C8B490',bc:'#7A5010',tc:'#4A3000'},
-  'at large':      {bg:'#C87888',bc:'#8A0020',tc:'#4A0010'},
-}
+  // ── BACK FROM MAIN MENU → LANGUAGE SCREEN ────────────────────────────
+  if (nav.length === 1 && nav[0] === '0') return ok(
+`CON Karibu/Welcome to hepa
+Chagua lugha/Choose language:
+1. Kiswahili
+2. English
+0. Cancel/Futa`)
 
-const CAT_ICON = {
-  'Dataset':    <Database size={13}/>,
-  'Report':     <FileText size={13}/>,
-  'Law / Act':  <Scale size={13}/>,
-  'Video':      <Play size={13}/>,
-  'Media':      <Newspaper size={13}/>,
-}
-
-const CAT_COLOR = {
-  'Dataset':    {bg:'#BC9EAE', tc:A},
-  'Report':     {bg:'#C4AABB', tc:'#4A2030'},
-  'Law / Act':  {bg:'#C0B490', tc:'#3A2800'},
-  'Video':      {bg:'#A8B8C0', tc:'#102030'},
-  'Media':      {bg:'#C0B8A8', tc:'#302010'},
-}
-
-const CATEGORIES = ['Dataset','Report','Law / Act','Video','Media']
-
-function ChartTip({active,payload,label}){
-  if(!active||!payload?.length) return null
-  return(
-    <div style={{background:CRD,color:TXT,border:`1px solid ${BD}`,fontFamily:"'Nunito Sans',sans-serif",fontSize:11,padding:'8px 12px'}}>
-      <div style={{opacity:.5,marginBottom:4}}>{label}</div>
-      {payload.map((p,i)=><div key={i} style={{color:p.color}}>{p.name}: <strong>{p.value}</strong></div>)}
-    </div>
-  )
-}
-
-function ADHCard(){
-  return(
-    <div style={{background:'#BC9EAE',border:`2px solid ${A}`,padding:'24px 28px',marginBottom:2,position:'relative'}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:24}}>
-        <div style={{flex:1}}>
-          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
-            <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,letterSpacing:'.12em',color:'#fff',background:A,padding:'3px 10px',textTransform:'uppercase',fontWeight:600}}>Featured Dataset</span>
-            <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT}}>Africa Data Hub · Odipodev · Africa Uncensored · 2024</span>
-          </div>
-          <h2 className="serif" style={{fontSize:22,fontWeight:700,color:TXT,lineHeight:1.3,marginBottom:10}}>
-            Silencing Women:<br/><em style={{color:A}}>Femicide in Kenya</em>
-          </h2>
-          <p style={{fontSize:13,color:MUT,lineHeight:1.8,fontFamily:"'Nunito Sans',sans-serif",maxWidth:680,fontWeight:300}}>
-            The most comprehensive femicide dataset for Kenya — covering 842 verified cases spanning 2016–2024,
-            drawn from court records and media reports. Tracks county distribution, victim profiles,
-            perpetrator relationships, and justice outcomes. The primary data source for FemSaidia Kenya.
-          </p>
-          <div style={{display:'flex',gap:10,marginTop:16}}>
-            <a href="https://www.africadatahub.org/femicide-kenya" target="_blank" rel="noopener noreferrer"
-              style={{display:'inline-flex',alignItems:'center',gap:6,background:A,color:'#F0D0D8',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:600,padding:'9px 18px',textDecoration:'none',letterSpacing:'.04em'}}>
-              Explore full dataset <ExternalLink size={13}/>
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function SilencingWomenTab(){
-  return(
-    <div className="fade-up" style={{width:'100%'}}>
-      <div style={{borderBottom:`1px solid ${BD}`,paddingBottom:20,marginBottom:24}}>
-        <p className="label" style={{marginBottom:10,color:A}}>Featured dataset · Africa Data Hub · Odipodev · Africa Uncensored</p>
-        <h1 className="serif" style={{fontSize:36,fontWeight:700,color:TXT}}>Silencing Women: Femicide in Kenya</h1>
-        <p style={{fontSize:13,color:MUT,marginTop:8,fontFamily:"'Nunito Sans',sans-serif",fontWeight:300,lineHeight:1.8}}>
-          842 verified femicide cases · 2016–2024 · court records + media reports · live interactive data.
-          Use the filters to explore by county, year, perpetrator relationship and more.
-        </p>
-        <a href="https://www.africadatahub.org/femicide-kenya" target="_blank" rel="noopener noreferrer"
-          style={{display:'inline-flex',alignItems:'center',gap:6,marginTop:14,color:A,fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:600,letterSpacing:'.04em',textDecoration:'none'}}>
-          Open in full screen <ExternalLink size={12}/>
-        </a>
-      </div>
-      <div style={{width:'100%',border:`1px solid ${BD}`,background:CRD,overflow:'hidden'}}>
-        <iframe
-          src="https://www.africadatahub.org/femicide-kenya"
-          title="Silencing Women: Femicide in Kenya — Africa Data Hub"
-          style={{width:'100%',height:'80vh',border:'none',display:'block'}}
-          allowFullScreen
-        />
-      </div>
-      <p style={{fontSize:11,color:MUT,marginTop:10,fontFamily:"'Nunito Sans',sans-serif"}}>
-        Data by Africa Data Hub, Odipodev and Africa Uncensored ·
-        <a href="https://www.africadatahub.org" target="_blank" rel="noopener noreferrer" style={{color:A,marginLeft:4}}>africadatahub.org</a>
-      </p>
-    </div>
-  )
-}
-
-function DashboardTab(){
-  return(
-    <div className="fade-up" style={{width:'100%'}}>
-      <div style={{borderBottom:`1px solid ${BD}`,paddingBottom:32,marginBottom:32}}>
-        <p className="label" style={{marginBottom:14,color:A,letterSpacing:'.15em'}}>● Kenya · Active crisis · 2023–2026</p>
-        <h1 className="serif" style={{fontSize:52,fontWeight:700,lineHeight:1.2,color:TXT}}>
-          A woman is killed<br/><em style={{color:A}}>every 47 hours</em><br/>in Kenya.
-        </h1>
-        <p style={{marginTop:18,fontSize:15,color:MUT,maxWidth:640,lineHeight:1.9,fontWeight:300,fontFamily:"'Nunito Sans',sans-serif"}}>
-          FemSaidia Kenya maps the femicide epidemic — connecting incident data,
-          misogynistic online narratives, and the digital pathways perpetrators exploit.
-          Built in memory of those already lost. Built for those still here.
-        </p>
-      </div>
-
-      <ADHCard/>
-
-      {/* ── HEPA BANNER ── */}
-      <div style={{
-        background:'#0A2D1A', padding:'20px 24px', marginBottom:2, marginTop:2,
-        display:'flex', justifyContent:'space-between', alignItems:'center',
-        flexWrap:'wrap', gap:16,
-      }}>
-        <div>
-          <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:6}}>
-            <div style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,color:'#FF5C28'}}>hepa</div>
-            <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:'rgba(255,255,255,0.5)',letterSpacing:'.12em',textTransform:'uppercase',fontWeight:700}}>Safety app · Get away · Stay safe</div>
-          </div>
-          <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.6)',lineHeight:1.7,maxWidth:560}}>
-            A safety app disguised as a calculator. Panic button, shake-to-alert, GPS location sharing, check-in timer and offline survival guide. 
-            Also available as a USSD shortcode — <strong style={{color:'rgba(255,255,255,0.9)'}}>*384*89056#</strong> — on any phone, any network, no data needed.
-          </p>
-        </div>
-        <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
-          <a href="https://hepa.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
-            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,
-              padding:'10px 20px',background:'#FF5C28',color:'#fff',textDecoration:'none',
-              letterSpacing:'.04em',whiteSpace:'nowrap'}}>
-            Install hepa →
-          </a>
-          <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.5)',
-            padding:'10px 0',display:'flex',alignItems:'center',gap:6}}>
-            <span style={{fontSize:16}}>📞</span>
-            Dial <strong style={{color:'#FF5C28'}}>*384*89056#</strong>
-          </div>
-        </div>
-      </div>
-
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:2,marginBottom:2,marginTop:2}}>
-        {[
-          {v:'600+', l:'Reported cases',        s:'2023–2025 · verified',                   c:A},
-          {v:'47',   l:'Counties affected',      s:'No county is untouched',                 c:A2},
-          {v:'4',    l:'Critical risk counties', s:'Nairobi · Kiambu · Mombasa · Nakuru',    c:A},
-          {v:'+312%',l:'Spike in Jan 2024',      s:'#TotalShutdownKE was the turning point', c:A},
-        ].map((s,i)=>(
-          <div key={i} className="stat-block">
-            <div className="serif" style={{fontSize:52,fontWeight:700,color:s.c,lineHeight:1}}>{s.v}</div>
-            <p style={{fontSize:14,color:TXT,fontWeight:600,marginTop:10,fontFamily:"'Nunito Sans',sans-serif"}}>{s.l}</p>
-            <p style={{fontSize:11,color:MUT,marginTop:5,fontFamily:"'Nunito Sans',sans-serif"}}>{s.s}</p>
-          </div>
-        ))}
-      </div>
-
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:2,marginTop:2}}>
-        <div className="card" style={{padding:24}}>
-          <div className="section-head">
-            <span>Reported cases by county · top 12</span>
-            <span style={{color:A}}>Indicative</span>
-          </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={TOP} layout="vertical" margin={{left:8,right:20,top:0,bottom:0}}>
-              <XAxis type="number" tick={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fill:MUT}} tickLine={false} axisLine={{stroke:BD}}/>
-              <YAxis type="category" dataKey="name" width={76} tick={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fill:TXT}} tickLine={false} axisLine={false}/>
-              <Tooltip content={<ChartTip/>}/>
-              <Bar dataKey="cases" name="Reported cases" fill={A} radius={0}/>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="card" style={{padding:24}}>
-          <div className="section-head">
-            <span>Incident trend vs online misogyny index · 2023–2024</span>
-          </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={TREND} margin={{left:0,right:12,top:10,bottom:0}}>
-              <defs>
-                <linearGradient id="gF" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor={A}  stopOpacity={0.35}/><stop offset="95%" stopColor={A}  stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="gN" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor={A2} stopOpacity={0.25}/><stop offset="95%" stopColor={A2} stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="m" interval={3} tick={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fill:MUT}} tickLine={false} axisLine={{stroke:BD}}/>
-              <YAxis tick={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fill:MUT}} tickLine={false} axisLine={false}/>
-              <Tooltip content={<ChartTip/>}/>
-              <ReferenceLine x="J'24" stroke={A} strokeDasharray="3 3"
-                label={{value:'#TotalShutdownKE',position:'insideTopLeft',fill:A,fontSize:10,fontFamily:"'Nunito Sans',sans-serif"}}/>
-              <Area type="monotone" dataKey="n" name="Misogyny index"    stroke={A2} strokeWidth={1.5} fill="url(#gN)" dot={false}/>
-              <Area type="monotone" dataKey="f" name="Reported incidents" stroke={A} strokeWidth={2}   fill="url(#gF)" dot={false}/>
-            </AreaChart>
-          </ResponsiveContainer>
-          <p style={{fontSize:11,color:MUT,marginTop:8,fontFamily:"'Nunito Sans',sans-serif"}}>Misogyny index = composite online narrative signal · indicative</p>
-        </div>
-      </div>
-
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:2,marginTop:2}}>
-        <div className="card" style={{padding:24}}>
-          <div className="section-head" style={{flexDirection:'column',alignItems:'flex-start',gap:8}}>
-            <span>All 47 counties · risk level</span>
-            <span style={{display:'flex',flexWrap:'wrap',gap:10}}>
-              {RISK.map((r,i)=>(
-                <span key={i} style={{display:'flex',alignItems:'center',gap:4}}>
-                  <span style={{width:8,height:8,background:r.bg,border:`1px solid ${BD}`,display:'inline-block'}}/>
-                  <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT}}>{r.label}</span>
-                </span>
-              ))}
-            </span>
-          </div>
-          <div style={{display:'flex',flexWrap:'wrap',gap:2}}>
-            {COUNTIES.map((c,i)=>{
-              const conf=RISK[c.r]
-              return <div key={i} className="county-tile" style={{background:conf.bg,color:conf.fg}} title={`${c.n}: ${c.c} reported cases`}>{c.n.substring(0,6)}</div>
-            })}
-          </div>
-          <p style={{fontSize:11,color:MUT,marginTop:12,fontFamily:"'Nunito Sans',sans-serif"}}>Hover for case count · full geographic map in v1.1</p>
-        </div>
-
-        <div className="card" style={{padding:24}}>
-          <div className="section-head">
-            <span>Recent incidents</span>
-            <span className="badge" style={{color:A,borderColor:BD,background:BG}}>Seeded · edit in data.js</span>
-          </div>
-          {INCIDENTS.map((inc,i)=>{
-            const s=SC[inc.status]||SC['open']
-            return(
-              <div key={i} className="incident-row">
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
-                  <div style={{flex:1}}>
-                    <div style={{fontWeight:600,fontSize:14,color:TXT}}>
-                      {inc.county} <span style={{color:MUT,fontWeight:400}}>· {inc.loc}</span>
-                    </div>
-                    <div style={{display:'flex',alignItems:'center',gap:8,marginTop:5}}>
-                      <span style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>{inc.date}</span>
-                      <span style={{fontSize:11,color:MUT}}>·</span>
-                      <a href={inc.url} target="_blank" rel="noopener noreferrer"
-                        style={{fontSize:11,color:A,fontFamily:"'Nunito Sans',sans-serif",fontWeight:600,display:'inline-flex',alignItems:'center',gap:3,textDecoration:'none'}}>
-                        {inc.src} <ExternalLink size={10}/>
-                      </a>
-                    </div>
-                  </div>
-                  <span className="badge" style={{background:s.bg,borderColor:s.bc,color:s.tc,whiteSpace:'nowrap',flexShrink:0}}>{inc.status}</span>
-                </div>
-              </div>
-            )
-          })}
-          <p style={{fontSize:11,color:MUT,marginTop:12,fontFamily:"'Nunito Sans',sans-serif"}}>Submit a verified incident via the Report tab</p>
-        </div>
-      </div>
-
-      <div className="card" style={{padding:24,marginTop:2}}>
-        <div className="section-head">
-          <span>Online narrative & misogyny intelligence</span>
-          <span style={{fontSize:11,color:MUT}}>Social listening integration pending</span>
-        </div>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:2,marginBottom:18}}>
-          {[
-            {v:'14,200+',l:'Manosphere content pieces',n:'Tracked Jan–Dec 2024',    c:A},
-            {v:'3,847',  l:'Online harassment reports', n:'Against women and girls', c:'#7A3020'},
-            {v:'912',    l:'Platform reports filed',    n:'Meta · TikTok · X',       c:'#6A4010'},
-            {v:'34%',    l:'Content acted on',          n:'Of all reports filed',    c:'#1A5A2A'},
-          ].map((m,i)=>(
-            <div key={i} style={{background:'#BC9EAE',border:`1px solid ${BD}`,padding:'18px 20px'}}>
-              <div className="serif" style={{fontSize:36,fontWeight:700,color:m.c,lineHeight:1}}>{m.v}</div>
-              <p style={{fontSize:13,color:TXT,marginTop:10,fontWeight:600,fontFamily:"'Nunito Sans',sans-serif"}}>{m.l}</p>
-              <p style={{fontSize:11,color:MUT,marginTop:5,fontFamily:"'Nunito Sans',sans-serif"}}>{m.n}</p>
-            </div>
-          ))}
-        </div>
-        <div className="pullquote">
-          <p className="serif" style={{fontSize:16,fontStyle:'italic',color:TXT,lineHeight:1.9}}>
-            "When the manosphere grows, women die. The data makes this correlation undeniable. FemSaidia Kenya exists to force that reckoning — in policy, in platforms, and in public conscience."
-          </p>
-          <p style={{fontSize:11,color:MUT,marginTop:10,fontFamily:"'Nunito Sans',sans-serif"}}>FemSaidia Kenya research framework · 2026</p>
-        </div>
-      </div>
-
-      <div style={{paddingTop:18,marginTop:18,borderTop:`1px solid ${BD}`}}>
-        <p className="label" style={{marginBottom:8}}>Primary data sources</p>
-        <p style={{fontSize:11,color:MUT,lineHeight:2.2,fontFamily:"'Nunito Sans',sans-serif"}}>
-          Africa Data Hub · Odipodev · Africa Uncensored · NGEC Kenya · Usikimye ·
-          Nation / Standard / The Star / Citizen Digital · UNFPA Kenya ·
-          Kenya Police Service · Ministry of Health · GVRC · #TotalShutdownKE ·
-          Femicide Count Kenya · Crowdsourced submissions (verified before publication)
-        </p>
-      </div>
-    </div>
-  )
-}
-
-function DataTab(){
-  const [activeCategory, setActiveCategory] = useState('All')
-  const [editMode, setEditMode] = useState(false)
-  const storageKey = 'femsaidia_documents'
-
-  const loadDocs = () => {
-    try {
-      const saved = localStorage.getItem(storageKey)
-      return saved ? JSON.parse(saved) : DOCUMENTS.map(d=>({...d}))
-    } catch { return DOCUMENTS.map(d=>({...d})) }
-  }
-
-  const [docs, setDocs] = useState(loadDocs)
-
-  const updateField = (idx, field, value) => {
-    const updated = docs.map((d,i) => i===idx ? {...d, [field]: value} : d)
-    setDocs(updated)
-    try { localStorage.setItem(storageKey, JSON.stringify(updated)) } catch {}
-  }
-
-  const resetDocs = () => {
-    const reset = DOCUMENTS.map(d=>({...d}))
-    setDocs(reset)
-    try { localStorage.removeItem(storageKey) } catch {}
-  }
-
-  const allCategories = ['All', ...CATEGORIES]
-  const filtered = activeCategory === 'All'
-    ? docs.map((d,i)=>({...d,_idx:i}))
-    : docs.map((d,i)=>({...d,_idx:i})).filter(d => d.category === activeCategory)
-
-  const inputStyle = {
-    fontFamily:"'Nunito Sans',sans-serif",
-    fontSize:13,
-    color:TXT,
-    background:'#DDD0D0',
-    border:`1px solid ${A}`,
-    padding:'4px 8px',
-    width:'100%',
-    outline:'none',
-    marginBottom:4,
-  }
-  const urlInputStyle = {
-    ...inputStyle,
-    fontSize:11,
-    color:'#5A1030',
-    fontFamily:'monospace',
-    background:'#E8D8D8',
-  }
-
-  return(
-    <div className="fade-up" style={{width:'100%'}}>
-      <div style={{borderBottom:`1px solid ${BD}`,paddingBottom:20,marginBottom:24}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
-          <div>
-            <p className="label" style={{marginBottom:10}}>Evidence base</p>
-            <h1 className="serif" style={{fontSize:36,fontWeight:700,color:TXT}}>Reports, research & source documents</h1>
-            <p style={{fontSize:13,color:MUT,marginTop:8,fontFamily:"'Nunito Sans',sans-serif",fontWeight:300}}>
-              {docs.length} resources · {editMode ? 'Edit mode on — click any title or URL to update it.' : 'Admin can edit titles and links using the Edit button.'}
-            </p>
-          </div>
-          <div style={{display:'flex',gap:8,flexShrink:0,marginTop:4}}>
-            {editMode && (
-              <button onClick={resetDocs}
-                style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:600,
-                  padding:'8px 14px',border:`1px solid ${BD}`,background:CRD,
-                  color:MUT,cursor:'pointer',letterSpacing:'.04em'}}>
-                Reset to defaults
-              </button>
-            )}
-            <button onClick={()=>setEditMode(e=>!e)}
-              style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:600,
-                padding:'8px 16px',border:`1px solid ${editMode ? A : BD}`,
-                background: editMode ? A : CRD,
-                color: editMode ? '#F0D0D8' : MUT,
-                cursor:'pointer',letterSpacing:'.06em'}}>
-              {editMode ? '✓ Done editing' : '✎ Edit links'}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Category filter */}
-      <div style={{display:'flex',gap:2,marginBottom:2,flexWrap:'wrap'}}>
-        {allCategories.map(cat=>(
-          <button key={cat}
-            onClick={()=>setActiveCategory(cat)}
-            style={{
-              fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:600,
-              padding:'7px 14px',border:`1px solid ${activeCategory===cat ? A : BD}`,
-              background: activeCategory===cat ? A : CRD,
-              color: activeCategory===cat ? '#F0D0D8' : MUT,
-              cursor:'pointer',letterSpacing:'.04em',
-              display:'inline-flex',alignItems:'center',gap:5,
-            }}>
-            {CAT_ICON[cat]} {cat}
-            <span style={{opacity:.6,fontSize:10}}>
-              ({cat==='All' ? docs.length : docs.filter(d=>d.category===cat).length})
-            </span>
-          </button>
-        ))}
-      </div>
-
-      <div className="card" style={{padding:0,overflow:'hidden'}}>
-        {filtered.map((d,i)=>{
-          const cc = CAT_COLOR[d.category] || {bg:CRD,tc:MUT}
-          const idx = d._idx
-          return(
-            <div key={idx} style={{
-              display:'flex',justifyContent:'space-between',alignItems: editMode ? 'flex-start' : 'center',
-              padding:'16px 24px',
-              borderBottom:i<filtered.length-1?`1px solid ${BD}`:'none',
-              gap:16,
-              background: d.featured ? '#BC9EAE' : 'transparent',
-            }}>
-              <div style={{flex:1}}>
-                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
-                  {d.featured&&(
-                    <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:'#fff',background:A,padding:'2px 8px',letterSpacing:'.08em',fontWeight:600}}>
-                      Primary dataset
-                    </span>
-                  )}
-                  <span style={{
-                    fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:600,
-                    padding:'2px 8px',background:cc.bg,color:cc.tc,
-                    display:'inline-flex',alignItems:'center',gap:4,letterSpacing:'.04em',
-                  }}>
-                    {CAT_ICON[d.category]} {d.category}
-                  </span>
-                  <span style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>{d.y}</span>
-                </div>
-                {editMode ? (
-                  <>
-                    <input
-                      value={d.t}
-                      onChange={e=>updateField(idx,'t',e.target.value)}
-                      style={inputStyle}
-                      placeholder="Document title"
-                    />
-                    <input
-                      value={d.url}
-                      onChange={e=>updateField(idx,'url',e.target.value)}
-                      style={urlInputStyle}
-                      placeholder="https://..."
-                    />
-                  </>
-                ) : (
-                  <div style={{fontWeight:600,fontSize:d.featured?15:14,color:TXT,lineHeight:1.5}}>{d.t}</div>
-                )}
-              </div>
-              <div style={{display:'flex',gap:8,flexShrink:0}}>
-                <a href={d.url} target="_blank" rel="noopener noreferrer"
-                  style={{
-                    color:A,display:'inline-flex',alignItems:'center',gap:4,
-                    fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:600,
-                    padding:'7px 14px',border:`1px solid ${A}`,textDecoration:'none',
-                    opacity: d.url ? 1 : 0.4,
-                    pointerEvents: d.url ? 'auto' : 'none',
-                  }}>
-                  {d.category==='Video' ? 'Watch' : 'View'} <ExternalLink size={11}/>
-                </a>
-                {d.pdf&&(
-                  <a href={d.url} target="_blank" rel="noopener noreferrer" download
-                    style={{
-                      color:MUT,display:'inline-flex',alignItems:'center',gap:4,
-                      fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:600,
-                      padding:'7px 12px',border:`1px solid ${BD}`,textDecoration:'none',
-                    }}>
-                    <Download size={12}/> PDF
-                  </a>
-                )}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-function ResourcesTab(){
-  const [editMode, setEditMode] = useState(false)
-  const storageKey = 'femsaidia_resources'
-
-  const loadRes = () => {
-    try {
-      const saved = localStorage.getItem(storageKey)
-      return saved ? JSON.parse(saved) : RESOURCES.map(r=>({...r}))
-    } catch { return RESOURCES.map(r=>({...r})) }
-  }
-
-  const [res, setRes] = useState(loadRes)
-
-  const updateField = (idx, field, value) => {
-    const updated = res.map((r,i) => i===idx ? {...r, [field]: value} : r)
-    setRes(updated)
-    try { localStorage.setItem(storageKey, JSON.stringify(updated)) } catch {}
-  }
-
-  const resetRes = () => {
-    const reset = RESOURCES.map(r=>({...r}))
-    setRes(reset)
-    try { localStorage.removeItem(storageKey) } catch {}
-  }
-
-  const urgent  = res.map((r,i)=>({...r,_idx:i})).filter(r=>r.urgent)
-  const support = res.map((r,i)=>({...r,_idx:i})).filter(r=>!r.urgent)
-
-  const inputStyle = {
-    fontFamily:"'Nunito Sans',sans-serif",
-    fontSize:13,color:TXT,
-    background:'#DDD0D0',
-    border:`1px solid ${A}`,
-    padding:'4px 8px',width:'100%',
-    outline:'none',marginBottom:4,
-  }
-  const urlInputStyle = {
-    ...inputStyle,fontSize:11,
-    color:'#5A1030',fontFamily:'monospace',
-    background:'#E8D8D8',
-  }
-  const phoneInputStyle = {
-    ...inputStyle,fontSize:12,
-    fontFamily:"'Lora',serif",fontWeight:600,
-    color:A,
-  }
-
-  const ResRow = ({r, size='large'}) => {
-    const idx = r._idx
-    return editMode ? (
-      <div style={{padding: size==='large' ? '16px 0' : '12px 0', borderBottom:`1px solid ${BD}`}}>
-        <input value={r.n} onChange={e=>updateField(idx,'n',e.target.value)} style={inputStyle} placeholder="Organisation name"/>
-        <input value={r.t} onChange={e=>updateField(idx,'t',e.target.value)} style={{...inputStyle,fontSize:11,color:MUT}} placeholder="Type / description"/>
-        <input value={r.p} onChange={e=>updateField(idx,'p',e.target.value)} style={phoneInputStyle} placeholder="Phone number"/>
-        <input value={r.url||''} onChange={e=>updateField(idx,'url',e.target.value)} style={urlInputStyle} placeholder="https://..."/>
-      </div>
-    ) : (
-      <div style={{padding: size==='large' ? '16px 0' : '12px 0', borderBottom:`1px solid ${BD}`, display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-        <div>
-          <a href={r.url} target="_blank" rel="noopener noreferrer" style={{textDecoration:'none'}}>
-            <div style={{fontWeight:600,fontSize: size==='large' ? 14 : 13,color:A,fontFamily:"'Nunito Sans',sans-serif",display:'inline-flex',alignItems:'center',gap:5}}>
-              {r.n} {r.url && <ExternalLink size={11}/>}
-            </div>
-          </a>
-          <p className="label" style={{margin:'5px 0'}}>{r.t}</p>
-          {size==='large' && <p className="serif" style={{fontSize:22,color:A,fontWeight:700}}>{r.p}</p>}
-          {size==='small' && <p style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>{r.p}</p>}
-        </div>
-      </div>
-    )
-  }
-
-  return(
-    <div className="fade-up" style={{width:'100%'}}>
-      <div style={{borderBottom:`1px solid ${BD}`,paddingBottom:20,marginBottom:24}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
-          <div>
-            <p className="label" style={{marginBottom:10,color:A}}>If you are in danger, call now</p>
-            <h1 className="serif" style={{fontSize:36,fontWeight:700,color:TXT}}>Help is available. You are not alone.</h1>
-            <p style={{fontSize:13,color:MUT,marginTop:8,fontFamily:"'Nunito Sans',sans-serif",fontWeight:300}}>
-              {res.length} organisations · {editMode ? 'Edit mode on — update names, numbers and links directly.' : 'Admin can update contacts using the Edit button.'}
-            </p>
-          </div>
-          <div style={{display:'flex',gap:8,flexShrink:0,marginTop:4}}>
-            {editMode && (
-              <button onClick={resetRes}
-                style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:600,
-                  padding:'8px 14px',border:`1px solid ${BD}`,background:CRD,
-                  color:MUT,cursor:'pointer',letterSpacing:'.04em'}}>
-                Reset to defaults
-              </button>
-            )}
-            <button onClick={()=>setEditMode(e=>!e)}
-              style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:600,
-                padding:'8px 16px',border:`1px solid ${editMode ? A : BD}`,
-                background: editMode ? A : CRD,
-                color: editMode ? '#F0D0D8' : MUT,
-                cursor:'pointer',letterSpacing:'.06em'}}>
-              {editMode ? '✓ Done editing' : '✎ Edit contacts'}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div style={{background:'#BC9EAE',border:`1px solid ${BD}`,padding:'20px 26px',marginBottom:2,display:'flex',alignItems:'center',gap:18}}>
-        <AlertTriangle size={24} color={A}/>
-        <div>
-          <div style={{fontWeight:600,fontSize:16,color:TXT,fontFamily:"'Nunito Sans',sans-serif"}}>Emergency? Call 999 or 112 immediately.</div>
-          <p style={{fontSize:12,color:MUT,marginTop:4,fontFamily:"'Nunito Sans',sans-serif"}}>DCI Gender Desk: 0800 722 203 · Available 24 hours</p>
-        </div>
-      </div>
-
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:2,marginTop:2}}>
-        <div className="card" style={{padding:24}}>
-          <div className="section-head"><span>Emergency lines</span><span style={{color:A}}>24/7</span></div>
-          {urgent.map((r,i)=><ResRow key={i} r={r} size="large"/>)}
-        </div>
-        <div className="card" style={{padding:24}}>
-          <div className="section-head"><span>CSO, legal & data support</span></div>
-          {support.map((r,i)=><ResRow key={i} r={r} size="small"/>)}
-        </div>
-      </div>
-
-      {/* ── SAFETY GUIDES ── */}
-      <div style={{marginTop:2}}>
-
-        {/* Section header */}
-        <div style={{borderTop:`1px solid ${BD}`,paddingTop:24,marginTop:2,marginBottom:2}}>
-          <p className="label" style={{marginBottom:8}}>Safety guides & referral pathways</p>
-          <h2 className="serif" style={{fontSize:28,fontWeight:700,color:TXT,lineHeight:1.3}}>
-            Know your rights. Know what to do.<br/>
-            <em style={{color:A,fontWeight:400}}>Step by step.</em>
-          </h2>
-        </div>
-
-        {/* Guide cards grid */}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:2,marginBottom:2}}>
-
-          {/* How to Report */}
-          <div style={{background:'#B89AAA',border:'1px solid #A07888',padding:24}}>
-            <div style={{marginBottom:16}}>
-              <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,letterSpacing:'.12em',color:'#8A1030',textTransform:'uppercase',fontWeight:700,marginBottom:6}}>Referral pathway · Step by step</p>
-              <div style={{fontFamily:"'Lora',serif",fontSize:18,fontWeight:700,color:'#180410',borderBottom:'2px solid #8A1030',paddingBottom:10}}>How to report an incident</div>
-            </div>
-            {[
-              {n:'1', title:'Ensure immediate safety first', body:'If in danger, leave the location. Go to a neighbour, public place, or call 999/112. Do not confront the perpetrator alone.'},
-              {n:'2', title:'Go to the nearest police station', body:'Report at the Gender Desk. You have the right to be attended to immediately. If turned away, ask for the OCS (Officer in Charge of Station).'},
-              {n:'3', title:'Obtain and fill a P3 Form', body:'The P3 is a police medical form required to document injuries. Request it at the station — it is free of charge. Take it to a government hospital for examination.'},
-              {n:'4', title:'Visit a government hospital', body:'A medical officer fills the P3 form documenting injuries. This is critical evidence in court. Go within 72 hours of the incident — the sooner the better.'},
-              {n:'5', title:'File an official statement', body:'Return the completed P3 to the police. Ensure you receive a copy of your OB (Occurrence Book) number. This is your case reference — keep it safe.'},
-              {n:'6', title:'Follow up regularly', body:'Cases stall when survivors stop following up. Visit the station every 2 weeks. Note the name and badge number of your investigating officer.'},
-            ].map((s,i)=>(
-              <div key={i} style={{display:'flex',gap:14,paddingBottom:14,marginBottom:14,borderBottom:i<5?`1px solid ${BD}`:'none'}}>
-                <div style={{
-                  width:28,height:28,borderRadius:'50%',
-                  background:A,color:'#F0D0D8',
-                  display:'flex',alignItems:'center',justifyContent:'center',
-                  fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,
-                  flexShrink:0,marginTop:2,
-                }}>{s.n}</div>
-                <div>
-                  <div style={{fontWeight:700,fontSize:13,color:TXT,fontFamily:"'Nunito Sans',sans-serif",marginBottom:4}}>{s.title}</div>
-                  <p style={{fontSize:12,color:'#2A0818',lineHeight:1.7,fontFamily:"'Nunito Sans',sans-serif"}}>{s.body}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* P3 Form + Evidence */}
-          <div style={{display:'flex',flexDirection:'column',gap:2}}>
-            <div style={{background:'#B89AAA',border:'1px solid #A07888',padding:24}}>
-              <div style={{marginBottom:16}}>
-                <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,letterSpacing:'.12em',color:'#8A1030',textTransform:'uppercase',fontWeight:700,marginBottom:6}}>Legal tool · Know your rights</p>
-                <div style={{fontFamily:"'Lora',serif",fontSize:18,fontWeight:700,color:'#180410',borderBottom:'2px solid #8A1030',paddingBottom:10}}>The P3 Form — what you need to know</div>
-              </div>
-              {[
-                {q:'What is a P3 Form?', a:'A Police Medical Form used to document physical injuries in cases of assault, GBV or attempted murder. It is legally admissible evidence in Kenyan courts.'},
-                {q:'Where do I get it?', a:'From any police station in Kenya. It is free. You do not need money to obtain one. If asked to pay, report it to the IPOA (Independent Policing Oversight Authority).'},
-                {q:'Who fills it?', a:'A medical officer at a government hospital (or approved facility) completes the medical section. The police complete the other sections.'},
-                {q:'How long do I have?', a:'Injuries heal and forensic evidence degrades. Go within 72 hours. Courts can accept late P3s but early documentation is far stronger evidence.'},
-                {q:'What if I am refused?', a:'You have a legal right to a P3. Contact FIDA Kenya (020 387 1231), Kituo Cha Sheria (0800 720 434) or COVAW (020 273 8881) immediately.'},
-              ].map((item,i,arr)=>(
-                <div key={i} style={{paddingBottom:12,marginBottom:12,borderBottom:i<arr.length-1?`1px solid ${BD}`:'none'}}>
-                  <div style={{fontWeight:700,fontSize:12,color:A,fontFamily:"'Nunito Sans',sans-serif",marginBottom:3}}>{item.q}</div>
-                  <p style={{fontSize:12,color:'#2A0818',lineHeight:1.7,fontFamily:"'Nunito Sans',sans-serif"}}>{item.a}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Preserving Evidence */}
-            <div style={{background:'#B89AAA',border:'1px solid #A07888',padding:24}}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingBottom:10,borderBottom:'1px solid #A07888',marginBottom:14,fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:'#5A3050',letterSpacing:'.06em'}}>
-                <span>Preserving material evidence</span>
-                <span style={{color:'#8A1030',fontWeight:700}}>Critical</span>
-              </div>
-              {[
-                {icon:'📱', tip:'Screenshot all threatening messages, calls, social media posts. Back them up to email or cloud immediately.'},
-                {icon:'👕', tip:'Do not wash clothing worn during an incident. Place in a paper bag (not plastic) and hand to police or hospital.'},
-                {icon:'📸', tip:'Photograph injuries immediately — with timestamps on. Use a trusted friend as witness if possible.'},
-                {icon:'🏠', tip:'Do not clean the scene. If possible, lock the area until police arrive to document it.'},
-                {icon:'✍️', tip:'Write down everything you remember — time, sequence, exact words used — while memory is fresh.'},
-                {icon:'👥', tip:'Identify any witnesses. Get their names and contacts before they leave the scene.'},
-              ].map((e,i)=>(
-                <div key={i} style={{display:'flex',gap:10,paddingBottom:10,marginBottom:10,borderBottom:i<5?`1px solid ${BD}`:'none',alignItems:'flex-start'}}>
-                  <span style={{fontSize:16,flexShrink:0}}>{e.icon}</span>
-                  <p style={{fontSize:12,color:'#2A0818',lineHeight:1.7,fontFamily:"'Nunito Sans',sans-serif"}}>{e.tip}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Meeting someone / Safety protocols */}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:2,marginBottom:2}}>
-
-          <div className="card" style={{padding:24}}>
-            <div style={{marginBottom:16}}>
-              <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,letterSpacing:'.12em',color:'#8A1030',textTransform:'uppercase',fontWeight:700,marginBottom:6}}>Safety protocol</p>
-              <div style={{fontFamily:"'Lora',serif",fontSize:18,fontWeight:700,color:'#180410',borderBottom:'2px solid #8A1030',paddingBottom:10,marginBottom:2}}>Meeting someone for the first time</div>
-            </div>
-            {[
-              'Always meet in a public place — café, mall, busy street. Never a private residence or Airbnb first.',
-              'Tell a trusted person where you are going, who you are meeting and when you expect to be back.',
-              'Share your live location with someone you trust before the meeting.',
-              'Arrange your own transport. Do not depend on the person you are meeting to get home.',
-              'Keep your phone charged and accessible at all times.',
-              'If anything feels wrong — leave. You do not owe anyone an explanation.',
-              'Run their name, phone number or social media handle through available safety databases before meeting.',
-            ].map((tip,i)=>(
-              <div key={i} style={{display:'flex',gap:10,paddingBottom:10,marginBottom:10,borderBottom:i<6?`1px solid ${BD}`:'none'}}>
-                <span style={{color:A,fontWeight:700,fontFamily:"'Nunito Sans',sans-serif",fontSize:13,flexShrink:0}}>{i+1}.</span>
-                <p style={{fontSize:12,color:'#2A0818',lineHeight:1.7,fontFamily:"'Nunito Sans',sans-serif"}}>{tip}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="card" style={{padding:24}}>
-            <div style={{marginBottom:16}}>
-              <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,letterSpacing:'.12em',color:'#8A1030',textTransform:'uppercase',fontWeight:700,marginBottom:6}}>Engagement safety</p>
-              <div style={{fontFamily:"'Lora',serif",fontSize:18,fontWeight:700,color:'#180410',borderBottom:'2px solid #8A1030',paddingBottom:10,marginBottom:2}}>Communication & engagement protocols</div>
-            </div>
-            {[
-              {t:'Online dating safety', b:'Use platforms with verified profiles. Never share your home address, workplace or daily routine early in a relationship.'},
-              {t:'Red flags in messaging', b:'Excessive urgency, pressure for money, requests for intimate images, isolation from family/friends — these are warning signs.'},
-              {t:'Protect your location', b:'Turn off location metadata on photos before sending. Use messaging apps that do not expose your IP address.'},
-              {t:'Financial independence', b:'Never allow a new partner access to your finances, accounts or property. Financial control is a key precursor to violence.'},
-              {t:'Trust your instincts', b:'If a person makes you feel unsafe, uncomfortable or controlled — that feeling is valid data. Act on it.'},
-              {t:'Document patterns', b:'Screenshot controlling behaviour, threats or manipulation. Patterns matter in court, not just single incidents.'},
-            ].map((item,i,arr)=>(
-              <div key={i} style={{paddingBottom:12,marginBottom:12,borderBottom:i<arr.length-1?`1px solid ${BD}`:'none'}}>
-                <div style={{fontWeight:700,fontSize:12,color:A,fontFamily:"'Nunito Sans',sans-serif",marginBottom:3}}>{item.t}</div>
-                <p style={{fontSize:12,color:'#2A0818',lineHeight:1.7,fontFamily:"'Nunito Sans',sans-serif"}}>{item.b}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="card" style={{padding:24}}>
-            <div style={{marginBottom:16}}>
-              <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,letterSpacing:'.12em',color:'#8A1030',textTransform:'uppercase',fontWeight:700,marginBottom:6}}>Expert voices</p>
-              <div style={{fontFamily:"'Lora',serif",fontSize:18,fontWeight:700,color:'#180410',borderBottom:'2px solid #8A1030',paddingBottom:10,marginBottom:2}}>Survival tips from professionals</div>
-            </div>
-            {[
-              {src:'GVRC Kenya', tip:'"Document everything. A medical report, a screenshot, a witness name — each one is a brick in your case. Build it from day one."'},
-              {src:'Kituo Cha Sheria', tip:'"You do not need money to access justice. Legal aid is your right. Do not let anyone tell you otherwise."'},
-              {src:'FIDA Kenya', tip:'"Report even when you are not ready to prosecute. A recorded complaint creates a paper trail that protects you later."'},
-              {src:'Usikimye', tip:'"Reach out. The silence protects the abuser, not you. Over 150 women call our helpline every day — you will not be judged."'},
-              {src:'COVAW', tip:'"Court delays are real but not permanent. Cases with strong early evidence — P3, photos, messages — move faster and result in convictions."'},
-            ].map((item,i,arr)=>(
-              <div key={i} style={{paddingBottom:14,marginBottom:14,borderBottom:i<arr.length-1?`1px solid ${BD}`:'none'}}>
-                <div className="pullquote" style={{marginTop:0,padding:'12px 16px'}}>
-                  <p className="serif" style={{fontSize:12,fontStyle:'italic',color:TXT,lineHeight:1.8}}>{item.tip}</p>
-                  <p style={{fontSize:10,color:MUT,marginTop:6,fontFamily:"'Nunito Sans',sans-serif",letterSpacing:'.06em',textTransform:'uppercase'}}>{item.src}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Survivor videos */}
-        <div className="card" style={{padding:24}}>
-          <div className="section-head">
-            <span>Survivor voices & expert testimonials</span>
-            <span style={{fontSize:11,color:MUT}}>Opens on YouTube</span>
-          </div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:2}}>
-            {[
-              {title:'France 24 · The 51%: Confronting femicide in Kenya',         year:'2025', url:'https://www.youtube.com/watch?v=sdE-bO9vNrA',  desc:'Feminist & security professor Awino Okech on the systemic roots of femicide in Kenya.'},
-              {title:'Al Jazeera: Femicide in Kenya exposes a dark reality',        year:'2026', url:'https://www.youtube.com/watch?v=CD27I4tK0fg',  desc:'Investigative report on patterns of femicide and the failure of state response.'},
-              {title:'Voice of the Global South: Protests erupt over femicides',   year:'2024', url:'https://www.youtube.com/watch?v=t9fB5Wm3e7s',  desc:'Coverage of the January 2024 #TotalShutdownKE marches — 10,000 women in the streets.'},
-            ].map((v,i)=>(
-              <a key={i} href={v.url} target="_blank" rel="noopener noreferrer"
-                style={{textDecoration:'none',display:'block',background:'#BC9EAE',border:`1px solid ${BD}`,padding:18}}>
-                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
-                  <div style={{width:36,height:36,background:A,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                    <span style={{color:'#F0D0D8',fontSize:14}}>▶</span>
-                  </div>
-                  <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT,letterSpacing:'.06em'}}>{v.year}</span>
-                </div>
-                <div style={{fontWeight:600,fontSize:13,color:TXT,lineHeight:1.4,marginBottom:6,fontFamily:"'Nunito Sans',sans-serif"}}>{v.title}</div>
-                <p style={{fontSize:11,color:MUT,lineHeight:1.6,fontFamily:"'Nunito Sans',sans-serif"}}>{v.desc}</p>
-                <div style={{marginTop:10,display:'inline-flex',alignItems:'center',gap:4,color:A,fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:600}}>
-                  Watch <ExternalLink size={10}/>
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
-
-      </div>
-    </div>
-  )
-}
-
-const TABS = [
-  {id:'dashboard',       label:'Dashboard'},
-  {id:'data',            label:'Data & reports'},
-  {id:'silencing-women', label:'Silencing Women'},
-  {id:'resources',       label:'Available Help'},
-  {id:'survival',         label:'Survival Guide', red:true},
-  {id:'redflag',         label:'Red flag', red:true},
-  {id:'petition',        label:'Petition', red:true},
-  {id:'report',          label:'Report'},
-  {id:'partners',        label:'Partners'},
-  {id:'sentiment',       label:'Socials & Sentiment'},
-  {id:'tech-tracker',    label:'Tech Tracker'},
-  {id:'cases',           label:'Case Tracker', red:true},
-]
-
-// ── INVITE GATE ───────────────────────────────────────────────────────────────
-import { createClient } from '@supabase/supabase-js'
-const _sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY)
-
-function InviteGate({ children }) {
-  const stored = sessionStorage.getItem('femsaidia_access')
-  const [unlocked, setUnlocked] = useState(!!stored)
-  const [code, setCode]         = useState('')
-  const [error, setError]       = useState('')
-  const [loading, setLoading]   = useState(false)
-
-  const tryCode = async () => {
-    if (!code.trim()) return
-    setLoading(true)
-    setError('')
-    const { data } = await _sb
-      .from('invite_codes')
-      .select('id, uses_limit, uses_count, expires_at')
-      .eq('code', code.trim().toLowerCase())
-      .eq('active', true)
-      .single()
-
-    if (!data) {
-      setError('Invalid access code. Please check your invitation.')
-      setCode('')
-      setLoading(false)
-      return
+  // ── EXPLICIT BACK FROM LEVEL 1 → MAIN MENU ───────────────────────────
+  // Belt-and-suspenders: if nav ends in 0 and effective depth is 1, go to main
+  // This catches AT session edge cases where state simulator might misfire
+  if (nav.length >= 1 && nav[nav.length-1] === '0') {
+    // Count effective depth: replay but stop at last 0
+    let chk = 0
+    for (const p of nav.slice(0, -1)) {
+      if (p === '0') { if (chk > 0) chk-- }
+      else chk++
     }
-    if (data.expires_at && new Date(data.expires_at) < new Date()) {
-      setError('This access code has expired.')
-      setCode('')
-      setLoading(false)
-      return
-    }
-    if (data.uses_limit && data.uses_count >= data.uses_limit) {
-      setError('This access code has reached its usage limit.')
-      setCode('')
-      setLoading(false)
-      return
-    }
-    // Increment uses
-    await _sb.from('invite_codes').update({ uses_count: (data.uses_count||0) + 1 }).eq('id', data.id)
-    sessionStorage.setItem('femsaidia_access', '1')
-    setUnlocked(true)
-    setLoading(false)
+    // If we were at level 1 (submenu), go to main menu
+    if (chk <= 1) return ok(main(e))
   }
 
-  if (unlocked) return children
+  // ── REPLAY NAV TO FIND CURRENT STATE ──────────────────────────────────
+  // Each press either goes deeper (number) or back (0)
+  // Replay all presses to find where user actually is now
+  let level = 0, o1 = '', o2 = ''
+  for (const p of nav) {
+    if (p === '0') {
+      if (level > 0) level--
+      if (level === 0) { o1 = ''; o2 = '' }
+      if (level === 1) o2 = ''
+    } else {
+      level++
+      if (level === 1) o1 = p
+      else if (level === 2) o2 = p
+    }
+  }
 
-  return (
-    <div style={{
-      minHeight:'100vh', background:'#D4BEC4',
-      display:'flex', alignItems:'center', justifyContent:'center',
-      padding:24, fontFamily:"'Nunito Sans',sans-serif",
-    }}>
-      <div style={{ width:'100%', maxWidth:400 }}>
-        <div style={{ textAlign:'center', marginBottom:32 }}>
-          <div style={{ fontFamily:"'Lora',serif", fontSize:32, fontWeight:700, color:'#180410' }}>
-            Fem<span style={{ color:'#8A1030' }}>Saidia</span> Kenya
-          </div>
-          <p style={{ fontSize:12, color:'#7A4A60', marginTop:6, letterSpacing:'.08em', fontFamily:"'Lora',serif", fontStyle:'italic' }}>
-            A Woman is Killed Every 47 Hours in Kenya
-          </p>
-        </div>
-        <div style={{ background:'#C4AABB', border:'1px solid #B89AAA', padding:28 }}>
-          <div style={{ fontFamily:"'Lora',serif", fontSize:18, fontWeight:700, color:'#180410', marginBottom:8 }}>
-            Preview access
-          </div>
-          <p style={{ fontSize:12, color:'#7A4A60', lineHeight:1.7, marginBottom:20 }}>
-            FemSaidia Kenya is currently in preview. Enter your access code to continue.
-          </p>
-          <input
-            value={code}
-            onChange={e => setCode(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && tryCode()}
-            placeholder="Enter access code"
-            style={{
-              width:'100%', fontFamily:"'Nunito Sans',sans-serif", fontSize:13,
-              color:'#180410', background:'#DDD0D0', border:'1px solid #B89AAA',
-              padding:'10px 12px', outline:'none', marginBottom:10,
-            }}
-          />
-          {error && (
-            <p style={{ fontSize:11, color:'#8A1030', marginBottom:10, fontFamily:"'Nunito Sans',sans-serif" }}>{error}</p>
-          )}
-          <button onClick={tryCode} disabled={loading}
-            style={{
-              width:'100%', fontFamily:"'Nunito Sans',sans-serif", fontSize:13,
-              fontWeight:700, padding:'11px', background: loading ? '#7A4A60' : '#8A1030',
-              color:'#F0D0D8', border:'none', cursor: loading ? 'wait' : 'pointer', letterSpacing:'.04em',
-            }}>
-            {loading ? 'Checking...' : 'Access platform →'}
-          </button>
-        </div>
-        <p style={{ fontSize:11, color:'#7A4A60', textAlign:'center', marginTop:16, fontFamily:"'Nunito Sans',sans-serif" }}>
-          To request access contact admin@femsaidiakenya.org
-        </p>
-      </div>
-    </div>
-  )
+  const B = e ? 'Back' : 'Rudi'
+
+  // ── RENDER BASED ON CURRENT STATE ─────────────────────────────────────
+  if (level === 0) return ok(main(e))
+  if (level === 1) return ok(lvl1(o1, e, B))
+  if (level === 2) return ok(lvl2(o1, o2, e, B))
+  return ok(main(e))
+})
+
+// ── LEVEL 0: MAIN MENU ────────────────────────────────────────────────────
+function main(e: boolean): string {
+  return e
+?`CON Welcome to hepa:
+1. I am in danger RIGHT NOW
+2. Emergency numbers
+3. Safety tips
+4. Plan to leave safely
+5. Make a report
+0. Back/Rudi`
+:`CON Karibu hepa:
+1. Niko hatarini SAA HII
+2. Nambari za dharura
+3. Vidokezo vya usalama
+4. Mpango wa kutoroka
+5. Piga ripoti
+0. Rudi/Back`
 }
 
-export default function App(){
-  const [activeTab,setActiveTab]=useState('dashboard')
-  return(
-    <InviteGate>
-    <div style={{fontFamily:"'Nunito Sans',sans-serif",color:TXT,minHeight:'100vh',background:BG,width:'100%'}}>
-      <div style={{background:A,color:'#F0D0D8',padding:'7px 32px',display:'flex',alignItems:'center',gap:12,fontSize:11,fontFamily:"'Nunito Sans',sans-serif",width:'100%'}}>
-        <span className="pulse" style={{display:'inline-block'}}>●</span>
-        <span>FemSaidia Kenya — femicide is a national emergency. Share this platform. Submit verified incidents.</span>
-        <span style={{marginLeft:'auto',opacity:.7}}>femsaidiakenya.org</span>
-      </div>
-      <header style={{background:HDR,borderBottom:`1px solid ${BD}`,padding:'0 32px',width:'100%'}}>
-        <div style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',padding:'28px 0 20px',borderBottom:`1px solid ${BD}`}}>
-          <div>
-            <div className="serif" style={{fontSize:56,fontWeight:700,color:TXT,letterSpacing:'-.02em',lineHeight:1}}>
-              Fem<span style={{color:A}}>Saidia</span> Kenya
-            </div>
-            <p style={{fontSize:11,color:MUT,marginTop:8,fontFamily:"'Lora',serif",fontStyle:'italic',fontWeight:400,letterSpacing:'.01em'}}>
-              A Woman is Killed Every 47 Hours in Kenya
-            </p>
-          </div>
-          <div style={{textAlign:'right',paddingBottom:4}}>
-            <p style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>Last updated</p>
-            <p style={{fontSize:12,color:'#5A3050',fontFamily:"'Nunito Sans',sans-serif",marginTop:2}}>04 May 2026 · 08:00 EAT</p>
-          </div>
-        </div>
-        <nav style={{display:'flex',overflowX:'auto'}}>
-          {TABS.map(t=>(
-            <button key={t.id} className={`nav-tab${activeTab===t.id?' active':''}`} disabled={t.locked===true} onClick={()=>!t.locked&&setActiveTab(t.id)} style={t.red&&activeTab!==t.id?{color:'#8A1030',fontWeight:700}:{}}>
-              {t.locked&&<Lock size={10}/>}
-              {t.label}
-              {t.locked&&<span style={{fontSize:10,opacity:.5}}>· soon</span>}
-            </button>
-          ))}
-        </nav>
-      </header>
-      <main style={{padding:'28px 32px',width:'100%'}}>
-        {activeTab==='dashboard'       && <DashboardTab/>}
-        {activeTab==='data'            && <DataTab/>}
-        {activeTab==='silencing-women' && <SilencingWomenTab/>}
-        {activeTab==='resources'       && <ResourcesTab/>}
-        {activeTab==='survival'        && <SurvivalGuideTab/>}
-        {activeTab==='redflag'         && <RedFlagTab/>}
-        {activeTab==='petition'        && <PetitionTab/>}
-        {activeTab==='report'          && <ReportTab/>}
-        {activeTab==='partners'        && <PartnersTab/>}
-        {activeTab==='sentiment'       && <SocialsSentimentTab/>}
-        {activeTab==='tech-tracker'    && <TechTrackerTab/>}
-        {activeTab==='cases'           && <CaseTrackerTab/>}
-      </main>
-      <footer style={{borderTop:`1px solid ${BD}`,padding:'18px 32px',display:'flex',justifyContent:'space-between',alignItems:'center',background:HDR,width:'100%'}}>
-        <p style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>FemSaidia Kenya · femsaidiakenya.org · 2026</p>
-        <p className="serif" style={{fontSize:12,color:MUT,fontStyle:'italic'}}>Built for justice · in memory of those we lost</p>
-      </footer>
-    </div>
-    </InviteGate>
-  )
+// ── LEVEL 1: SUBMENUS ─────────────────────────────────────────────────────
+function lvl1(o1: string, e: boolean, B: string): string {
+  if (o1==='1') return e
+?`CON DANGER - Choose action:
+1. Call 999
+2. Call DCI Gender Desk
+3. Call GVRC
+4. Emergency message to copy
+0. ${B}`
+:`CON HATARI - Chagua hatua:
+1. Pigia 999
+2. Pigia DCI Jinsia
+3. Pigia GVRC
+4. Ujumbe wa dharura
+0. ${B}`
+
+  if (o1==='2') return e
+?`CON Emergency numbers:
+1. Police: 999/112
+2. DCI: 0800 722 203
+3. GVRC: 0800 723 253
+4. Usikimye: 0800 723 253
+5. FIDA: 0719 638 006
+6. Kituo: 0800 720 434
+0. ${B}`
+:`CON Nambari za dharura:
+1. Polisi: 999/112
+2. DCI: 0800 722 203
+3. GVRC: 0800 723 253
+4. Usikimye: 0800 723 253
+5. FIDA: 0719 638 006
+6. Kituo: 0800 720 434
+0. ${B}`
+
+  if (o1==='3') return e
+?`CON Safety tips:
+1. Steps for right now
+2. Before meeting someone new
+3. Warning signs
+4. Police say it is family matter
+0. ${B}`
+:`CON Vidokezo vya usalama:
+1. Hatua za saa hii
+2. Kabla ya kukutana na mgeni
+3. Dalili za mpenzi hatari
+4. Polisi wakisema ni kinyumbani
+0. ${B}`
+
+  if (o1==='4') return e
+?`CON Plan to leave safely:
+WARNING: Leaving is most dangerous.
+Plan BEFORE you go.
+1. Preparation
+2. The day you leave
+3. After you leave
+4. Protection Order
+0. ${B}`
+:`CON Mpango wa kutoroka:
+ONYO: Kutoroka ni hatari zaidi.
+Panga KABLA ya kwenda.
+1. Kujiandaa
+2. Siku ya kutoroka
+3. Baada ya kutoroka
+4. Amri ya Ulinzi
+0. ${B}`
+
+  if (o1==='5') return e
+?`CON Make a report:
+Visit: femsaidiakenya.org
+Click Report to submit.
+DCI: 0800 722 203
+NGEC: 020 272 0585
+FIDA: 0719 638 006
+Your identity is protected.
+0. ${B}`
+:`CON Piga ripoti:
+Tembelea: femsaidiakenya.org
+Bonyeza Report kutuma.
+DCI: 0800 722 203
+NGEC: 020 272 0585
+FIDA: 0719 638 006
+Jina lako litabaki siri.
+0. ${B}`
+
+  return main(e)
+}
+
+// ── LEVEL 2: SUB-SUBMENUS ─────────────────────────────────────────────────
+function lvl2(o1: string, o2: string, e: boolean, B: string): string {
+
+  // ── SECTION 1: DANGER ───────────────────────────────────────────────
+  if (o1==='1') {
+    if (o2==='1') return e
+?`CON Call 999 or 112 NOW
+Leave line open - they listen.
+Get to a crowded place.
+Make noise. Do not negotiate.
+0. ${B}`
+:`CON Pigia 999 au 112 SASA
+Acha simu ikilia - watasikia.
+Enda pahali kuna watu.
+Fanya kelele. Usikubali kuongea.
+0. ${B}`
+
+    if (o2==='2') return e
+?`CON DCI Gender Desk:
+Call: 0800 722 203
+FREE. 24 hours.
+Independent of local police.
+0. ${B}`
+:`CON DCI Kitengo cha Jinsia:
+Pigia: 0800 722 203
+BURE. Masaa 24.
+Huru na polisi wa mtaa.
+0. ${B}`
+
+    if (o2==='3') return e
+?`CON GVRC Kenya:
+Call: 0800 723 253
+Medical, counselling,
+legal support. FREE. 24hrs.
+0. ${B}`
+:`CON GVRC Kenya:
+Pigia: 0800 723 253
+Matibabu, ushauri,
+msaada wa kisheria. BURE.
+0. ${B}`
+
+    if (o2==='4') return e
+?`CON Copy & send to trusted contact:
+"I am in danger. Call police
+on my behalf: 999 or
+DCI: 0800 722 203
+I am sharing my WhatsApp
+location now."
+0. ${B}`
+:`CON Nakili na tuma kwa rafiki:
+"Niko hatarini. Nipigie polisi
+kwa niaba yangu: 999 au
+DCI: 0800 722 203
+Natuma maeneo yangu
+kwa WhatsApp sasa."
+0. ${B}`
+  }
+
+  // ── SECTION 2: EMERGENCY NUMBERS ────────────────────────────────────
+  if (o1==='2') {
+    const nums: Record<string,[string,string]> = {
+      '1':['CON Police Emergency\nCall: 999 or 112\nFree on all networks.','CON Polisi wa Dharura\nPigia: 999 au 112\nBure kwa mitandao yote.'],
+      '2':['CON DCI Gender Desk\nCall: 0800 722 203\nFREE. 24 hours.','CON DCI Kitengo Jinsia\nPigia: 0800 722 203\nBURE. Masaa 24.'],
+      '3':['CON GVRC Kenya\nCall: 0800 723 253\nFree. Medical & legal.','CON GVRC Kenya\nPigia: 0800 723 253\nBure. Matibabu na kisheria.'],
+      '4':['CON Usikimye Helpline\nCall: 0800 723 253\nFree counselling.','CON Usikimye Helpline\nPigia: 0800 723 253\nUshauri bure.'],
+      '5':['CON FIDA Kenya\nCall: 0719 638 006\nFree legal aid.','CON FIDA Kenya\nPigia: 0719 638 006\nMsaada wa kisheria bure.'],
+      '6':['CON Kituo Cha Sheria\nCall: 0800 720 434\nFree legal aid.','CON Kituo Cha Sheria\nPigia: 0800 720 434\nMsaada wa kisheria bure.'],
+    }
+    const m = nums[o2]
+    if (m) return `${e?m[0]:m[1]}\n0. ${B}`
+  }
+
+  // ── SECTION 3: SAFETY TIPS ───────────────────────────────────────────
+  if (o1==='3') {
+    if (o2==='1') return e
+?`CON Steps for RIGHT NOW:
+. Call 999, leave line open
+. Share location-WhatsApp Live
+. Get to a crowded place
+. Make noise, break glass
+. Do not negotiate
+0. ${B}`
+:`CON Hatua za SAA HII:
+. Pigia 999, acha simu ikilia
+. Tuma maeneo uko-WhatsApp Live
+. Enda pahali kuna watu
+. Fanya kelele, vunja kioo
+. Usikubali kuongea
+0. ${B}`
+
+    if (o2==='2') return e
+?`CON Before meeting someone new:
+. Tell someone-who, where, when
+. Share location-WhatsApp Live
+. Public places only, no Airbnb
+. Never leave your drink
+. Code word with trusted friend
+0. ${B}`
+:`CON Kabla ya kukutana na mgeni:
+. Elezea watu-nani, wapi, lini
+. Tuma maeneo-WhatsApp Live
+. Mahali ya umma tu, si Airbnb
+. Chunga kinywaji chako
+. Neno la siri na rafiki
+0. ${B}`
+
+    if (o2==='3') return e
+?`CON Warning signs:
+. Controls your phone/movements
+. Threatens you or family
+. Has hit you even once
+. Has strangled you-VERY DANGEROUS
+. Isolates you from loved ones
+0. ${B}`
+:`CON Dalili za mpenzi hatari:
+. Anakudhibiti simu na mahali
+. Anakutishia au familia yako
+. Amekupiga hata mara moja
+. Amekusonga shingo-HATARI SANA
+. Anakutenga na wapendwa
+0. ${B}`
+
+    if (o2==='4') return e
+?`CON Police say it is family matter:
+1. Demand OB number-they must give it
+2. Call DCI: 0800 722 203
+3. Call NGEC: 020 272 0585
+4. FIDA: 0719 638 006
+5. IPOA: 0800 724 763
+0. ${B}`
+:`CON Polisi wakisema ni kinyumbani:
+1. Chukua nambari ya OB-lazima
+2. Pigia DCI: 0800 722 203
+3. Pigia NGEC: 020 272 0585
+4. FIDA: 0719 638 006
+5. IPOA: 0800 724 763
+0. ${B}`
+  }
+
+  // ── SECTION 4: LEAVING ───────────────────────────────────────────────
+  if (o1==='4') {
+    if (o2==='1') return e
+?`CON Preparation:
+. Secret bag: ID, docs, cash, charger
+. Go somewhere they don't know
+. Change ALL passwords quietly
+. Get Protection Order first
+  FIDA: 0719 638 006 (FREE)
+0. ${B}`
+:`CON Kujiandaa:
+. Mkoba wa siri: ID, hati, pesa, chaja
+. Chagua mahali hajui
+. Badilisha passwords ZOTE polepole
+. Pata Amri ya Ulinzi kwanza
+  FIDA: 0719 638 006 (BURE)
+0. ${B}`
+
+    if (o2==='2') return e
+?`CON The day you leave:
+. Leave while they are away
+. Tell ONE person only
+. Go somewhere they don't know
+. Change your usual routes
+. Call police when leaving
+0. ${B}`
+:`CON Siku ya kutoroka:
+. Toka akiwa hayupo
+. Mwambie mtu MMOJA tu
+. Enda mahali hajui
+. Badilisha njia wewe hutumia
+. Pigia polisi ukitoroka
+0. ${B}`
+
+    if (o2==='3') return e
+?`CON After you leave:
+. Vary routes every day
+. Block online, save evidence first
+. Tell workplace and school
+. Never meet them alone-ever
+. Save all their contact attempts
+0. ${B}`
+:`CON Baada ya kutoroka:
+. Badilisha njia kila siku
+. Mzuie mtandaoni, weka ushahidi
+. Elezea hali kazini na shule
+. Usikutane naye peke yako kamwe
+. Hifadhi majaribio ya kuwasiliana
+0. ${B}`
+
+    if (o2==='4') return e
+?`CON Protection Order-Law 2015:
+. Court issues within 24 hours
+. They cannot approach you
+. Violation = immediate arrest
+
+FIDA (FREE): 0719 638 006
+Kituo: 0800 720 434
+0. ${B}`
+:`CON Amri ya Ulinzi-Sheria la 2015:
+. Mahakama inaitoa masaa 24
+. Anapigwa marufuku kukukaribia
+. Akikiuka = anashikwa mara moja
+
+FIDA (BURE): 0719 638 006
+Kituo: 0800 720 434
+0. ${B}`
+  }
+
+  return lvl1(o1, e, B)
+}
+
+function ok(text: string): Response {
+  return new Response(text, {
+    status: 200,
+    headers: { 'Content-Type':'text/plain;charset=utf-8', 'Cache-Control':'no-cache' },
+  })
 }
