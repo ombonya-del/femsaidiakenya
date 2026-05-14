@@ -102,7 +102,8 @@ async function fetchRSS(source: string, url: string, type: string): Promise<any[
       const item  = match[1]
       const title = extractText(item, 'title')
       const desc  = extractText(item, 'description').replace(/<[^>]+>/g,'').substring(0,400)
-      const link  = item.match(/<link[^>]*>(.*?)<\/link>/)?.[1]?.trim() || ''
+      const linkRaw = item.match(/<link[^>]*>(.*?)<\/link>/)?.[1]?.trim() || ''
+      const link = linkRaw.replace(/<[^>]+>/g, '').trim()
       const pubDate = item.match(/<pubDate>(.*?)<\/pubDate>/)?.[1] || ''
 
       if (title) items.push({ source, title, snippet:desc, url:link, pubDate, content_type:type, thumbnail_url:null, channel_name:source })
@@ -338,10 +339,11 @@ serve(async () => {
     published:        true,
   }))
 
+  console.log(`To insert: ${toInsert.length}, sample: ${JSON.stringify(toInsert[0] ? {title:toInsert[0].article_title?.slice(0,40), gbv:toInsert[0].gbv_relevance} : null)}`)
   if (toInsert.length) {
-    const { error } = await supabase.from('sentiment_articles').insert(toInsert)
-    if (error) console.error('Insert error:', error.message)
-    else console.log(`Inserted ${toInsert.length} items`)
+    const { data: inserted, error } = await supabase.from('sentiment_articles').insert(toInsert).select('id')
+    if (error) console.error('Insert error:', error.message, JSON.stringify(error))
+    else console.log(`Inserted ${inserted?.length} items successfully`)
   }
 
   await updateMisogynyIndex(classified)
