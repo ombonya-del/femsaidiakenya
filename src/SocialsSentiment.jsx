@@ -96,7 +96,7 @@ function ArticleModal({ article, onClose }) {
             </div>
             <div style={{ fontFamily:"'Lora',serif", fontSize:16, fontWeight:700,
               color:'#fff', lineHeight:1.4 }}>
-              {article.title || article.url}
+              {article.article_title || article.article_url || article.source_name}
             </div>
           </div>
           <button onClick={onClose} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.5)',
@@ -107,7 +107,7 @@ function ArticleModal({ article, onClose }) {
 
         {/* Video embed or thumbnail */}
         {(() => {
-          const videoUrl = article.source_url || article.url || ''
+          const videoUrl = article.article_url || ''
           const ytMatch = videoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
           if (ytMatch) {
             return (
@@ -165,27 +165,27 @@ function ArticleModal({ article, onClose }) {
           )}
 
           {/* Summary */}
-          {article.summary && (
+          {(article.summary || article.article_snippet) && (
             <div style={{ marginBottom:16 }}>
               <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
                 color:MUT, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:6 }}>
                 Summary
               </div>
               <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:13,
-                color:TXT, lineHeight:1.7 }}>{article.summary}</p>
+                color:TXT, lineHeight:1.7 }}>{article.summary || article.article_snippet}</p>
             </div>
           )}
 
           {/* Scan date */}
-          {article.scanned_at && (
+          {(article.scanned_at || article.published_at) && (
             <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT, marginBottom:16 }}>
-              Scanned: {new Date(article.scanned_at).toLocaleString('en-KE', { dateStyle:'medium', timeStyle:'short' })}
+              Scanned: {new Date(article.scanned_at || article.published_at).toLocaleString('en-KE', { dateStyle:'medium', timeStyle:'short' })}
             </p>
           )}
 
           {/* Open source */}
           {article.url && (
-            <a href={article.url} target="_blank" rel="noopener noreferrer"
+            <a href={article.article_url} target="_blank" rel="noopener noreferrer"
               style={{ display:'inline-flex', alignItems:'center', gap:6,
                 fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700,
                 padding:'10px 18px', background:A, color:'#fff', textDecoration:'none' }}>
@@ -237,7 +237,7 @@ function ArticleCard({ a, onClick }) {
           </div>
           <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:600,
             color:TXT, lineHeight:1.5, marginBottom:4 }}>
-            {a.title || a.url}
+            {a.article_title || a.article_url || a.source_name}
           </div>
         </div>
         {/* Score badge */}
@@ -254,7 +254,7 @@ function ArticleCard({ a, onClick }) {
         <div style={{ position:'relative', marginBottom:8 }}
           onClick={e => {
             e.stopPropagation()
-            const u = a.source_url || a.url
+            const u = a.article_url
             if (u) window.open(u, '_blank')
           }}>
           <img src={a.thumbnail_url} alt="" style={{ width:'100%', height:90, objectFit:'cover' }}
@@ -326,13 +326,21 @@ export default function SocialsSentimentTab() {
   const podcasts    = articles.filter(a => a.content_type === 'podcast')
   const news        = articles.filter(a => a.content_type !== 'video' && a.content_type !== 'podcast')
 
-  // Platform breakdown
-  const platformCounts = {}
-  articles.forEach(a => (a.tech_platforms || []).forEach(p => {
-    platformCounts[p] = (platformCounts[p] || 0) + 1
-  }))
+  // Platform breakdown — combines tech_platforms (mentioned) + platform (source)
+  const platformCounts: Record<string,number> = {}
+  articles.forEach(a => {
+    // Count source platforms (X, YouTube, TikTok etc.)
+    if (a.platform && a.platform !== 'news') {
+      const label = a.platform === 'x' ? 'X / Twitter' : a.platform.charAt(0).toUpperCase() + a.platform.slice(1)
+      platformCounts[label] = (platformCounts[label] || 0) + 1
+    }
+    // Count tech platforms mentioned in content
+    ;(a.tech_platforms || []).forEach((p: string) => {
+      platformCounts[p] = (platformCounts[p] || 0) + 1
+    })
+  })
   const topPlatforms = Object.entries(platformCounts)
-    .sort(([,a],[,b]) => b - a).slice(0, 6)
+    .sort(([,a],[,b]) => (b as number) - (a as number)).slice(0, 8)
 
   // ── BREAKDOWN METRICS for click-to-filter ──────────────────────────────────
   const breakdownMetrics = [
@@ -364,7 +372,8 @@ export default function SocialsSentimentTab() {
   if (search.trim()) {
     const q = search.toLowerCase()
     displayed = displayed.filter(a =>
-      (a.title || '').toLowerCase().includes(q) ||
+      (a.article_title || '').toLowerCase().includes(q) ||
+      (a.article_snippet || '').toLowerCase().includes(q) ||
       (a.summary || '').toLowerCase().includes(q) ||
       (a.tech_platforms || []).some(p => p.toLowerCase().includes(q))
     )
