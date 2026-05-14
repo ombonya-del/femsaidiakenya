@@ -1,399 +1,716 @@
-// hepa USSD — Bilingual SW/EN
-// Navigation state simulator — correct back at every level
-// Supabase Edge Function — Africa's Talking
+import { useState, useEffect, useRef, useCallback } from 'react'
 
-Deno.serve(async (req: Request) => {
-  const fd   = await req.formData().catch(() => null)
-  const body = fd ? Object.fromEntries(fd.entries()) : {}
-  const text = (body.text ?? '') as string
-  const inp  = text !== '' ? text.split('*') : []
+// ── CONSTANTS ─────────────────────────────────────────────────────────────────
+const EMERGENCY_CONTACTS = [
+  { name:'Police emergency',    phone:'999'          },
+  { name:'DCI Gender Desk',     phone:'0800722203'   },
+  { name:'GVRC Kenya',          phone:'0800723253'   },
+  { name:'Usikimye',            phone:'0800723253'   },
+  { name:'FIDA Kenya',          phone:'0719638006'   },
+  { name:'Kituo Cha Sheria',    phone:'0800720434'   },
+]
 
-  // Language from first press: 2=English, else Swahili
-  const e   = inp[0] === '2'
-  const nav = inp.slice(1)
+const GUIDE_SECTIONS = [
+  {
+    id:'now', title:'🚨 Right now — immediate danger',
+    items:[
+      'Call 999 or 112 immediately. Leave the line open if you cannot speak — dispatchers listen for background sounds.',
+      'Open WhatsApp → share your Live Location with your trusted contact right now.',
+      'Run toward people — a shop, kiosk, church, matatu stage. Perpetrators rarely escalate in crowds.',
+      'Make noise. Scream, break glass, bang walls. Disrupt the isolation.',
+      'Text your trusted contact your location even if you cannot call. A simple "HELP" with your location is enough.',
+      'Do not try to reason or negotiate. In the moment of violence, survival is the only goal.',
+    ]
+  },
+  {
+    id:'date', title:'📱 Before a first meeting (online date)',
+    items:[
+      'Tell a trusted person: who you are meeting, where, when you expect to return.',
+      'Share your WhatsApp Live Location before entering any building or vehicle.',
+      'Refuse first meetings at private apartments, Airbnbs or short-stay rentals. Public only.',
+      'Video call them before the date — confirm they match their photos.',
+      'Never leave a drink unattended. Never accept a drink you did not see poured.',
+      'Set a code word with your trusted contact — if you send it, they call police immediately.',
+    ]
+  },
+  {
+    id:'leaving', title:'🚪 Leaving an abusive partner',
+    items:[
+      'Leaving is the most dangerous time. Plan before you go — do not leave spontaneously.',
+      'Build an emergency bag in secret: ID, birth certificates, cash, charger, medications.',
+      'Do not go to the obvious place. Choose somewhere your partner does not know.',
+      'Get a Protection Order BEFORE leaving. FIDA Kenya can help — 0719 638 006.',
+      'Change ALL passwords and log out of shared devices before leaving.',
+      'Tell one trusted person your full plan and route. If they don\'t hear from you by a specific time, they call police.',
+      'After leaving: vary your routines. Block on all platforms. Never meet him alone.',
+    ]
+  },
+  {
+    id:'police', title:'🏛️ When police say it\'s a "family matter"',
+    items:[
+      'Insist on an OB (Occurrence Book) number. This creates a legal record they cannot erase.',
+      'Call DCI Gender Desk directly: 0800 722 203. They operate independently of local police.',
+      'Contact NGEC: 020 272 0585. They can compel police to act.',
+      'Get legal aid: FIDA Kenya 0719 638 006 or Kituo Cha Sheria 0800 720 434.',
+      'Report police inaction to IPOA (oversight body): 0800 724 763.',
+    ]
+  },
+]
 
-  // ── LANGUAGE SELECTION ─────────────────────────────────────────────────
-  if (text === '') return ok(
-`CON Karibu/Welcome to hepa
-Gharama: Ksh 1.25/ombi
-Cost: Ksh 1.25/session
+// ── CALCULATOR ────────────────────────────────────────────────────────────────
+function Calculator({ onReveal }) {
+  const [display, setDisplay] = useState('0')
+  const [expression, setExpression] = useState('')
+  const [waitingForOperand, setWaitingForOperand] = useState(false)
+  const [operator, setOperator] = useState(null)
+  const [prevValue, setPrevValue] = useState(null)
+  const [longPressInterval, setLongPressInterval] = useState(null)
+  const [pressProgress, setPressProgress] = useState(0)
+  const progressRef = useRef(0)
 
-1. Kiswahili
-2. English
-0. Cancel/Futa`)
-
-  // Cancel at language screen
-  if (inp[0] === '0') return ok(
-`END Asante. Thank you.
-Piga tena/Dial again: *384*89056#`)
-
-  // ── BACK FROM MAIN MENU → LANGUAGE SCREEN ────────────────────────────
-  if (nav.length === 1 && nav[0] === '0') return ok(
-`CON Karibu/Welcome to hepa
-Chagua lugha/Choose language:
-1. Kiswahili
-2. English
-0. Cancel/Futa`)
-
-  // ── EXPLICIT BACK FROM LEVEL 1 → MAIN MENU ───────────────────────────
-  // Belt-and-suspenders: if nav ends in 0 and effective depth is 1, go to main
-  // This catches AT session edge cases where state simulator might misfire
-  if (nav.length >= 1 && nav[nav.length-1] === '0') {
-    // Count effective depth: replay but stop at last 0
-    let chk = 0
-    for (const p of nav.slice(0, -1)) {
-      if (p === '0') { if (chk > 0) chk-- }
-      else chk++
-    }
-    // If we were at level 1 (submenu), go to main menu
-    if (chk <= 1) return ok(main(e))
-  }
-
-  // ── REPLAY NAV TO FIND CURRENT STATE ──────────────────────────────────
-  // Each press either goes deeper (number) or back (0)
-  // Replay all presses to find where user actually is now
-  let level = 0, o1 = '', o2 = ''
-  for (const p of nav) {
-    if (p === '0') {
-      if (level > 0) level--
-      if (level === 0) { o1 = ''; o2 = '' }
-      if (level === 1) o2 = ''
+  const inputDigit = (digit) => {
+    if (waitingForOperand) {
+      setDisplay(String(digit))
+      setWaitingForOperand(false)
     } else {
-      level++
-      if (level === 1) o1 = p
-      else if (level === 2) o2 = p
+      setDisplay(display === '0' ? String(digit) : display + digit)
     }
   }
 
-  const B = e ? 'Back' : 'Rudi'
-
-  // ── RENDER BASED ON CURRENT STATE ─────────────────────────────────────
-  if (level === 0) return ok(main(e))
-  if (level === 1) return ok(lvl1(o1, e, B))
-  if (level === 2) return ok(lvl2(o1, o2, e, B))
-  return ok(main(e))
-})
-
-// ── LEVEL 0: MAIN MENU ────────────────────────────────────────────────────
-function main(e: boolean): string {
-  return e
-?`CON Welcome to hepa:
-1. I am in danger RIGHT NOW
-2. Emergency numbers
-3. Safety tips
-4. Plan to leave safely
-5. Make a report
-0. Back/Rudi`
-:`CON Karibu hepa:
-1. Niko hatarini SAA HII
-2. Nambari za dharura
-3. Vidokezo vya usalama
-4. Mpango wa kutoroka
-5. Piga ripoti
-0. Rudi/Back`
-}
-
-// ── LEVEL 1: SUBMENUS ─────────────────────────────────────────────────────
-function lvl1(o1: string, e: boolean, B: string): string {
-  if (o1==='1') return e
-?`CON DANGER - Choose action:
-1. Call 999
-2. Call DCI Gender Desk
-3. Call GVRC
-4. Emergency message to copy
-0. ${B}`
-:`CON HATARI - Chagua hatua:
-1. Pigia 999
-2. Pigia DCI Jinsia
-3. Pigia GVRC
-4. Ujumbe wa dharura
-0. ${B}`
-
-  if (o1==='2') return e
-?`CON Emergency numbers:
-1. Police: 999/112
-2. DCI: 0800 722 203
-3. GVRC: 0800 723 253
-4. Usikimye: 0800 723 253
-5. FIDA: 0719 638 006
-6. Kituo: 0800 720 434
-0. ${B}`
-:`CON Nambari za dharura:
-1. Polisi: 999/112
-2. DCI: 0800 722 203
-3. GVRC: 0800 723 253
-4. Usikimye: 0800 723 253
-5. FIDA: 0719 638 006
-6. Kituo: 0800 720 434
-0. ${B}`
-
-  if (o1==='3') return e
-?`CON Safety tips:
-1. Steps for right now
-2. Before meeting someone new
-3. Warning signs
-4. Police say it is family matter
-0. ${B}`
-:`CON Vidokezo vya usalama:
-1. Hatua za saa hii
-2. Kabla ya kukutana na mgeni
-3. Dalili za mpenzi hatari
-4. Polisi wakisema ni kinyumbani
-0. ${B}`
-
-  if (o1==='4') return e
-?`CON Plan to leave safely:
-WARNING: Leaving is most dangerous.
-Plan BEFORE you go.
-1. Preparation
-2. The day you leave
-3. After you leave
-4. Protection Order
-0. ${B}`
-:`CON Mpango wa kutoroka:
-ONYO: Kutoroka ni hatari zaidi.
-Panga KABLA ya kwenda.
-1. Kujiandaa
-2. Siku ya kutoroka
-3. Baada ya kutoroka
-4. Amri ya Ulinzi
-0. ${B}`
-
-  if (o1==='5') return e
-?`CON Make a report:
-Visit: femsaidiakenya.org
-Click Report to submit.
-DCI: 0800 722 203
-NGEC: 020 272 0585
-FIDA: 0719 638 006
-Your identity is protected.
-0. ${B}`
-:`CON Piga ripoti:
-Tembelea: femsaidiakenya.org
-Bonyeza Report kutuma.
-DCI: 0800 722 203
-NGEC: 020 272 0585
-FIDA: 0719 638 006
-Jina lako litabaki siri.
-0. ${B}`
-
-  return main(e)
-}
-
-// ── LEVEL 2: SUB-SUBMENUS ─────────────────────────────────────────────────
-function lvl2(o1: string, o2: string, e: boolean, B: string): string {
-
-  // ── SECTION 1: DANGER ───────────────────────────────────────────────
-  if (o1==='1') {
-    if (o2==='1') return e
-?`CON Call 999 or 112 NOW
-Leave line open - they listen.
-Get to a crowded place.
-Make noise. Do not negotiate.
-0. ${B}`
-:`CON Pigia 999 au 112 SASA
-Acha simu ikilia - watasikia.
-Enda pahali kuna watu.
-Fanya kelele. Usikubali kuongea.
-0. ${B}`
-
-    if (o2==='2') return e
-?`CON DCI Gender Desk:
-Call: 0800 722 203
-FREE. 24 hours.
-Independent of local police.
-0. ${B}`
-:`CON DCI Kitengo cha Jinsia:
-Pigia: 0800 722 203
-BURE. Masaa 24.
-Huru na polisi wa mtaa.
-0. ${B}`
-
-    if (o2==='3') return e
-?`CON GVRC Kenya:
-Call: 0800 723 253
-Medical, counselling,
-legal support. FREE. 24hrs.
-0. ${B}`
-:`CON GVRC Kenya:
-Pigia: 0800 723 253
-Matibabu, ushauri,
-msaada wa kisheria. BURE.
-0. ${B}`
-
-    if (o2==='4') return e
-?`CON Copy & send to trusted contact:
-"I am in danger. Call police
-on my behalf: 999 or
-DCI: 0800 722 203
-I am sharing my WhatsApp
-location now."
-0. ${B}`
-:`CON Nakili na tuma kwa rafiki:
-"Niko hatarini. Nipigie polisi
-kwa niaba yangu: 999 au
-DCI: 0800 722 203
-Natuma maeneo yangu
-kwa WhatsApp sasa."
-0. ${B}`
+  const inputDecimal = () => {
+    if (waitingForOperand) { setDisplay('0.'); setWaitingForOperand(false); return }
+    if (!display.includes('.')) setDisplay(display + '.')
   }
 
-  // ── SECTION 2: EMERGENCY NUMBERS ────────────────────────────────────
-  if (o1==='2') {
-    const nums: Record<string,[string,string]> = {
-      '1':['CON Police Emergency\nCall: 999 or 112\nFree on all networks.','CON Polisi wa Dharura\nPigia: 999 au 112\nBure kwa mitandao yote.'],
-      '2':['CON DCI Gender Desk\nCall: 0800 722 203\nFREE. 24 hours.','CON DCI Kitengo Jinsia\nPigia: 0800 722 203\nBURE. Masaa 24.'],
-      '3':['CON GVRC Kenya\nCall: 0800 723 253\nFree. Medical & legal.','CON GVRC Kenya\nPigia: 0800 723 253\nBure. Matibabu na kisheria.'],
-      '4':['CON Usikimye Helpline\nCall: 0800 723 253\nFree counselling.','CON Usikimye Helpline\nPigia: 0800 723 253\nUshauri bure.'],
-      '5':['CON FIDA Kenya\nCall: 0719 638 006\nFree legal aid.','CON FIDA Kenya\nPigia: 0719 638 006\nMsaada wa kisheria bure.'],
-      '6':['CON Kituo Cha Sheria\nCall: 0800 720 434\nFree legal aid.','CON Kituo Cha Sheria\nPigia: 0800 720 434\nMsaada wa kisheria bure.'],
+  const clear = () => {
+    setDisplay('0'); setExpression(''); setOperator(null)
+    setPrevValue(null); setWaitingForOperand(false)
+  }
+
+  const toggleSign = () => setDisplay(String(parseFloat(display) * -1))
+
+  const percentage = () => setDisplay(String(parseFloat(display) / 100))
+
+  const handleOperator = (op) => {
+    const val = parseFloat(display)
+    if (prevValue !== null && !waitingForOperand) {
+      const result = calculate(prevValue, val, operator)
+      setDisplay(String(result))
+      setPrevValue(result)
+      setExpression(`${result} ${op}`)
+    } else {
+      setPrevValue(val)
+      setExpression(`${val} ${op}`)
     }
-    const m = nums[o2]
-    if (m) return `${e?m[0]:m[1]}\n0. ${B}`
+    setOperator(op)
+    setWaitingForOperand(true)
   }
 
-  // ── SECTION 3: SAFETY TIPS ───────────────────────────────────────────
-  if (o1==='3') {
-    if (o2==='1') return e
-?`CON Steps for RIGHT NOW:
-. Call 999, leave line open
-. Share location-WhatsApp Live
-. Get to a crowded place
-. Make noise, break glass
-. Do not negotiate
-0. ${B}`
-:`CON Hatua za SAA HII:
-. Pigia 999, acha simu ikilia
-. Tuma maeneo uko-WhatsApp Live
-. Enda pahali kuna watu
-. Fanya kelele, vunja kioo
-. Usikubali kuongea
-0. ${B}`
-
-    if (o2==='2') return e
-?`CON Before meeting someone new:
-. Tell someone-who, where, when
-. Share location-WhatsApp Live
-. Public places only, no Airbnb
-. Never leave your drink
-. Code word with trusted friend
-0. ${B}`
-:`CON Kabla ya kukutana na mgeni:
-. Elezea watu-nani, wapi, lini
-. Tuma maeneo-WhatsApp Live
-. Mahali ya umma tu, si Airbnb
-. Chunga kinywaji chako
-. Neno la siri na rafiki
-0. ${B}`
-
-    if (o2==='3') return e
-?`CON Warning signs:
-. Controls your phone/movements
-. Threatens you or family
-. Has hit you even once
-. Has strangled you-VERY DANGEROUS
-. Isolates you from loved ones
-0. ${B}`
-:`CON Dalili za mpenzi hatari:
-. Anakudhibiti simu na mahali
-. Anakutishia au familia yako
-. Amekupiga hata mara moja
-. Amekusonga shingo-HATARI SANA
-. Anakutenga na wapendwa
-0. ${B}`
-
-    if (o2==='4') return e
-?`CON Police say it is family matter:
-1. Demand OB number-they must give it
-2. Call DCI: 0800 722 203
-3. Call NGEC: 020 272 0585
-4. FIDA: 0719 638 006
-5. IPOA: 0800 724 763
-0. ${B}`
-:`CON Polisi wakisema ni kinyumbani:
-1. Chukua nambari ya OB-lazima
-2. Pigia DCI: 0800 722 203
-3. Pigia NGEC: 020 272 0585
-4. FIDA: 0719 638 006
-5. IPOA: 0800 724 763
-0. ${B}`
+  const calculate = (a, b, op) => {
+    switch (op) {
+      case '+': return a + b
+      case '−': return a - b
+      case '×': return a * b
+      case '÷': return b !== 0 ? a / b : 0
+      default: return b
+    }
   }
 
-  // ── SECTION 4: LEAVING ───────────────────────────────────────────────
-  if (o1==='4') {
-    if (o2==='1') return e
-?`CON Preparation:
-. Secret bag: ID, docs, cash, charger
-. Go somewhere they don't know
-. Change ALL passwords quietly
-. Get Protection Order first
-  FIDA: 0719 638 006 (FREE)
-0. ${B}`
-:`CON Kujiandaa:
-. Mkoba wa siri: ID, hati, pesa, chaja
-. Chagua mahali hajui
-. Badilisha passwords ZOTE polepole
-. Pata Amri ya Ulinzi kwanza
-  FIDA: 0719 638 006 (BURE)
-0. ${B}`
-
-    if (o2==='2') return e
-?`CON The day you leave:
-. Leave while they are away
-. Tell ONE person only
-. Go somewhere they don't know
-. Change your usual routes
-. Call police when leaving
-0. ${B}`
-:`CON Siku ya kutoroka:
-. Toka akiwa hayupo
-. Mwambie mtu MMOJA tu
-. Enda mahali hajui
-. Badilisha njia wewe hutumia
-. Pigia polisi ukitoroka
-0. ${B}`
-
-    if (o2==='3') return e
-?`CON After you leave:
-. Vary routes every day
-. Block online, save evidence first
-. Tell workplace and school
-. Never meet them alone-ever
-. Save all their contact attempts
-0. ${B}`
-:`CON Baada ya kutoroka:
-. Badilisha njia kila siku
-. Mzuie mtandaoni, weka ushahidi
-. Elezea hali kazini na shule
-. Usikutane naye peke yako kamwe
-. Hifadhi majaribio ya kuwasiliana
-0. ${B}`
-
-    if (o2==='4') return e
-?`CON Protection Order-Law 2015:
-. Court issues within 24 hours
-. They cannot approach you
-. Violation = immediate arrest
-
-FIDA (FREE): 0719 638 006
-Kituo: 0800 720 434
-0. ${B}`
-:`CON Amri ya Ulinzi-Sheria la 2015:
-. Mahakama inaitoa masaa 24
-. Anapigwa marufuku kukukaribia
-. Akikiuka = anashikwa mara moja
-
-FIDA (BURE): 0719 638 006
-Kituo: 0800 720 434
-0. ${B}`
+  const equals = () => {
+    if (operator && prevValue !== null) {
+      const val = parseFloat(display)
+      const result = calculate(prevValue, val, operator)
+      const rounded = parseFloat(result.toFixed(10))
+      setDisplay(String(rounded))
+      setExpression('')
+      setOperator(null)
+      setPrevValue(null)
+      setWaitingForOperand(true)
+    }
   }
 
-  return lvl1(o1, e, B)
+  // Long press on = to reveal hepa
+  const startLongPress = () => {
+    progressRef.current = 0
+    setPressProgress(0)
+    const interval = setInterval(() => {
+      progressRef.current += 2
+      setPressProgress(progressRef.current)
+      if (progressRef.current >= 100) {
+        clearInterval(interval)
+        setPressProgress(0)
+        onReveal()
+      }
+    }, 60)
+    setLongPressInterval(interval)
+  }
+
+  const endLongPress = () => {
+    if (longPressInterval) {
+      clearInterval(longPressInterval)
+      setLongPressInterval(null)
+    }
+    progressRef.current = 0
+    setPressProgress(0)
+    if (pressProgress < 100) equals()
+  }
+
+  const isLong = display.length > 9
+
+  const rows = [
+    [
+      { label:'AC', action:clear, cls:'grey', wide:false },
+      { label:'+/-', action:toggleSign, cls:'grey' },
+      { label:'%', action:percentage, cls:'grey' },
+      { label:'÷', action:()=>handleOperator('÷'), cls:'orange' },
+    ],
+    [
+      { label:'7', action:()=>inputDigit('7'), cls:'dark-grey' },
+      { label:'8', action:()=>inputDigit('8'), cls:'dark-grey' },
+      { label:'9', action:()=>inputDigit('9'), cls:'dark-grey' },
+      { label:'×', action:()=>handleOperator('×'), cls:'orange' },
+    ],
+    [
+      { label:'4', action:()=>inputDigit('4'), cls:'dark-grey' },
+      { label:'5', action:()=>inputDigit('5'), cls:'dark-grey' },
+      { label:'6', action:()=>inputDigit('6'), cls:'dark-grey' },
+      { label:'−', action:()=>handleOperator('−'), cls:'orange' },
+    ],
+    [
+      { label:'1', action:()=>inputDigit('1'), cls:'dark-grey' },
+      { label:'2', action:()=>inputDigit('2'), cls:'dark-grey' },
+      { label:'3', action:()=>inputDigit('3'), cls:'dark-grey' },
+      { label:'+', action:()=>handleOperator('+'), cls:'orange' },
+    ],
+  ]
+
+  return (
+    <div className="calc-root">
+      <div className="calc-display">
+        <div className="calc-expr">{expression}</div>
+        <div className={`calc-value${isLong?' small':''}`}>{display}</div>
+      </div>
+      <div className="calc-grid">
+        {rows.flat().map((btn, i) => (
+          <button key={i} className={`calc-btn ${btn.cls}`}
+            onClick={btn.action} onContextMenu={e=>e.preventDefault()}>
+            {btn.label}
+          </button>
+        ))}
+        {/* Zero */}
+        <button className="calc-btn dark-grey zero"
+          onClick={()=>inputDigit('0')} onContextMenu={e=>e.preventDefault()}>
+          0
+        </button>
+        {/* Decimal */}
+        <button className="calc-btn dark-grey"
+          onClick={inputDecimal} onContextMenu={e=>e.preventDefault()}>
+          .
+        </button>
+        {/* Equals — long press triggers hepa */}
+        <button
+          className={`calc-btn orange equals${longPressInterval?' pressing':''}`}
+          style={{ position:'relative', overflow:'hidden' }}
+          onPointerDown={startLongPress}
+          onPointerUp={endLongPress}
+          onPointerLeave={endLongPress}
+          onContextMenu={e=>e.preventDefault()}>
+          {pressProgress > 0 && (
+            <div style={{
+              position:'absolute', inset:0, borderRadius:'50%',
+              background:`conic-gradient(rgba(255,255,255,0.35) ${pressProgress * 3.6}deg, transparent 0deg)`,
+            }}/>
+          )}
+          <span style={{position:'relative',zIndex:1}}>=</span>
+        </button>
+      </div>
+    </div>
+  )
 }
 
-function ok(text: string): Response {
-  return new Response(text, {
-    status: 200,
-    headers: { 'Content-Type':'text/plain;charset=utf-8', 'Cache-Control':'no-cache' },
-  })
+// ── PANIC ACTIVE SCREEN ───────────────────────────────────────────────────────
+function PanicScreen({ contacts, onDismiss }) {
+  const [location, setLocation] = useState(null)
+  const [sent, setSent] = useState(false)
+
+  useEffect(() => {
+    navigator.geolocation?.getCurrentPosition(
+      pos => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => setLocation(null),
+      { timeout: 8000, enableHighAccuracy: true }
+    )
+  }, [])
+
+  const locationUrl = location
+    ? `https://maps.google.com/?q=${location.lat},${location.lng}`
+    : 'Location not available'
+
+  const message = `🚨 EMERGENCY — I need help immediately!\n\nThis is an automated alert from hepa.\n${location ? `My location: ${locationUrl}` : 'Location unavailable — call me NOW'}\n\nCall police: 999\nDCI Gender Desk: 0800 722 203`
+
+  const sendAlert = () => {
+    if (contacts.length > 0) {
+      const phone = contacts[0].phone.replace(/\s+/g, '')
+      const wa = `https://wa.me/${phone.startsWith('0') ? '254' + phone.slice(1) : phone}?text=${encodeURIComponent(message)}`
+      window.open(wa, '_blank')
+    }
+    setSent(true)
+  }
+
+  return (
+    <div className="panic-active">
+      <div style={{fontSize:48,marginBottom:16}}>🚨</div>
+      <div className="panic-active-title">ALERT SENT</div>
+      <div className="panic-active-sub">
+        {location ? 'Your GPS location is being shared.' : 'Getting your location...'}
+      </div>
+
+      <div style={{display:'flex',flexDirection:'column',gap:12,width:'100%',maxWidth:320,marginBottom:24}}>
+        <a href="tel:999"
+          style={{display:'block',background:'#fff',color:'#CC1010',fontFamily:"'Nunito Sans',sans-serif",
+            fontSize:18,fontWeight:800,padding:'16px',borderRadius:14,textAlign:'center',textDecoration:'none',letterSpacing:'.04em'}}>
+          CALL 999 NOW
+        </a>
+        {contacts.length > 0 && !sent && (
+          <button onClick={sendAlert}
+            style={{background:'rgba(255,255,255,0.15)',border:'1px solid rgba(255,255,255,0.3)',
+              color:'#fff',fontFamily:"'Nunito Sans',sans-serif",fontSize:14,fontWeight:700,
+              padding:'14px',borderRadius:14,cursor:'pointer'}}>
+            📲 Send WhatsApp alert to {contacts[0].name}
+          </button>
+        )}
+        {sent && (
+          <div style={{background:'rgba(255,255,255,0.1)',borderRadius:14,padding:14,
+            fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'rgba(255,255,255,0.8)',textAlign:'center'}}>
+            ✓ WhatsApp opened with your location
+          </div>
+        )}
+        <a href={`sms:999?body=${encodeURIComponent(message)}`}
+          style={{display:'block',background:'rgba(255,255,255,0.1)',color:'#fff',
+            fontFamily:"'Nunito Sans',sans-serif",fontSize:13,fontWeight:600,
+            padding:'12px',borderRadius:14,textAlign:'center',textDecoration:'none'}}>
+          📨 Send SMS alert
+        </a>
+      </div>
+
+      <button onClick={onDismiss}
+        style={{background:'none',border:'1px solid rgba(255,255,255,0.2)',color:'rgba(255,255,255,0.5)',
+          fontFamily:"'Nunito Sans',sans-serif",fontSize:12,padding:'10px 24px',
+          borderRadius:10,cursor:'pointer'}}>
+        I am safe — dismiss
+      </button>
+    </div>
+  )
+}
+
+// ── CHECK-IN SCREEN ───────────────────────────────────────────────────────────
+function CheckInScreen({ contacts, onBack }) {
+  const [hours, setHours] = useState(() => localStorage.getItem('hepa_checkin_h') || '22')
+  const [minutes, setMinutes] = useState(() => localStorage.getItem('hepa_checkin_m') || '00')
+  const [active, setActive] = useState(false)
+  const [remaining, setRemaining] = useState(null)
+  const intervalRef = useRef(null)
+
+  const fireCheckinAlert = (location) => {
+    const phone = contacts[0]?.phone.replace(/\s+/g, '')
+    if (!phone) return
+    const intlPhone = phone.startsWith('0') ? '254' + phone.slice(1) : phone
+
+    const locText = location
+      ? `My location: https://maps.google.com/?q=${location.lat},${location.lng}`
+      : 'Location unavailable — call me and contact police immediately.'
+
+    const msg = `🚨 CHECK-IN MISSED\n\nThis is an automated hepa alert.\n\n${locText}\n\nI did not check in by the agreed time. Please check on me immediately.\n\nCall police: 999\nDCI Gender Desk: 0800 722 203`
+
+    // Send WhatsApp first (with location link)
+    window.open(`https://wa.me/${intlPhone}?text=${encodeURIComponent(msg)}`, '_blank')
+
+    // Send SMS after a longer delay so WhatsApp has time to open
+    setTimeout(() => {
+      window.location.href = `sms:${phone}?body=${encodeURIComponent(msg)}`
+    }, 3000)
+  }
+
+  const start = () => {
+    const now = new Date()
+    const target = new Date()
+    target.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+    if (target <= now) target.setDate(target.getDate() + 1)
+    const diff = target - now
+    setRemaining(diff)
+    setActive(true)
+    intervalRef.current = setInterval(() => {
+      setRemaining(r => {
+        if (r <= 1000) {
+          clearInterval(intervalRef.current)
+          setActive(false)
+          // Get location then fire alert
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+              pos => fireCheckinAlert({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+              ()  => fireCheckinAlert(null),
+              { timeout: 5000 }
+            )
+          } else {
+            fireCheckinAlert(null)
+          }
+          return 0
+        }
+        return r - 1000
+      })
+    }, 1000)
+  }
+
+  const cancel = () => {
+    clearInterval(intervalRef.current)
+    setActive(false)
+    setRemaining(null)
+  }
+
+  const fmt = ms => {
+    const h = Math.floor(ms / 3600000)
+    const m = Math.floor((ms % 3600000) / 60000)
+    const s = Math.floor((ms % 60000) / 1000)
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+  }
+
+  return (
+    <div className="hepa-screen">
+      <div className="screen-header">
+        <button className="back-btn" onClick={onBack}>←</button>
+        <div className="screen-title">Check-in timer</div>
+      </div>
+      <div style={{padding:'0 16px'}}>
+        <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.7,marginBottom:20}}>
+          Set a time by which you will check in. If you don't — hepa automatically sends a <strong style={{color:'rgba(255,255,255,0.7)'}}>WhatsApp message and SMS</strong> to your trusted contact, with your GPS location and a request to call police immediately.
+        </p>
+
+        {!active ? (
+          <div className="checkin-card">
+            <div className="checkin-label">Check in by</div>
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:20}}>
+              <input type="number" value={hours} min="0" max="23"
+                onChange={e=>{ const v=e.target.value.padStart(2,'0'); setHours(v); localStorage.setItem('hepa_checkin_h',v); }}
+                style={{width:70,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.1)',
+                  borderRadius:10,padding:'10px',fontSize:32,color:'#fff',
+                  fontFamily:"'Nunito Sans',sans-serif",textAlign:'center',outline:'none'}}/>
+              <span style={{color:'#fff',fontSize:32,fontWeight:700}}>:</span>
+              <input type="number" value={minutes} min="0" max="59"
+                onChange={e=>{ const v=e.target.value.padStart(2,'0'); setMinutes(v); localStorage.setItem('hepa_checkin_m',v); }}
+                style={{width:70,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.1)',
+                  borderRadius:10,padding:'10px',fontSize:32,color:'#fff',
+                  fontFamily:"'Nunito Sans',sans-serif",textAlign:'center',outline:'none'}}/>
+            </div>
+            <button className="hepa-btn" onClick={start}
+              style={{marginTop:0}}>
+              Start check-in timer
+            </button>
+          </div>
+        ) : (
+          <div className="checkin-card checkin-active">
+            <div className="checkin-label">⏱ Alert fires in</div>
+            <div className="checkin-time">{fmt(remaining || 0)}</div>
+            <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.4)',margin:'8px 0 16px',lineHeight:1.6}}>
+              If you do not cancel, {contacts[0]?.name || 'your contact'} receives a <strong style={{color:'rgba(255,255,255,0.6)'}}>WhatsApp + SMS alert with your GPS location</strong> automatically.
+            </p>
+            <button className="hepa-btn" onClick={cancel}
+              style={{background:'rgba(255,255,255,0.1)',marginTop:0}}>
+              ✓ I am safe — cancel timer
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── GUIDE SCREEN ──────────────────────────────────────────────────────────────
+function GuideScreen({ onBack }) {
+  const [open, setOpen] = useState('now')
+  return (
+    <div className="hepa-screen">
+      <div className="screen-header">
+        <button className="back-btn" onClick={onBack}>←</button>
+        <div className="screen-title">Survival guide</div>
+      </div>
+      {GUIDE_SECTIONS.map(s => (
+        <div key={s.id} className="guide-section">
+          <div className="guide-section-header" onClick={()=>setOpen(open===s.id?null:s.id)}>
+            <div className="guide-section-title">{s.title}</div>
+            <span style={{color:'rgba(255,255,255,0.4)',fontSize:18}}>{open===s.id?'−':'+'}</span>
+          </div>
+          {open===s.id && (
+            <div className="guide-section-body">
+              {s.items.map((item,i)=>(
+                <div key={i} className="guide-item">
+                  <div className="guide-item-n">{i+1}</div>
+                  <div className="guide-item-text">{item}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+      <div style={{height:32}}/>
+    </div>
+  )
+}
+
+// ── SETUP SCREEN ──────────────────────────────────────────────────────────────
+function SetupScreen({ onSave, initial }) {
+  const [name, setName] = useState(initial.name || '')
+  const [cname, setCname] = useState(initial.contacts[0]?.name || '')
+  const [cphone, setCphone] = useState(initial.contacts[0]?.phone || '')
+
+  const save = () => {
+    if (!name.trim() || !cphone.trim()) return
+    onSave({ name: name.trim(), contacts: [{ name: cname.trim() || 'My contact', phone: cphone.trim() }] })
+  }
+
+  return (
+    <div style={{minHeight:'100vh',background:'#0A2D1A',overflowY:'auto',WebkitOverflowScrolling:'touch'}}>
+      <div style={{padding:'40px 24px 20px',paddingTop:'calc(env(safe-area-inset-top,0px) + 40px)'}}>
+        <div style={{fontFamily:"'Lora',serif",fontSize:32,fontWeight:700,color:'#FF5C28',marginBottom:6}}>hepa</div>
+        <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.7}}>
+          Set up takes 60 seconds. Your information never leaves your phone.
+        </div>
+      </div>
+      <div className="setup-wrap" style={{paddingTop:0}}>
+        <label className="setup-label">Your name</label>
+        <input className="setup-input" value={name} onChange={e=>setName(e.target.value)} placeholder="Your first name"/>
+
+        <div style={{marginTop:24,paddingTop:20,borderTop:'1px solid rgba(255,255,255,0.06)'}}>
+          <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,fontWeight:700,color:'#fff',marginBottom:4}}>Trusted contact</div>
+          <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.4)',lineHeight:1.6,marginBottom:12}}>
+            When you trigger a panic alert, this person receives an automatic WhatsApp message with your GPS location. Choose someone who will act immediately.
+          </p>
+          <label className="setup-label">Their name</label>
+          <input className="setup-input" value={cname} onChange={e=>setCname(e.target.value)} placeholder="e.g. My sister Janet"/>
+          <label className="setup-label">Their phone number</label>
+          <input className="setup-input" type="tel" value={cphone} onChange={e=>setCphone(e.target.value)} placeholder="e.g. 0712 345 678"/>
+        </div>
+
+        <div style={{marginTop:24,padding:16,background:'rgba(255,92,40,0.08)',borderRadius:12,border:'1px solid rgba(255,92,40,0.15)'}}>
+          <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.5)',lineHeight:1.7}}>
+            <strong style={{color:'#FF5C28'}}>To open hepa:</strong> open the Calculator app and hold the <strong style={{color:'#fff'}}>=</strong> button for 3 seconds. This keeps hepa hidden from anyone who picks up your phone.
+          </p>
+        </div>
+
+        <button className="hepa-btn" onClick={save} style={{marginTop:24}}>Save and open hepa →</button>
+        <div style={{height:60}}/>
+      </div>
+    </div>
+  )
+}
+
+// ── CONTACTS SCREEN ───────────────────────────────────────────────────────────
+function ContactsScreen({ data, onBack, onUpdate }) {
+  const [cname, setCname] = useState(data.contacts[0]?.name || '')
+  const [cphone, setCphone] = useState(data.contacts[0]?.phone || '')
+
+  const save = () => {
+    onUpdate({ ...data, contacts:[{name:cname,phone:cphone}] })
+    onBack()
+  }
+
+  return (
+    <div className="hepa-screen">
+      <div className="screen-header">
+        <button className="back-btn" onClick={onBack}>←</button>
+        <div className="screen-title">Trusted contact</div>
+      </div>
+      <div className="setup-wrap">
+        <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.7,marginBottom:8}}>
+          This person receives an automatic WhatsApp alert with your GPS location when you trigger the panic button or shake the phone.
+        </p>
+        <label className="setup-label">Their name</label>
+        <input className="setup-input" value={cname} onChange={e=>setCname(e.target.value)}/>
+        <label className="setup-label">Their phone number</label>
+        <input className="setup-input" type="tel" value={cphone} onChange={e=>setCphone(e.target.value)}/>
+        <button className="hepa-btn" onClick={save} style={{marginTop:24}}>Save contact</button>
+        <div style={{height:40}}/>
+      </div>
+    </div>
+  )
+}
+
+// ── MAIN APP ──────────────────────────────────────────────────────────────────
+export default function App() {
+  const [screen, setScreen] = useState('calc') // calc | reveal | setup | home | panic | checkin | guide | contacts
+  const [userData, setUserData] = useState(null)
+  const [shakeEnabled, setShakeEnabled] = useState(false)
+  const shakeRef = useRef({ x:0, y:0, z:0, t:0 })
+
+  // Load saved user data
+  useEffect(() => {
+    const saved = localStorage.getItem('hepa_user')
+    if (saved) setUserData(JSON.parse(saved))
+  }, [])
+
+  const saveUserData = (data) => {
+    localStorage.setItem('hepa_user', JSON.stringify(data))
+    setUserData(data)
+  }
+
+  // Reveal hepa from calculator
+  const reveal = () => {
+    setScreen('reveal')
+    setTimeout(() => {
+      setScreen(userData ? 'home' : 'setup')
+    }, 600)
+  }
+
+  // Shake detection
+  const enableShake = useCallback(() => {
+    const handleMotion = (e) => {
+      const { x, y, z } = e.accelerationIncludingGravity || {}
+      const now = Date.now()
+      const prev = shakeRef.current
+      if (now - prev.t > 100) {
+        const dx = Math.abs((x||0) - prev.x)
+        const dy = Math.abs((y||0) - prev.y)
+        const dz = Math.abs((z||0) - prev.z)
+        if (dx + dy + dz > 25 && screen === 'home') {
+          setScreen('panic')
+        }
+        shakeRef.current = { x:x||0, y:y||0, z:z||0, t:now }
+      }
+    }
+
+    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+      DeviceMotionEvent.requestPermission().then(perm => {
+        if (perm === 'granted') {
+          window.addEventListener('devicemotion', handleMotion)
+          setShakeEnabled(true)
+        }
+      }).catch(()=>{})
+    } else {
+      window.addEventListener('devicemotion', handleMotion)
+      setShakeEnabled(true)
+    }
+  }, [screen])
+
+  useEffect(() => {
+    if (screen === 'home' && !shakeEnabled) enableShake()
+  }, [screen])
+
+  // ── RENDER ─────────────────────────────────────────────────────────────────
+  if (screen === 'calc') return <Calculator onReveal={reveal}/>
+
+  if (screen === 'reveal') return (
+    <div className="hepa-reveal">
+      <div style={{fontFamily:"'Lora',serif",fontSize:48,fontWeight:700,color:'#FF5C28',animation:'fadeIn .4s .3s both'}}>hepa</div>
+    </div>
+  )
+
+  if (screen === 'setup') return (
+    <SetupScreen
+      initial={userData || {name:'',contacts:[]}}
+      onSave={(data) => { saveUserData(data); setScreen('home') }}
+    />
+  )
+
+  if (screen === 'panic') return (
+    <PanicScreen
+      contacts={userData?.contacts || []}
+      onDismiss={() => setScreen('home')}
+    />
+  )
+
+  if (screen === 'checkin') return (
+    <CheckInScreen
+      contacts={userData?.contacts || []}
+      onBack={() => setScreen('home')}
+    />
+  )
+
+  if (screen === 'guide') return (
+    <GuideScreen onBack={() => setScreen('home')}/>
+  )
+
+  if (screen === 'contacts') return (
+    <ContactsScreen
+      data={userData || {name:'',contacts:[]}}
+      onBack={() => setScreen('home')}
+      onUpdate={saveUserData}
+    />
+  )
+
+  // Home screen
+  return (
+    <div className="hepa-root">
+      {/* Header */}
+      <div className="hepa-header">
+        <div className="hepa-logo">
+          hepa
+          <span>Get away · Stay safe</span>
+        </div>
+        <button className="hepa-calc-btn" onClick={()=>setScreen('calc')}>
+          🔢 Calculator
+        </button>
+      </div>
+
+      {/* User greeting */}
+      {userData?.name && (
+        <div style={{padding:'14px 24px 0',fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'rgba(255,255,255,0.4)'}}>
+          Hello, <strong style={{color:'rgba(255,255,255,0.7)'}}>{userData.name}</strong>
+        </div>
+      )}
+
+      {/* PANIC BUTTON */}
+      <div className="panic-zone">
+        <button className="panic-btn" onClick={()=>setScreen('panic')}>
+          <div className="panic-btn-label">PANIC</div>
+          <div className="panic-btn-sub">Tap or shake</div>
+        </button>
+        <div className="panic-hint">
+          Hold phone and shake — alert fires automatically
+        </div>
+        {!shakeEnabled && (
+          <div className="permission-box" style={{marginTop:12,width:'100%'}}>
+            <p>Enable shake-to-alert for faster panic triggering</p>
+            <button className="perm-btn" onClick={enableShake}>Enable shake detection</button>
+          </div>
+        )}
+      </div>
+
+      {/* Emergency contacts */}
+      <div className="contacts-strip">
+        <div className="contacts-strip-title">Emergency numbers</div>
+        {EMERGENCY_CONTACTS.map((c,i) => (
+          <div key={i} className="contact-row">
+            <div className="contact-name">{c.name}</div>
+            <a href={`tel:${c.phone}`} className="contact-call">{c.phone}</a>
+          </div>
+        ))}
+      </div>
+
+      {/* Action cards */}
+      <div className="action-grid">
+        <button className="action-card" onClick={()=>setScreen('checkin')}>
+          <span className="action-card-icon">⏱</span>
+          <div className="action-card-title">Check-in timer</div>
+          <div className="action-card-sub">Alert if I don&apos;t check in</div>
+        </button>
+        <button className="action-card" onClick={()=>setScreen('guide')}>
+          <span className="action-card-icon">📖</span>
+          <div className="action-card-title">Survival guide</div>
+          <div className="action-card-sub">Offline safety protocols</div>
+        </button>
+        <button className="action-card" onClick={()=>setScreen('contacts')}>
+          <span className="action-card-icon">👤</span>
+          <div className="action-card-title">Trusted contact</div>
+          <div className="action-card-sub">{userData?.contacts[0]?.name || 'Not set'}</div>
+        </button>
+        <a className="action-card"
+          href="https://femsaidiakenya.org"
+          style={{textDecoration:'none'}}>
+          <span className="action-card-icon">🛡</span>
+          <div className="action-card-title">FemSaidia</div>
+          <div className="action-card-sub">Resources & support</div>
+        </a>
+      </div>
+
+      <div style={{height:32}}/>
+    </div>
+  )
 }
