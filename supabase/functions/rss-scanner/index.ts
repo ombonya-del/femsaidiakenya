@@ -116,7 +116,6 @@ Return only the JSON array.`
     })
 
     const data   = await res.json()
-    console.log('Claude response:', JSON.stringify(data).slice(0,200))
     const text   = data.content?.[0]?.text || '[]'
     const clean  = text.replace(/```json|```/g, '').trim()
     const scores = JSON.parse(clean)
