@@ -327,7 +327,7 @@ export default function SocialsSentimentTab() {
   const news        = articles.filter(a => a.content_type !== 'video' && a.content_type !== 'podcast')
 
   // Platform breakdown — combines tech_platforms (mentioned) + platform (source)
-  const platformCounts: Record<string,number> = {}
+  const platformCounts = {}
   articles.forEach(a => {
     // Count source platforms (X, YouTube, TikTok etc.)
     if (a.platform && a.platform !== 'news') {
@@ -335,12 +335,12 @@ export default function SocialsSentimentTab() {
       platformCounts[label] = (platformCounts[label] || 0) + 1
     }
     // Count tech platforms mentioned in content
-    ;(a.tech_platforms || []).forEach((p: string) => {
+    ;(a.tech_platforms || []).forEach((p) => {
       platformCounts[p] = (platformCounts[p] || 0) + 1
     })
   })
   const topPlatforms = Object.entries(platformCounts)
-    .sort(([,a],[,b]) => (b as number) - (a as number)).slice(0, 8)
+    .sort(([,a],[,b]) => b - a).slice(0, 8)
 
   // ── BREAKDOWN METRICS for click-to-filter ──────────────────────────────────
   const breakdownMetrics = [
