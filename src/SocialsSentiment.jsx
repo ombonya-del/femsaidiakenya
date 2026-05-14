@@ -326,21 +326,24 @@ export default function SocialsSentimentTab() {
   const podcasts    = articles.filter(a => a.content_type === 'podcast')
   const news        = articles.filter(a => a.content_type !== 'video' && a.content_type !== 'podcast')
 
-  // Platform breakdown — combines tech_platforms (mentioned) + platform (source)
-  const platformCounts = {}
+  // Source platforms — where content comes from
+  const sourceCounts = {}
   articles.forEach(a => {
-    // Count source platforms (X, YouTube, TikTok etc.)
     if (a.platform && a.platform !== 'news') {
       const label = a.platform === 'x' ? 'X / Twitter' : a.platform.charAt(0).toUpperCase() + a.platform.slice(1)
-      platformCounts[label] = (platformCounts[label] || 0) + 1
+      sourceCounts[label] = (sourceCounts[label] || 0) + 1
     }
-    // Count tech platforms mentioned in content
+  })
+  const topSources = Object.entries(sourceCounts).sort(([,a],[,b]) => b - a)
+
+  // Mentioned platforms — platforms named in GBV content
+  const mentionCounts = {}
+  articles.forEach(a => {
     ;(a.tech_platforms || []).forEach((p) => {
-      platformCounts[p] = (platformCounts[p] || 0) + 1
+      mentionCounts[p] = (mentionCounts[p] || 0) + 1
     })
   })
-  const topPlatforms = Object.entries(platformCounts)
-    .sort(([,a],[,b]) => b - a).slice(0, 8)
+  const topMentions = Object.entries(mentionCounts).sort(([,a],[,b]) => b - a).slice(0, 6)
 
   // ── BREAKDOWN METRICS for click-to-filter ──────────────────────────────────
   const breakdownMetrics = [
@@ -491,30 +494,44 @@ export default function SocialsSentimentTab() {
               {/* Platform breakdown */}
               <div style={{ minWidth:180, flexShrink:0 }}>
                 <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-                  letterSpacing:'.12em', textTransform:'uppercase', color:A, marginBottom:10 }}>
+                  letterSpacing:'.12em', textTransform:'uppercase', color:A, marginBottom:8 }}>
                   Platforms in focus
                 </p>
-                {topPlatforms.length > 0 ? topPlatforms.map(([p, c], i) => (
-                  <div key={i} onClick={() => {
-                      setSearch(p)
-                      setActiveBreak(null)
-                      setFilter('all')
-                    }}
+
+                {/* Source platforms */}
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
+                  color:MUT, letterSpacing:'.08em', textTransform:'uppercase',
+                  fontWeight:700, marginBottom:4 }}>Source</p>
+                {topSources.map(([p, c], i) => (
+                  <div key={i} onClick={() => { setSearch(p); setActiveBreak(null); setFilter('all') }}
                     style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
-                      padding:'6px 0', borderBottom:`1px solid rgba(184,154,170,0.3)`,
-                      cursor:'pointer' }}>
-                    <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12,
+                      padding:'4px 0', borderBottom:`1px solid rgba(184,154,170,0.2)`, cursor:'pointer' }}>
+                    <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
                       color:TXT, fontWeight:600 }}>{p}</span>
                     <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
-                      color:'#8A4010', fontWeight:700 }}>{c}</span>
+                      color:A, fontWeight:700 }}>{c}</span>
                   </div>
-                )) : (
-                  <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
-                    color:MUT, fontStyle:'italic' }}>No platform data yet</p>
-                )}
+                ))}
+
+                {/* Mentioned platforms */}
+                {topMentions.length > 0 && (<>
+                  <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
+                    color:MUT, letterSpacing:'.08em', textTransform:'uppercase',
+                    fontWeight:700, margin:'10px 0 4px' }}>Mentioned in content</p>
+                  {topMentions.map(([p, c], i) => (
+                    <div key={i} onClick={() => { setSearch(p); setActiveBreak(null); setFilter('all') }}
+                      style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
+                        padding:'4px 0', borderBottom:`1px solid rgba(184,154,170,0.2)`, cursor:'pointer' }}>
+                      <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                        color:TXT, fontWeight:600 }}>{p}</span>
+                      <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                        color:'#8A4010', fontWeight:700 }}>{c}</span>
+                    </div>
+                  ))}
+                </>)}
                 <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
                   color:MUT, marginTop:8, lineHeight:1.6 }}>
-                  Click a platform to filter articles below
+                  Click any to filter
                 </p>
               </div>
             </div>
