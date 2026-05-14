@@ -40,6 +40,8 @@ Deno.serve(async (req: Request) => {
 `CON Karibu/Welcome to hepa
 Gharama: Ksh 1.25/ombi
 Cost: Ksh 1.25/session
+Nambari yako itatumika kuboresha huduma
+Your number helps improve this service
 
 1. Kiswahili
 2. English

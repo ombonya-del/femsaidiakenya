@@ -212,8 +212,10 @@ export default function CaseTrackerTab() {
         </div>
         <div style={{ background:'#B89AAA', border:`2px solid ${A}`, padding:20 }}>
           <p style={{ fontSize:10, color:A, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.12em', textTransform:'uppercase', marginBottom:4, fontWeight:700 }}>Justice status breakdown</p>
-          <p style={{ fontSize:18, fontFamily:"'Lora',serif", fontWeight:700, color:TXT, marginBottom:16, borderBottom:`1px solid ${BD}`, paddingBottom:12 }}>Where do cases end up?</p>
+          <p style={{ fontSize:18, fontFamily:"'Lora',serif", fontWeight:700, color:TXT, marginBottom:24, borderBottom:`1px solid ${BD}`, paddingBottom:12 }}>Where do cases end up?</p>
+          <div style={{marginTop:8}}>
           <JusticeFunnel cases={cases}/>
+          </div>
           <p style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif", marginTop:10, fontStyle:'italic' }}>
             {noActionCount} cases ({cases.length ? Math.round((noActionCount/cases.length)*100) : 0}%) have no known legal action — suspects free, families without justice.
           </p>
