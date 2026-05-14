@@ -16,11 +16,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE)
 
 // ── RSS SOURCES ───────────────────────────────────────────────────────────────
 const RSS_FEEDS = [
-  { source: 'Nation Africa',   url: 'https://nation.africa/rss/1949941884-national.xml' },
-  { source: 'Standard Media',  url: 'https://www.standardmedia.co.ke/rss/national.xml' },
-  { source: 'The Star Kenya',  url: 'https://www.the-star.co.ke/rss.xml' },
-  { source: 'Citizen Digital', url: 'https://www.citizentv.co.ke/feed/' },
-  { source: 'Capital FM',      url: 'https://www.capitalfm.co.ke/news/feed/' },
+  { source: 'Google News — Femicide Kenya',    url: 'https://news.google.com/rss/search?q=Kenya+femicide&hl=en-KE&gl=KE&ceid=KE:en' },
+  { source: 'Google News — GBV Women Kenya',  url: 'https://news.google.com/rss/search?q=Kenya+gender+violence+women+killed&hl=en-KE&gl=KE&ceid=KE:en' },
+  { source: 'Google News — Domestic Violence', url: 'https://news.google.com/rss/search?q=Kenya+domestic+violence+murder+woman&hl=en-KE&gl=KE&ceid=KE:en' },
+  { source: 'Google News — Sexual Violence',   url: 'https://news.google.com/rss/search?q=Kenya+rape+sexual+assault+woman&hl=en-KE&gl=KE&ceid=KE:en' },
+  { source: 'Google News — Missing Women',    url: 'https://news.google.com/rss/search?q=Kenya+missing+woman+girl+body+found&hl=en-KE&gl=KE&ceid=KE:en' },
+  { source: 'Google News — Misogyny Kenya',   url: 'https://news.google.com/rss/search?q=Kenya+misogyny+toxic+masculinity&hl=en-KE&gl=KE&ceid=KE:en' },
 ]
 
 // ── GBV KEYWORDS (pre-filter before Claude API) ───────────────────────────────
@@ -37,7 +38,7 @@ const GBV_KEYWORDS = [
 // ── FETCH & PARSE RSS ─────────────────────────────────────────────────────────
 async function fetchRSS(source: string, url: string): Promise<any[]> {
   try {
-    const res  = await fetch(url, { headers: { 'User-Agent': 'FemSaidiaKenya/1.0' } })
+    const res  = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FemSaidiaBot/1.0)','Accept':'application/rss+xml,application/xml,text/xml' } })
     const text = await res.text()
 
     // Extract items with regex (no XML parser needed)
@@ -47,9 +48,11 @@ async function fetchRSS(source: string, url: string): Promise<any[]> {
 
     while ((match = itemRegex.exec(text)) !== null) {
       const item    = match[1]
-      const title   = item.match(/<title[^>]*><!\[CDATA\[(.*?)\]\]><\/title>|<title[^>]*>(.*?)<\/title>/)?.[1] || ''
-      const desc    = item.match(/<description[^>]*><!\[CDATA\[(.*?)\]\]><\/description>|<description[^>]*>(.*?)<\/description>/)?.[1] || ''
-      const link    = item.match(/<link[^>]*>(.*?)<\/link>/)?.[1]?.trim() || ''
+      const titleMatch = item.match(/<title[^>]*><!\[CDATA\[([\s\S]*?)\]\]><\/title>|<title[^>]*>([\s\S]*?)<\/title>/)
+      const title   = (titleMatch?.[1] || titleMatch?.[2] || '').trim()
+      const descMatch = item.match(/<description[^>]*><!\[CDATA\[([\s\S]*?)\]\]><\/description>|<description[^>]*>([\s\S]*?)<\/description>/)
+      const desc    = (descMatch?.[1] || descMatch?.[2] || '').trim()
+      const link    = (item.match(/<link>(.*?)<\/link>|<link[^>]*href="([^"]*)"[^>]*\/>/)?.[1] || item.match(/<link>(.*?)<\/link>|<link[^>]*href="([^"]*)"[^>]*\/>/)?.[2] || '').trim()
       const pubDate = item.match(/<pubDate>(.*?)<\/pubDate>/)?.[1] || ''
 
       // Clean HTML tags from description
@@ -113,6 +116,7 @@ Return only the JSON array.`
     })
 
     const data   = await res.json()
+    console.log('Claude response:', JSON.stringify(data).slice(0,200))
     const text   = data.content?.[0]?.text || '[]'
     const clean  = text.replace(/```json|```/g, '').trim()
     const scores = JSON.parse(clean)
@@ -178,14 +182,25 @@ serve(async () => {
 
     // 3. Check which URLs already exist in DB
     const urls = relevant.map(a => a.url).filter(Boolean)
+    const titles = relevant.map(a => a.title?.slice(0,80)).filter(Boolean)
     const { data: existing } = await supabase
       .from('sentiment_articles')
       .select('article_url')
       .in('article_url', urls)
 
     const existingUrls = new Set((existing || []).map((e: any) => e.article_url))
-    const newArticles  = relevant.filter(a => !existingUrls.has(a.url))
-    console.log(`New articles to classify: ${newArticles.length}`)
+    // Deduplicate by title (Google News uses redirect URLs that change)
+    const { data: existingTitles } = await supabase
+      .from('sentiment_articles')
+      .select('article_title')
+      .in('article_title', titles.map(t => t))
+    const existingTitleSet = new Set((existingTitles || []).map((r:any) => r.article_title?.slice(0,80)))
+    const newArticles = relevant.filter(a => 
+      !existingUrls.has(a.url) && !existingTitleSet.has(a.title?.slice(0,80))
+    )
+    // Limit to 25 to stay within Edge Function 60s timeout
+    const limited = newArticles.slice(0, 25)
+    console.log(`New articles to classify: ${limited.length} (capped from ${newArticles.length})`)
 
     if (!newArticles.length) {
       return new Response(JSON.stringify({ success: true, message: 'No new articles' }), { status: 200 })
@@ -193,8 +208,8 @@ serve(async () => {
 
     // 4. Classify in batches of 5 (API rate limits)
     const classified: any[] = []
-    for (let i = 0; i < newArticles.length; i += 5) {
-      const batch = newArticles.slice(i, i + 5)
+    for (let i = 0; i < limited.length; i += 5) {
+      const batch = limited.slice(i, i + 5)
       const results = await classifyArticles(batch)
       classified.push(...results)
       // Brief pause between batches
@@ -220,6 +235,7 @@ serve(async () => {
         published:        true,
       }))
 
+    console.log(`Classified: ${classified.length}, GBV>=4: ${classified.filter(a=>a.gbv_relevance>=4).length}, scores: ${JSON.stringify(classified.slice(0,3).map(a=>({t:a.title?.slice(0,30),g:a.gbv_relevance,m:a.misogyny_score})))}`)
     if (toInsert.length) {
       const { error } = await supabase
         .from('sentiment_articles')
