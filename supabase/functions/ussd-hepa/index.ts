@@ -8,6 +8,29 @@ Deno.serve(async (req: Request) => {
   const text = (body.text ?? '') as string
   const inp  = text !== '' ? text.split('*') : []
 
+  // Silently log session to Supabase for usage tracking
+  const phone    = (body.phoneNumber ?? '') as string
+  const session  = (body.sessionId ?? '') as string
+  const svcCode  = (body.serviceCode ?? '') as string
+  if (text === '' && phone) {
+    // New session started — log it (fire and forget, don't block response)
+    fetch(`${Deno.env.get('SUPABASE_URL')}/rest/v1/hepa_sessions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''}`,
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify({
+        session_id:   session,
+        phone_hash:   phone.slice(-4), // store only last 4 digits for privacy
+        service_code: svcCode,
+        started_at:   new Date().toISOString(),
+      }),
+    }).catch(() => {}) // silent fail — never block the USSD response
+  }
+
   // Language from first press: 2=English, else Swahili
   const e   = inp[0] === '2'
   const nav = inp.slice(1)
