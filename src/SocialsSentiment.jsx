@@ -105,12 +105,29 @@ function ArticleModal({ article, onClose }) {
           </button>
         </div>
 
-        {/* Thumbnail */}
-        {article.thumbnail_url && (
-          <img src={article.thumbnail_url} alt=""
-            style={{ width:'100%', height:200, objectFit:'cover' }}
-            onError={e => e.target.style.display='none'}/>
-        )}
+        {/* Video embed or thumbnail */}
+        {(() => {
+          const videoUrl = article.source_url || article.url || ''
+          const ytMatch = videoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
+          if (ytMatch) {
+            return (
+              <div style={{ position:'relative', paddingBottom:'56.25%', height:0 }}>
+                <iframe
+                  src={`https://www.youtube.com/embed/${ytMatch[1]}`}
+                  style={{ position:'absolute', top:0, left:0, width:'100%', height:'100%', border:'none' }}
+                  allowFullScreen title={article.title || 'Video'}/>
+              </div>
+            )
+          }
+          if (article.thumbnail_url) {
+            return (
+              <img src={article.thumbnail_url} alt=""
+                style={{ width:'100%', height:200, objectFit:'cover' }}
+                onError={e => e.target.style.display='none'}/>
+            )
+          }
+          return null
+        })()}
 
         {/* Intelligence data */}
         <div style={{ padding:20 }}>
@@ -234,12 +251,20 @@ function ArticleCard({ a, onClick }) {
 
       {/* Thumbnail for video */}
       {a.thumbnail_url && a.content_type === 'video' && (
-        <div style={{ position:'relative', marginBottom:8 }}>
+        <div style={{ position:'relative', marginBottom:8 }}
+          onClick={e => {
+            e.stopPropagation()
+            const u = a.source_url || a.url
+            if (u) window.open(u, '_blank')
+          }}>
           <img src={a.thumbnail_url} alt="" style={{ width:'100%', height:90, objectFit:'cover' }}
             onError={e => e.target.style.display='none'}/>
-          <div style={{ position:'absolute', inset:0, background:'rgba(24,4,16,0.3)',
-            display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <div style={{ position:'absolute', inset:0, background:'rgba(24,4,16,0.4)',
+            display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+            gap:4 }}>
             <Play size={24} color="#fff" fill="#fff"/>
+            <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
+              color:'rgba(255,255,255,0.8)', fontWeight:700 }}>Click to watch</span>
           </div>
         </div>
       )}
@@ -255,7 +280,7 @@ function ArticleCard({ a, onClick }) {
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:4,
           fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT }}>
-          <Eye size={10}/> View details
+          <Eye size={10}/> {a.content_type === 'video' ? 'Watch video' : 'Read article'}
         </div>
       </div>
     </div>
@@ -359,10 +384,17 @@ export default function SocialsSentimentTab() {
             <h1 className="serif" style={{ fontSize:36, fontWeight:700, color:TXT }}>
               Socials & Sentiment
             </h1>
-            <p style={{ fontSize:13, color:MUT, marginTop:6, fontFamily:"'Nunito Sans',sans-serif",
-              fontWeight:300 }}>
-              {total} articles, videos and podcasts scanned · Real-time misogyny and GBV intelligence
-            </p>
+            {(() => {
+              const todayStr = new Date().toISOString().slice(0,10)
+              const scannedToday = articles.filter(a => (a.scanned_at||'').startsWith(todayStr)).length
+              return (
+                <p style={{ fontSize:13, color:MUT, marginTop:6, fontFamily:"'Nunito Sans',sans-serif",
+                  fontWeight:300 }}>
+                  <strong style={{ color:A }}>{scannedToday} items scanned today</strong>
+                  {' '}&nbsp;·&nbsp; {total} total in database &nbsp;·&nbsp; Real-time misogyny and GBV intelligence
+                </p>
+              )
+            })()}
           </div>
           <button onClick={load} style={{ display:'inline-flex', alignItems:'center', gap:6,
             fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:600,
