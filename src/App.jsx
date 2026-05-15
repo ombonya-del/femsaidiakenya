@@ -317,9 +317,7 @@ function DashboardTab(){
             </span>
           </div>
           <KenyaCountyMap countyCounts={countyCounts}/>
-          {['dummy'c.n.substring(0,6)}</div>
-            })}
-          </div>
+          
           <p style={{fontSize:11,color:MUT,marginTop:12,fontFamily:"'Nunito Sans',sans-serif"}}>Hover for case count · full geographic map in v1.1</p>
         </div>
 
