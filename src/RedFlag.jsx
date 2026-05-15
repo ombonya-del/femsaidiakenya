@@ -386,10 +386,10 @@ export default function RedFlagTab() {
   })
 
   const SECTIONS = [
-    {id:'profiles',   label:'Perpetrator Intelligence', icon:<AlertTriangle size={13}/>},
-    {id:'archetypes', label:'Know Your Profile',        icon:<Users size={13}/>},
-    {id:'ecosystem',  label:'For the Ecosystem',        icon:<Shield size={13}/>},
-    {id:'norms',      label:'Safety Norms That Work',   icon:<MessageSquare size={13}/>},
+    {id:'profiles',   sw:'Red Flag',   en:'Perpetrator Intelligence', icon:<AlertTriangle size={13}/>},
+    {id:'archetypes', sw:'JiJue',      en:'Know Yourself',            icon:<Users size={13}/>},
+    {id:'ecosystem',  sw:'JiTume',     en:'Take Action',              icon:<Shield size={13}/>},
+    {id:'norms',      sw:'LindaLinda', en:'Protect & Share',          icon:<MessageSquare size={13}/>},
   ]
 
   return (
@@ -402,8 +402,13 @@ export default function RedFlagTab() {
 
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:2,marginBottom:20}}>
         {SECTIONS.map(s=>(
-          <button key={s.id} onClick={()=>setSection(s.id)} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,padding:'10px 8px',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6,background:section===s.id?A:CRD,color:section===s.id?'#fff':MUT}}>
-            {s.icon} {s.label}
+          <button key={s.id} onClick={()=>setSection(s.id)}
+            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
+              padding:'10px 8px',border:'none',cursor:'pointer',
+              display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:2,
+              background:section===s.id?A:CRD,color:section===s.id?'#fff':MUT}}>
+            <span style={{display:'flex',alignItems:'center',gap:4}}>{s.icon} {s.sw}</span>
+            <span style={{fontSize:9,fontWeight:400,opacity:0.75,letterSpacing:'.02em'}}>{s.en}</span>
           </button>
         ))}
       </div>

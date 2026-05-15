@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { Shield, useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import {
   LogOut, CheckCircle, XCircle, AlertTriangle, Edit2, Save, X,
@@ -992,6 +992,181 @@ function CasesTab() {
   )
 }
 
+// ── LINDALINDA (SAFETY NORMS) TAB ────────────────────────────────────────────
+function LindaLindaTab() {
+  const [norms,   setNorms]   = useState([])
+  const [loading, setLoading] = useState(true)
+  const [filter,  setFilter]  = useState('published')
+  const [editing, setEditing] = useState(null)
+  const [editText, setEditText] = useState({})
+
+  const load = () => {
+    setLoading(true)
+    supabase.from('safety_norms').select('*')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => { setNorms(data || []); setLoading(false) })
+  }
+
+  useEffect(() => { load() }, [])
+
+  const update = async (id, updates) => {
+    await supabase.from('safety_norms').update(updates).eq('id', id)
+    load()
+    setEditing(null)
+  }
+
+  const filtered = norms.filter(n => filter === 'all' ? true : n.status === filter)
+
+  const counts = {
+    published: norms.filter(n=>n.status==='published').length,
+    flagged:   norms.filter(n=>n.status==='flagged').length,
+    removed:   norms.filter(n=>n.status==='removed').length,
+    all:       norms.length,
+  }
+
+  return (
+    <div>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start',
+        marginBottom:20, flexWrap:'wrap', gap:12 }}>
+        <div>
+          <h2 style={{ fontFamily:"'Lora',serif", fontSize:22, fontWeight:700, color:TXT, marginBottom:4 }}>
+            LindaLinda · Safety Norms
+          </h2>
+          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT }}>
+            Community-submitted safety stories. Review, add caveats, flag or remove as needed.
+          </p>
+        </div>
+        <div style={{ display:'flex', gap:8 }}>
+          {[
+            { id:'published', label:`Published (${counts.published})` },
+            { id:'flagged',   label:`Flagged (${counts.flagged})` },
+            { id:'removed',   label:`Removed (${counts.removed})` },
+            { id:'all',       label:`All (${counts.all})` },
+          ].map(f => (
+            <button key={f.id} onClick={() => setFilter(f.id)}
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                padding:'6px 12px', border:`1px solid ${BD}`, cursor:'pointer',
+                background: filter===f.id ? A : CRD, color: filter===f.id ? '#fff' : MUT }}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading ? (
+        <p style={{ color:MUT, fontFamily:"'Nunito Sans',sans-serif", fontSize:12 }}>Loading…</p>
+      ) : filtered.length === 0 ? (
+        <p style={{ color:MUT, fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontStyle:'italic' }}>
+          No stories in this category yet.
+        </p>
+      ) : filtered.map(norm => (
+        <div key={norm.id} style={{ background:CRD, border:`1px solid ${BD}`,
+          marginBottom:12, padding:16 }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start',
+            gap:12, marginBottom:10 }}>
+            <div style={{ flex:1 }}>
+              <div style={{ fontFamily:"'Lora',serif", fontSize:15, fontWeight:700,
+                color:TXT, marginBottom:4 }}>{norm.title}</div>
+              <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT }}>
+                {norm.submitted_by || 'Anonymous'} · {norm.context || 'General'} ·{' '}
+                {norm.created_at && new Date(norm.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}
+              </div>
+            </div>
+            <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+              <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+                padding:'2px 8px', letterSpacing:'.08em', textTransform:'uppercase',
+                background: norm.status==='published'?'#1A5A2A':norm.status==='flagged'?'#CA8A04':'#8A1030',
+                color:'#fff' }}>
+                {norm.status}
+              </span>
+            </div>
+          </div>
+
+          {editing === norm.id ? (
+            <div>
+              <textarea
+                value={editText.story ?? norm.story}
+                onChange={e => setEditText({...editText, story:e.target.value})}
+                rows={4}
+                style={{ width:'100%', padding:'8px 12px', fontFamily:"'Nunito Sans',sans-serif",
+                  fontSize:12, background:'rgba(255,255,255,0.7)', border:`1px solid ${BD}`,
+                  color:TXT, outline:'none', resize:'vertical', boxSizing:'border-box', marginBottom:8 }}/>
+              <div style={{ marginBottom:8 }}>
+                <label style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                  letterSpacing:'.08em', textTransform:'uppercase', color:MUT, display:'block', marginBottom:4 }}>
+                  Admin caveat (optional — shown below the story)
+                </label>
+                <input
+                  value={editText.caveat ?? norm.caveat ?? ''}
+                  onChange={e => setEditText({...editText, caveat:e.target.value})}
+                  placeholder="e.g. Editor note: this practice may not work in all situations..."
+                  style={{ width:'100%', padding:'8px 12px', fontFamily:"'Nunito Sans',sans-serif",
+                    fontSize:12, background:'rgba(255,255,255,0.7)', border:`1px solid ${BD}`,
+                    color:TXT, outline:'none', boxSizing:'border-box' }}/>
+              </div>
+              <div style={{ display:'flex', gap:8 }}>
+                <button onClick={() => update(norm.id, { story:editText.story??norm.story, caveat:editText.caveat??norm.caveat??'' })}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                    padding:'6px 14px', background:'#1A5A2A', color:'#fff', border:'none', cursor:'pointer' }}>
+                  Save changes
+                </button>
+                <button onClick={() => { setEditing(null); setEditText({}) }}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                    padding:'6px 14px', background:CRD, color:MUT, border:`1px solid ${BD}`, cursor:'pointer' }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:TXT,
+                lineHeight:1.7, marginBottom: norm.caveat ? 8 : 0 }}>{norm.story}</p>
+              {norm.caveat && (
+                <div style={{ background:'rgba(202,138,4,0.1)', borderLeft:'3px solid #CA8A04',
+                  padding:'8px 12px', marginTop:8 }}>
+                  <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:'#8A6000',
+                    fontStyle:'italic' }}>📝 Admin note: {norm.caveat}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {editing !== norm.id && (
+            <div style={{ display:'flex', gap:8, marginTop:12, flexWrap:'wrap' }}>
+              <button onClick={() => { setEditing(norm.id); setEditText({}) }}
+                style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                  padding:'5px 12px', background:CRD, color:MUT, border:`1px solid ${BD}`, cursor:'pointer' }}>
+                Edit / Add caveat
+              </button>
+              {norm.status !== 'published' && (
+                <button onClick={() => update(norm.id, { status:'published' })}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                    padding:'5px 12px', background:'#1A5A2A', color:'#fff', border:'none', cursor:'pointer' }}>
+                  Publish
+                </button>
+              )}
+              {norm.status !== 'flagged' && (
+                <button onClick={() => update(norm.id, { status:'flagged' })}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                    padding:'5px 12px', background:'#CA8A04', color:'#fff', border:'none', cursor:'pointer' }}>
+                  Flag
+                </button>
+              )}
+              {norm.status !== 'removed' && (
+                <button onClick={() => update(norm.id, { status:'removed' })}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                    padding:'5px 12px', background:A, color:'#fff', border:'none', cursor:'pointer' }}>
+                  Remove
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 const TABS = [
   { id:'submissions', label:'Submissions', icon:<Flag size={14}/> },
   { id:'profiles',    label:'Profiles',    icon:<Users size={14}/> },
@@ -1067,6 +1242,7 @@ export default function App() {
       <main style={{padding:'28px 32px',width:'100%'}}>
         {tab==='submissions' && <SubmissionsTab/>}
         {tab==='profiles'    && <ProfilesTab/>}
+        {tab==='lindalinda'  && <LindaLindaTab/>}
         {tab==='analytics'   && <AnalyticsTab/>}
         {tab==='codes'       && <AccessCodesTab/>}
         {tab==='cases'       && <CasesTab/>}
