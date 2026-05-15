@@ -163,7 +163,7 @@ function SilencingWomenTab(){
 function DashboardTab(){
   const [recentCases, setRecentCases] = useState([])
   useEffect(()=>{
-    supabase.from('femicide_cases')
+    _sb.from('femicide_cases')
       .select('id,victim_name,date_of_incident,county,location,justice_status,source_name,source_url')
       .order('date_of_incident',{ascending:false})
       .limit(6)
