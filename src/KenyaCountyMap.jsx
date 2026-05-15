@@ -137,17 +137,32 @@ export default function KenyaCountyMap({ countyCounts = {} }) {
           })}
 
           {hovered && counties[hovered] && (() => {
-            const count = countyCounts[hovered] ?? countyCounts[hovered+' County'] ?? 0
-            const risk  = getRisk(count)
-            const tx    = Math.min(Math.max(tooltip.x, 60), 420)
-            const ty    = tooltip.y > 300 ? tooltip.y - 55 : tooltip.y + 12
+            const liveCount = countyCounts[hovered] || countyCounts[hovered+' County'] || 0
+            const historical = BASELINE[hovered] || 0
+            const total = Math.max(liveCount, historical)
+            const risk  = getRisk(total)
+            const tx    = Math.min(Math.max(tooltip.x, 80), 400)
+            const ty    = tooltip.y > 300 ? tooltip.y - 110 : tooltip.y + 12
             return (
               <g pointerEvents="none">
-                <rect x={tx-60} y={ty} width={140} height={46} fill="#180410" rx="2"/>
+                <rect x={tx-80} y={ty} width={180} height={100} fill="#180410" rx="2"/>
                 <text x={tx+10} y={ty+16} textAnchor="middle" fontFamily="'Lora',serif"
-                  fontSize="12" fontWeight="700" fill="#fff">{hovered}</text>
-                <text x={tx+10} y={ty+30} textAnchor="middle" fontFamily="'Nunito Sans',sans-serif"
-                  fontSize="9" fill="rgba(255,255,255,0.7)">{count} cases · {risk.label}</text>
+                  fontSize="13" fontWeight="700" fill="#fff">{hovered}</text>
+                <rect x={tx-78} y={ty+22} width={176} height={1} fill="rgba(255,255,255,0.15)"/>
+                <text x={tx-70} y={ty+36} fontFamily="'Nunito Sans',sans-serif"
+                  fontSize="9" fill="rgba(255,255,255,0.5)">HISTORICAL (2014–2026)</text>
+                <text x={tx+85} y={ty+36} textAnchor="end" fontFamily="'Lora',serif"
+                  fontSize="12" fontWeight="700" fill="#FF8070">{historical} cases</text>
+                <rect x={tx-78} y={ty+42} width={176} height={1} fill="rgba(255,255,255,0.1)"/>
+                <text x={tx-70} y={ty+56} fontFamily="'Nunito Sans',sans-serif"
+                  fontSize="9" fill="rgba(255,255,255,0.5)">VERIFIED (2024–2026)</text>
+                <text x={tx+85} y={ty+56} textAnchor="end" fontFamily="'Lora',serif"
+                  fontSize="12" fontWeight="700" fill="#90E870">{liveCount} cases</text>
+                <rect x={tx-78} y={ty+64} width={176} height={1} fill="rgba(255,255,255,0.1)"/>
+                <text x={tx-70} y={ty+76} fontFamily="'Nunito Sans',sans-serif"
+                  fontSize="8" fill="rgba(255,255,255,0.35)" fontStyle="italic">Historical: media, CSOs, court records</text>
+                <text x={tx-70} y={ty+87} fontFamily="'Nunito Sans',sans-serif"
+                  fontSize="8" fill="rgba(255,255,255,0.35)" fontStyle="italic">Current: FemSaidia Kenya verified DB</text>
               </g>
             )
           })()}
