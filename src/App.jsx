@@ -161,13 +161,40 @@ function SilencingWomenTab(){
 }
 
 function DashboardTab(){
-  const [recentCases, setRecentCases] = useState([])
+  const [recentCases,   setRecentCases]   = useState([])
+  const [intelStats,    setIntelStats]    = useState({total:0,highMiso:0,techGBV:0,score:0})
+  const [countyCounts,  setCountyCounts]  = useState({})
+
   useEffect(()=>{
+    // Recent cases from DB
     _sb.from('femicide_cases')
       .select('id,victim_name,incident_date,county,location,status,source_url,source_type')
       .order('incident_date',{ascending:false})
       .limit(6)
       .then(({data})=>{ if(data) setRecentCases(data) })
+
+    // Intelligence stats from sentiment_articles
+    _sb.from('sentiment_articles')
+      .select('misogyny_score,tech_facilitated,gbv_relevance,sentiment')
+      .then(({data})=>{
+        if(!data) return
+        setIntelStats({
+          total:    data.length,
+          highMiso: data.filter(a=>a.misogyny_score>=7).length,
+          techGBV:  data.filter(a=>a.tech_facilitated).length,
+          alarming: data.filter(a=>a.sentiment==='alarming'||a.sentiment==='negative').length,
+        })
+      })
+
+    // Live county counts from femicide_cases
+    _sb.from('femicide_cases')
+      .select('county')
+      .then(({data})=>{
+        if(!data) return
+        const counts = {}
+        data.forEach(c=>{ if(c.county) counts[c.county]=(counts[c.county]||0)+1 })
+        setCountyCounts(counts)
+      })
   },[])
   return(
     <div className="fade-up" style={{width:'100%'}}>
@@ -286,10 +313,23 @@ function DashboardTab(){
               ))}
             </span>
           </div>
-          <div style={{display:'flex',flexWrap:'wrap',gap:2}}>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(8,1fr)',gap:3,marginTop:8}}>
             {COUNTIES.map((c,i)=>{
-              const conf=RISK[c.r]
-              return <div key={i} className="county-tile" style={{background:conf.bg,color:conf.fg}} title={`${c.n}: ${c.c} reported cases`}>{c.n.substring(0,6)}</div>
+              const liveCount = countyCounts[c.n] || countyCounts[c.n+' County'] || c.c
+              const riskIdx = liveCount>=100?0:liveCount>=30?1:liveCount>=15?2:liveCount>=5?3:liveCount>0?4:5
+              const conf=RISK[riskIdx]
+              return <div key={i} style={{
+                background:conf.bg, color:conf.fg, padding:'10px 8px',
+                textAlign:'center', cursor:'default',
+                transition:'transform .15s',
+              }}
+              title={`${c.n}: ${liveCount} reported cases`}
+              onMouseEnter={e=>e.currentTarget.style.transform='scale(1.05)'}
+              onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}>
+                <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,lineHeight:1.3}}>{c.n}</div>
+                <div style={{fontFamily:"'Lora',serif",fontSize:16,fontWeight:700,marginTop:3}}>{liveCount}</div>
+                <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,opacity:.7,marginTop:1}}>cases</div>
+              </div>c.n.substring(0,6)}</div>
             })}
           </div>
           <p style={{fontSize:11,color:MUT,marginTop:12,fontFamily:"'Nunito Sans',sans-serif"}}>Hover for case count · full geographic map in v1.1</p>
@@ -349,10 +389,10 @@ function DashboardTab(){
         </div>
         <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:2,marginBottom:18}}>
           {[
-            {v:'14,200+',l:'Manosphere content pieces',n:'Tracked Jan–Dec 2024',    c:A},
-            {v:'3,847',  l:'Online harassment reports', n:'Against women and girls', c:'#7A3020'},
-            {v:'912',    l:'Platform reports filed',    n:'Meta · TikTok · X',       c:'#6A4010'},
-            {v:'34%',    l:'Content acted on',          n:'Of all reports filed',    c:'#1A5A2A'},
+            {v:intelStats.total||'—',    l:'Articles & posts scanned', n:'GBV intelligence feed · live', c:A},
+            {v:intelStats.highMiso||'—', l:'High misogyny content',     n:'Scored 7+ out of 10',         c:'#7A3020'},
+            {v:intelStats.techGBV||'—',  l:'Tech-facilitated incidents',n:'Via apps · platforms · social',c:'#6A4010'},
+            {v:intelStats.alarming||'—', l:'Alarming sentiment items',          n:'Of all reports filed',    c:'#1A5A2A'},
           ].map((m,i)=>(
             <div key={i} style={{background:'#BC9EAE',border:`1px solid ${BD}`,padding:'18px 20px'}}>
               <div className="serif" style={{fontSize:36,fontWeight:700,color:m.c,lineHeight:1}}>{m.v}</div>
