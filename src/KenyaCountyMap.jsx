@@ -4,12 +4,12 @@ const MUT = '#7A4A60'
 const BD  = '#B89AAA'
 
 const getRisk = c => {
-  if(c>=100)return{label:'Critical (100+)',bg:'#8A1030',fg:'#fff'}
-  if(c>=30) return{label:'High (30–99)',bg:'#A03050',fg:'#fff'}
-  if(c>=15) return{label:'Elevated (15–29)',bg:'#B05070',fg:'#fff'}
-  if(c>=5)  return{label:'Medium (5–14)',bg:'#C08898',fg:'#180410'}
-  if(c>0)   return{label:'Low (1–4)',bg:'#C8A8B8',fg:'#180410'}
-  return         {label:'Gap / no data',bg:'#DDD0D8',fg:'#7A5068'}
+  if(c>=100)return{label:'Critical (100+)',  bg:'#5A0010',fg:'#fff'}
+  if(c>=30) return{label:'High (30–99)',     bg:'#CC2200',fg:'#fff'}
+  if(c>=15) return{label:'Elevated (15–29)', bg:'#E87020',fg:'#fff'}
+  if(c>=5)  return{label:'Medium (5–14)',    bg:'#F0C040',fg:'#180410'}
+  if(c>0)   return{label:'Low (1–4)',        bg:'#90C878',fg:'#180410'}
+  return         {label:'Gap / no data',     bg:'#DDD0D8',fg:'#7A5068'}
 }
 
 const NAME_MAP = {
@@ -50,6 +50,7 @@ const LEGEND = [
   {label:'Elevated (15–29)',c:20},{label:'Medium (5–14)',c:8},
   {label:'Low (1–4)',c:2},{label:'Gap / no data',c:0}
 ]
+// Legend uses same getRisk so colours auto-match
 
 export default function KenyaCountyMap({ countyCounts = {} }) {
   const [counties, setCounties] = useState({})
