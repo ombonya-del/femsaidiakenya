@@ -1,4 +1,4 @@
-import { Shield, useState, useEffect } from 'react'
+import { Shield, BookOpen, useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import {
   LogOut, CheckCircle, XCircle, AlertTriangle, Edit2, Save, X,
@@ -1167,12 +1167,152 @@ function LindaLindaTab() {
   )
 }
 
+// ── ARCHETYPES CONTENT EDITOR ────────────────────────────────────────────────
+function ArchetypesTab() {
+  const ARCH_IDS = [
+    {id:'naive',      label:'The Naive',      color:'#1A3F6F'},
+    {id:'precocious', label:'The Precocious',  color:'#8A4010'},
+    {id:'allin',      label:'The All-In',      color:'#3A1870'},
+  ]
+  const SECTIONS = [
+    {id:'protective', label:'Protect Yourself'},
+    {id:'redflags',   label:'Red Flags'},
+  ]
+  const [items,      setItems]      = useState([])
+  const [loading,    setLoading]    = useState(true)
+  const [activeArch, setActiveArch] = useState('naive')
+  const [activeSec,  setActiveSec]  = useState('protective')
+  const [editing,    setEditing]    = useState(null)
+  const [editText,   setEditText]   = useState('')
+  const [newText,    setNewText]    = useState('')
+  const [adding,     setAdding]     = useState(false)
+
+  const load = () => {
+    setLoading(true)
+    supabase.from('archetype_content').select('*')
+      .order('sort_order',{ascending:true})
+      .then(({data})=>{ setItems(data||[]); setLoading(false) })
+  }
+
+  useEffect(()=>{ load() },[])
+
+  const filtered = items.filter(i=>i.archetype_id===activeArch && i.section===activeSec)
+
+  const save = async (id) => {
+    await supabase.from('archetype_content').update({content:editText,updated_at:new Date().toISOString()}).eq('id',id)
+    setEditing(null); setEditText(''); load()
+  }
+
+  const toggle = async (id, active) => {
+    await supabase.from('archetype_content').update({active:!active}).eq('id',id)
+    load()
+  }
+
+  const addNew = async () => {
+    if(!newText.trim()) return
+    const maxOrder = filtered.reduce((m,i)=>Math.max(m,i.sort_order||0),0)
+    await supabase.from('archetype_content').insert({
+      archetype_id: activeArch, section: activeSec,
+      content: newText.trim(), sort_order: maxOrder+1, active: true
+    })
+    setNewText(''); setAdding(false); load()
+  }
+
+  const arch = ARCH_IDS.find(a=>a.id===activeArch)
+
+  return (
+    <div>
+      <div style={{marginBottom:20}}>
+        <h2 style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,color:TXT,marginBottom:4}}>JiJue · JiTume Content Editor</h2>
+        <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT}}>Edit protective measures and red flags for each archetype. Changes go live immediately on femsaidiakenya.org.</p>
+      </div>
+
+      <div style={{display:'flex',gap:2,marginBottom:12}}>
+        {ARCH_IDS.map(a=>(
+          <button key={a.id} onClick={()=>setActiveArch(a.id)}
+            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,padding:'8px 16px',border:'none',cursor:'pointer',background:activeArch===a.id?a.color:CRD,color:activeArch===a.id?'#fff':MUT}}>
+            {a.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{display:'flex',gap:2,marginBottom:16}}>
+        {SECTIONS.map(s=>(
+          <button key={s.id} onClick={()=>setActiveSec(s.id)}
+            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,padding:'6px 14px',border:'none',cursor:'pointer',background:activeSec===s.id?arch?.color||A:CRD,color:activeSec===s.id?'#fff':MUT}}>
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <p style={{color:MUT,fontFamily:"'Nunito Sans',sans-serif",fontSize:12}}>Loading…</p>
+      ) : (
+        <>
+          {filtered.map((item,i)=>(
+            <div key={item.id} style={{background:item.active?CRD:'rgba(180,150,160,0.3)',border:`1px solid ${BD}`,marginBottom:8,padding:14,opacity:item.active?1:0.6}}>
+              {editing===item.id ? (
+                <div>
+                  <textarea value={editText} onChange={e=>setEditText(e.target.value)} rows={3}
+                    style={{width:'100%',padding:'8px 12px',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,background:'rgba(255,255,255,0.8)',border:`1px solid ${BD}`,color:TXT,outline:'none',resize:'vertical',boxSizing:'border-box',marginBottom:8}}/>
+                  <div style={{display:'flex',gap:8}}>
+                    <button onClick={()=>save(item.id)} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,padding:'5px 12px',background:'#1A5A2A',color:'#fff',border:'none',cursor:'pointer'}}>Save</button>
+                    <button onClick={()=>{setEditing(null);setEditText('')}} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,padding:'5px 12px',background:CRD,color:MUT,border:`1px solid ${BD}`,cursor:'pointer'}}>Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,marginBottom:4}}>#{i+1}</div>
+                    <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:TXT,lineHeight:1.6}}>{item.content}</div>
+                  </div>
+                  <div style={{display:'flex',gap:6,flexShrink:0}}>
+                    <button onClick={()=>{setEditing(item.id);setEditText(item.content)}}
+                      style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,padding:'4px 10px',background:CRD,color:MUT,border:`1px solid ${BD}`,cursor:'pointer'}}>Edit</button>
+                    <button onClick={()=>toggle(item.id,item.active)}
+                      style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,padding:'4px 10px',background:item.active?A:'#1A5A2A',color:'#fff',border:'none',cursor:'pointer'}}>
+                      {item.active?'Hide':'Show'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {filtered.length===0 && (
+            <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT,fontStyle:'italic',marginBottom:12}}>No items yet for this archetype/section. Add one below.</p>
+          )}
+
+          {adding ? (
+            <div style={{background:'rgba(255,255,255,0.5)',border:`1px solid ${BD}`,padding:14,marginTop:8}}>
+              <textarea value={newText} onChange={e=>setNewText(e.target.value)}
+                placeholder="Enter new item..." rows={3}
+                style={{width:'100%',padding:'8px 12px',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,background:'rgba(255,255,255,0.8)',border:`1px solid ${BD}`,color:TXT,outline:'none',resize:'vertical',boxSizing:'border-box',marginBottom:8}}/>
+              <div style={{display:'flex',gap:8}}>
+                <button onClick={addNew} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,padding:'5px 12px',background:arch?.color||A,color:'#fff',border:'none',cursor:'pointer'}}>Add item</button>
+                <button onClick={()=>{setAdding(false);setNewText('')}} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,padding:'5px 12px',background:CRD,color:MUT,border:`1px solid ${BD}`,cursor:'pointer'}}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={()=>setAdding(true)}
+              style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,padding:'8px 16px',background:arch?.color||A,color:'#fff',border:'none',cursor:'pointer',marginTop:8}}>
+              + Add new item
+            </button>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
 const TABS = [
-  { id:'submissions', label:'Submissions', icon:<Flag size={14}/> },
-  { id:'profiles',    label:'Profiles',    icon:<Users size={14}/> },
-  { id:'analytics',   label:'Analytics',   icon:<BarChart2 size={14}/> },
-  { id:'cases',       label:'Case tracker', icon:<FileText size={14}/> },
-  { id:'codes',       label:'Access codes', icon:<Users size={14}/> },
+  { id:'submissions', label:'Submissions',    icon:<Flag size={14}/> },
+  { id:'profiles',    label:'Profiles',       icon:<Users size={14}/> },
+  { id:'lindalinda',  label:'LindaLinda',     icon:<Shield size={14}/> },
+  { id:'archetypes',  label:'JiJue / JiTume', icon:<BookOpen size={14}/> },
+  { id:'analytics',   label:'Analytics',      icon:<BarChart2 size={14}/> },
+  { id:'cases',       label:'Case tracker',   icon:<FileText size={14}/> },
+  { id:'codes',       label:'Access codes',   icon:<Users size={14}/> },
 ]
 
 export default function App() {
@@ -1243,6 +1383,7 @@ export default function App() {
         {tab==='submissions' && <SubmissionsTab/>}
         {tab==='profiles'    && <ProfilesTab/>}
         {tab==='lindalinda'  && <LindaLindaTab/>}
+        {tab==='archetypes'  && <ArchetypesTab/>}
         {tab==='analytics'   && <AnalyticsTab/>}
         {tab==='codes'       && <AccessCodesTab/>}
         {tab==='cases'       && <CasesTab/>}

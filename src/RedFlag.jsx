@@ -160,9 +160,11 @@ function ProfileModal({p, onClose}) {
   )
 }
 
-function ArchetypeCard({a}) {
+function ArchetypeCard({a, getContent}) {
   const [open, setOpen] = useState(false)
   const [tab, setTab]   = useState('redflags')
+  const redFlags   = getContent ? getContent(a.id,'redflags',null)   : null
+  const protective = getContent ? getContent(a.id,'protective',null) : null
   return (
     <div style={{border:`2px solid ${a.color}`,marginBottom:16,background:'#fff'}}>
       <div onClick={()=>setOpen(!open)} style={{background:a.color,padding:'24px 28px',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
@@ -187,18 +189,37 @@ function ArchetypeCard({a}) {
               <button key={t.id} onClick={()=>setTab(t.id)} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,fontWeight:700,padding:'10px 20px',cursor:'pointer',border:'none',background:tab===t.id?a.color:CRD,color:tab===t.id?'#fff':MUT}}>{t.label}</button>
             ))}
           </div>
-          {tab==='redflags'&&<div style={{display:'flex',flexDirection:'column',gap:10}}>{a.redFlags.map((rf,i)=>(
-            <div key={i} style={{background:CRD,padding:'18px 20px',borderLeft:`4px solid ${a.color}`}}>
-              <div style={{fontFamily:"'Lora',serif",fontSize:16,fontWeight:700,color:TXT,marginBottom:8}}>🚩 {rf.flag}</div>
-              <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:14,color:MUT,lineHeight:1.7}}>{rf.why}</div>
-            </div>
-          ))}</div>}
-          {tab==='protective'&&<div style={{display:'flex',flexDirection:'column',gap:10}}>{a.protective.map((p,i)=>(
-            <div key={i} style={{background:CRD,padding:'18px 20px',borderLeft:'4px solid #2D7A3A',display:'flex',gap:14}}>
-              <span style={{color:'#2D7A3A',fontWeight:700,fontSize:20,flexShrink:0,lineHeight:1.4}}>✓</span>
-              <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:15,color:TXT,lineHeight:1.7}}>{p}</div>
-            </div>
-          ))}</div>}
+          {tab==='redflags'&&<div style={{display:'flex',flexDirection:'column',gap:10}}>
+            {(redFlags
+              ? redFlags.map((text,i) => {
+                  const [flag,...whyParts] = text.split(' — ')
+                  const why = whyParts.join(' — ')
+                  return (
+                    <div key={i} style={{background:CRD,padding:'18px 20px',borderLeft:`4px solid ${a.color}`}}>
+                      <div style={{fontFamily:"'Lora',serif",fontSize:16,fontWeight:700,color:TXT,marginBottom:8}}>🚩 {flag}</div>
+                      {why && <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:14,color:MUT,lineHeight:1.7}}>{why}</div>}
+                    </div>
+                  )
+                })
+              : a.redFlags.map((rf,i)=>(
+                  <div key={i} style={{background:CRD,padding:'18px 20px',borderLeft:`4px solid ${a.color}`}}>
+                    <div style={{fontFamily:"'Lora',serif",fontSize:16,fontWeight:700,color:TXT,marginBottom:8}}>🚩 {rf.flag}</div>
+                    <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:14,color:MUT,lineHeight:1.7}}>{rf.why}</div>
+                  </div>
+                ))
+            )}
+          </div>}
+          {tab==='protective'&&<div style={{display:'flex',flexDirection:'column',gap:10}}>
+            {(protective || a.protective).map((p,i)=>{
+              const isDigital = p.includes('hepa')||p.includes('Salama')||p.includes('Red Flag')||p.includes('femsaidiakenya')
+              return (
+                <div key={i} style={{background:isDigital?'#0A2D1A':CRD,padding:'18px 20px',borderLeft:`4px solid ${isDigital?'#FF5C28':'#2D7A3A'}`,display:'flex',gap:14}}>
+                  <span style={{color:isDigital?'#FF5C28':'#2D7A3A',fontWeight:700,fontSize:20,flexShrink:0,lineHeight:1.4}}>{isDigital?'📱':'✓'}</span>
+                  <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:15,color:isDigital?'#E8F5EE':TXT,lineHeight:1.7}}>{p}</div>
+                </div>
+              )
+            })}
+          </div>}
           {tab==='sister'&&(
             <div style={{background:a.light,padding:'32px 28px',borderLeft:`4px solid ${a.color}`}}>
               <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,letterSpacing:'.15em',textTransform:'uppercase',color:a.color,marginBottom:20}}>From someone who has seen this</div>
@@ -364,6 +385,7 @@ export default function RedFlagTab() {
   const [section,      setSection]      = useState('profiles')
   const [profiles,     setProfiles]     = useState([])
   const [norms,        setNorms]        = useState([])
+  const [dbContent,    setDbContent]    = useState({})
   const [selected,     setSelected]     = useState(null)
   const [showPerp,     setShowPerp]     = useState(false)
   const [showNorm,     setShowNorm]     = useState(false)
@@ -378,7 +400,26 @@ export default function RedFlagTab() {
     supabase.from('redflag_profiles').select('*').eq('status','approved')
       .order('created_at',{ascending:false}).then(({data})=>{setProfiles(data||[]);setLoading(false)})
     loadNorms()
+    // Load editable archetype content from DB
+    supabase.from('archetype_content').select('*').eq('active',true)
+      .order('sort_order',{ascending:true})
+      .then(({data}) => {
+        if(!data?.length) return
+        const grouped = {}
+        data.forEach(row => {
+          const key = `${row.archetype_id}_${row.section}`
+          if(!grouped[key]) grouped[key] = []
+          grouped[key].push(row.content)
+        })
+        setDbContent(grouped)
+      })
   }, [])
+
+  // Helper: get content from DB or fall back to hardcoded
+  const getContent = (archetypeId, section, fallback) => {
+    const key = `${archetypeId}_${section}`
+    return dbContent[key]?.length ? dbContent[key] : fallback
+  }
 
   const filtered = profiles.filter(p=>{
     const q=search.toLowerCase()
@@ -449,7 +490,7 @@ export default function RedFlagTab() {
             <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:A,marginBottom:6}}>A note before you read</p>
             <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:TXT,lineHeight:1.8}}>These profiles are not judgements. They are patterns — ways of being in the world at different life stages that create specific vulnerabilities. You might recognise yourself in one of them, or in parts of several. That recognition is the point. Knowing your risk profile is the first step to changing it.</p>
           </div>
-          {ARCHETYPES.map(a=><ArchetypeCard key={a.id} a={a}/>)}
+          {ARCHETYPES.map(a=><ArchetypeCard key={a.id} a={a} getContent={getContent}/>)}
         </div>
       )}
 
