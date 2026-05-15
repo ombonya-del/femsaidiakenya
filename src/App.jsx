@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { createClient } from '@supabase/supabase-js'
+const _sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY)
 import RedFlagTab from './RedFlag.jsx'
 import PetitionTab from './Petition.jsx'
 import ReportTab from './Report.jsx'
@@ -389,10 +391,10 @@ function DashboardTab(){
         </div>
         <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:2,marginBottom:18}}>
           {[
-            {v:intelStats.total||'—',    l:'Articles & posts scanned', n:'GBV intelligence feed · live', c:A},
-            {v:intelStats.highMiso||'—', l:'High misogyny content',     n:'Scored 7+ out of 10',         c:'#7A3020'},
-            {v:intelStats.techGBV||'—',  l:'Tech-facilitated incidents',n:'Via apps · platforms · social',c:'#6A4010'},
-            {v:intelStats.alarming||'—', l:'Alarming sentiment items',          n:'Of all reports filed',    c:'#1A5A2A'},
+            {v:intelStats.total>0?intelStats.total:'—',    l:'Articles & posts scanned', n:'GBV intelligence feed · live', c:A},
+            {v:intelStats.highMiso>0?intelStats.highMiso:'—', l:'High misogyny content',     n:'Scored 7+ out of 10',         c:'#7A3020'},
+            {v:intelStats.techGBV>0?intelStats.techGBV:'—',  l:'Tech-facilitated incidents',n:'Via apps · platforms · social',c:'#6A4010'},
+            {v:intelStats.alarming>0?intelStats.alarming:'—', l:'Alarming sentiment items',          n:'Of all reports filed',    c:'#1A5A2A'},
           ].map((m,i)=>(
             <div key={i} style={{background:'#BC9EAE',border:`1px solid ${BD}`,padding:'18px 20px'}}>
               <div className="serif" style={{fontSize:36,fontWeight:700,color:m.c,lineHeight:1}}>{m.v}</div>
@@ -931,8 +933,7 @@ const TABS = [
 ]
 
 // ── INVITE GATE ───────────────────────────────────────────────────────────────
-import { createClient } from '@supabase/supabase-js'
-const _sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY)
+
 
 function InviteGate({ children }) {
   const stored = sessionStorage.getItem('femsaidia_access')
