@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import KenyaCountyMap from './KenyaCountyMap.jsx'
 import { createClient } from '@supabase/supabase-js'
 const _sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY)
 import RedFlagTab from './RedFlag.jsx'
@@ -315,23 +316,8 @@ function DashboardTab(){
               ))}
             </span>
           </div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(8,1fr)',gap:3,marginTop:8}}>
-            {COUNTIES.map((c,i)=>{
-              const liveCount = countyCounts[c.n] || countyCounts[c.n+' County'] || c.c
-              const riskIdx = liveCount>=100?0:liveCount>=30?1:liveCount>=15?2:liveCount>=5?3:liveCount>0?4:5
-              const conf=RISK[riskIdx]
-              return <div key={i} style={{
-                background:conf.bg, color:conf.fg, padding:'10px 8px',
-                textAlign:'center', cursor:'default',
-                transition:'transform .15s',
-              }}
-              title={`${c.n}: ${liveCount} reported cases`}
-              onMouseEnter={e=>e.currentTarget.style.transform='scale(1.05)'}
-              onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}>
-                <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,lineHeight:1.3}}>{c.n}</div>
-                <div style={{fontFamily:"'Lora',serif",fontSize:16,fontWeight:700,marginTop:3}}>{liveCount}</div>
-                <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,opacity:.7,marginTop:1}}>cases</div>
-              </div>c.n.substring(0,6)}</div>
+          <KenyaCountyMap countyCounts={countyCounts}/>
+          {['dummy'c.n.substring(0,6)}</div>
             })}
           </div>
           <p style={{fontSize:11,color:MUT,marginTop:12,fontFamily:"'Nunito Sans',sans-serif"}}>Hover for case count · full geographic map in v1.1</p>
