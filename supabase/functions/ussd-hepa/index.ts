@@ -37,7 +37,8 @@ Deno.serve(async (req: Request) => {
 
   // ── LANGUAGE SELECTION ─────────────────────────────────────────────────
   if (text === '') return ok(
-`CON Karibu/Welcome to hepa
+`CON Karibu Salmin
+Welcome to Salmin
 Gharama: Ksh 1.25/ombi
 Cost: Ksh 1.25/session
 Nambari yako itatumika kuboresha huduma
@@ -54,7 +55,8 @@ Piga tena/Dial again: *384*89056#`)
 
   // ── BACK FROM MAIN MENU → LANGUAGE SCREEN ────────────────────────────
   if (nav.length === 1 && nav[0] === '0') return ok(
-`CON Karibu/Welcome to hepa
+`CON Karibu Salmin
+Welcome to Salmin
 Chagua lugha/Choose language:
 1. Kiswahili
 2. English
