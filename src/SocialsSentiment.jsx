@@ -184,7 +184,7 @@ function ArticleModal({ article, onClose }) {
           )}
 
           {/* Open source */}
-          {article.url && (
+          {article.article_url && (
             <a href={article.article_url} target="_blank" rel="noopener noreferrer"
               style={{ display:'inline-flex', alignItems:'center', gap:6,
                 fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700,
