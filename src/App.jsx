@@ -161,6 +161,14 @@ function SilencingWomenTab(){
 }
 
 function DashboardTab(){
+  const [recentCases, setRecentCases] = useState([])
+  useEffect(()=>{
+    supabase.from('femicide_cases')
+      .select('id,victim_name,date_of_incident,county,location,justice_status,source_name,source_url')
+      .order('date_of_incident',{ascending:false})
+      .limit(6)
+      .then(({data})=>{ if(data) setRecentCases(data) })
+  },[])
   return(
     <div className="fade-up" style={{width:'100%'}}>
       <div style={{borderBottom:`1px solid ${BD}`,paddingBottom:32,marginBottom:32}}>
@@ -288,29 +296,44 @@ function DashboardTab(){
         </div>
 
         <div className="card" style={{padding:24}}>
-          <div className="section-head">
-            <span>Recent incidents</span>
-            <span className="badge" style={{color:A,borderColor:BD,background:BG}}>Seeded · edit in data.js</span>
+          <div style={{borderBottom:`1px solid ${BD}`,paddingBottom:12,marginBottom:16,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <div>
+              <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,letterSpacing:'.12em',textTransform:'uppercase',color:A,marginBottom:4}}>● Live from database</p>
+              <h2 style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,color:TXT}}>Recent incidents</h2>
+            </div>
+            <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT,fontWeight:600}}>{recentCases.length} most recent</span>
           </div>
-          {INCIDENTS.map((inc,i)=>{
-            const s=SC[inc.status]||SC['open']
+          {recentCases.length === 0 ? (
+            <p style={{fontSize:12,color:MUT,fontFamily:"'Nunito Sans',sans-serif",fontStyle:'italic'}}>Loading...</p>
+          ) : recentCases.map((inc,i)=>{
+            const statusMap = {convicted:{bg:'#1A5A2A',bc:'#2D7A3A',tc:'#fff'},charged:{bg:'#1A3F6F',bc:'#2A5FAF',tc:'#fff'},trial:{bg:'#5A3A8A',bc:'#7A5AAA',tc:'#fff'},investigated:{bg:'#8A4010',bc:'#AA6030',tc:'#fff'},reported:{bg:CRD,bc:BD,tc:TXT},no_action:{bg:'#8A1030',bc:'#AA2050',tc:'#fff'},dismissed:{bg:'#5A4A60',bc:'#7A6A80',tc:'#fff'}}
+            const s = statusMap[inc.justice_status] || statusMap['reported']
+            const dateStr = inc.date_of_incident ? new Date(inc.date_of_incident).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}) : '—'
             return(
-              <div key={i} className="incident-row">
+              <div key={inc.id} style={{padding:'14px 0',borderBottom:i<recentCases.length-1?`1px solid ${BD}`:'none'}}>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
                   <div style={{flex:1}}>
-                    <div style={{fontWeight:600,fontSize:14,color:TXT}}>
-                      {inc.county} <span style={{color:MUT,fontWeight:400}}>· {inc.loc}</span>
+                    <div style={{fontFamily:"'Lora',serif",fontWeight:700,fontSize:15,color:TXT,marginBottom:4}}>
+                      {inc.victim_name || 'Name withheld'}
                     </div>
-                    <div style={{display:'flex',alignItems:'center',gap:8,marginTop:5}}>
-                      <span style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>{inc.date}</span>
-                      <span style={{fontSize:11,color:MUT}}>·</span>
-                      <a href={inc.url} target="_blank" rel="noopener noreferrer"
-                        style={{fontSize:11,color:A,fontFamily:"'Nunito Sans',sans-serif",fontWeight:600,display:'inline-flex',alignItems:'center',gap:3,textDecoration:'none'}}>
-                        {inc.src} <ExternalLink size={10}/>
-                      </a>
+                    <div style={{fontWeight:600,fontSize:12,color:MUT,fontFamily:"'Nunito Sans',sans-serif",marginBottom:4}}>
+                      {inc.county} {inc.location ? `· ${inc.location}` : ''}
+                    </div>
+                    <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                      <span style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>{dateStr}</span>
+                      {inc.source_url ? (
+                        <a href={inc.source_url} target="_blank" rel="noopener noreferrer"
+                          style={{fontSize:11,color:A,fontFamily:"'Nunito Sans',sans-serif",fontWeight:600,display:'inline-flex',alignItems:'center',gap:3,textDecoration:'none'}}>
+                          {inc.source_name || 'Source'} <ExternalLink size={10}/>
+                        </a>
+                      ) : inc.source_name ? (
+                        <span style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>{inc.source_name}</span>
+                      ) : null}
                     </div>
                   </div>
-                  <span className="badge" style={{background:s.bg,borderColor:s.bc,color:s.tc,whiteSpace:'nowrap',flexShrink:0}}>{inc.status}</span>
+                  <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,padding:'3px 10px',background:s.bg,border:`1px solid ${s.bc}`,color:s.tc,whiteSpace:'nowrap',flexShrink:0,textTransform:'uppercase',letterSpacing:'.06em'}}>
+                    {inc.justice_status?.replace('_',' ') || 'reported'}
+                  </span>
                 </div>
               </div>
             )
