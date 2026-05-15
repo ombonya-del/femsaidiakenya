@@ -30,10 +30,17 @@ async function fetchFeed(url: string): Promise<any[]> {
       const dmatch   = item.match(/<description[^>]*><!\[CDATA\[([\s\S]*?)\]\]><\/description>|<description[^>]*>([\s\S]*?)<\/description>/)
       const desc     = (dmatch?.[1] || dmatch?.[2] || '').trim()
       const linkRaw  = item.match(/<link[^>]*>([\s\S]*?)<\/link>/)?.[1]?.trim() || ''
-      const link     = linkRaw.replace(/<[^>]+>/g, '').trim()
+      const linkClean = linkRaw.replace(/<[^>]+>/g, '').trim()
+      // Extract real URL from Google News redirect if present
+      const realUrl   = linkClean.match(/url=([^&]+)/)?.[1]
+      const link      = realUrl ? decodeURIComponent(realUrl) : linkClean
       const pubDate  = item.match(/<pubDate>(.*?)<\/pubDate>/)?.[1] || ''
       const source   = item.match(/<source[^>]*>(.*?)<\/source>/)?.[1] || 'Google News'
-      const snippet  = desc.replace(/<[^>]+>/g,'').trim()
+      const snippet  = desc
+        .replace(/<[^>]+>/g,'')
+        .replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&')
+        .replace(/&nbsp;/g,' ').replace(/&#\d+;/g,'').replace(/<[^>]+>/g,'')
+        .trim()
       if (title) items.push({ source, title, snippet, url:link, pubDate })
     }
     console.log(`Feed fetched: ${items.length} items`)
