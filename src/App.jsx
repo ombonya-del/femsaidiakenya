@@ -164,8 +164,8 @@ function DashboardTab(){
   const [recentCases, setRecentCases] = useState([])
   useEffect(()=>{
     _sb.from('femicide_cases')
-      .select('id,victim_name,date_of_incident,county,location,justice_status,source_name,source_url')
-      .order('date_of_incident',{ascending:false})
+      .select('id,victim_name,incident_date,county,location,status,source_url,source_type')
+      .order('incident_date',{ascending:false})
       .limit(6)
       .then(({data})=>{ if(data) setRecentCases(data) })
   },[])
@@ -307,8 +307,8 @@ function DashboardTab(){
             <p style={{fontSize:12,color:MUT,fontFamily:"'Nunito Sans',sans-serif",fontStyle:'italic'}}>Loading...</p>
           ) : recentCases.map((inc,i)=>{
             const statusMap = {convicted:{bg:'#1A5A2A',bc:'#2D7A3A',tc:'#fff'},charged:{bg:'#1A3F6F',bc:'#2A5FAF',tc:'#fff'},trial:{bg:'#5A3A8A',bc:'#7A5AAA',tc:'#fff'},investigated:{bg:'#8A4010',bc:'#AA6030',tc:'#fff'},reported:{bg:CRD,bc:BD,tc:TXT},no_action:{bg:'#8A1030',bc:'#AA2050',tc:'#fff'},dismissed:{bg:'#5A4A60',bc:'#7A6A80',tc:'#fff'}}
-            const s = statusMap[inc.justice_status] || statusMap['reported']
-            const dateStr = inc.date_of_incident ? new Date(inc.date_of_incident).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}) : '—'
+            const s = statusMap[inc.status] || statusMap['reported']
+            const dateStr = inc.incident_date ? new Date(inc.incident_date).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}) : '—'
             return(
               <div key={inc.id} style={{padding:'14px 0',borderBottom:i<recentCases.length-1?`1px solid ${BD}`:'none'}}>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
@@ -324,7 +324,7 @@ function DashboardTab(){
                       {inc.source_url ? (
                         <a href={inc.source_url} target="_blank" rel="noopener noreferrer"
                           style={{fontSize:11,color:A,fontFamily:"'Nunito Sans',sans-serif",fontWeight:600,display:'inline-flex',alignItems:'center',gap:3,textDecoration:'none'}}>
-                          {inc.source_name || 'Source'} <ExternalLink size={10}/>
+                          {inc.source_type || 'Source'} <ExternalLink size={10}/>
                         </a>
                       ) : inc.source_name ? (
                         <span style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>{inc.source_name}</span>
@@ -332,7 +332,7 @@ function DashboardTab(){
                     </div>
                   </div>
                   <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,padding:'3px 10px',background:s.bg,border:`1px solid ${s.bc}`,color:s.tc,whiteSpace:'nowrap',flexShrink:0,textTransform:'uppercase',letterSpacing:'.06em'}}>
-                    {inc.justice_status?.replace('_',' ') || 'reported'}
+                    {inc.status?.replace('_',' ') || 'reported'}
                   </span>
                 </div>
               </div>
