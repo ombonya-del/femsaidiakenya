@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import RedFlagTab from './RedFlag.jsx'
 import PetitionTab from './Petition.jsx'
 import ReportTab from './Report.jsx'
