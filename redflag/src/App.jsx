@@ -355,7 +355,7 @@ function JiJueScreen() {
               </div>
               {a.intro.split('\n\n').map((p, i) => (
                 <p key={i} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:14,
-                  color:#180410,lineHeight:1.8,marginBottom:i<a.intro.split('\n\n').length-1?12:0}}>{p}</p>
+                  color:'#180410',lineHeight:1.8,marginBottom:i<a.intro.split('\n\n').length-1?12:0}}>{p}</p>
               ))}
             </div>
           </div>
@@ -411,7 +411,7 @@ function JiJueScreen() {
               letterSpacing:'.15em',textTransform:'uppercase',color:a.color,marginBottom:20}}>
               From someone who has seen this
             </div>
-            <p style={{fontFamily:"'Lora',serif",fontSize:18,color:#180410,lineHeight:1.9,fontStyle:'italic',margin:0}}>
+            <p style={{fontFamily:"'Lora',serif",fontSize:18,color:'#180410',lineHeight:1.9,fontStyle:'italic',margin:0}}>
               "{a.sisterSays}"
             </p>
           </div>
