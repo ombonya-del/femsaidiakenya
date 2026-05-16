@@ -211,7 +211,7 @@ function ArchetypeCard({a, getContent}) {
           </div>}
           {tab==='protective'&&<div style={{display:'flex',flexDirection:'column',gap:10}}>
             {(protective || a.protective).map((p,i)=>{
-              const isDigital = p.includes('hepa')||p.includes('Salama')||p.includes('Red Flag')||p.includes('femsaidiakenya')
+              const isDigital = p.includes('hepa')||p.includes('Salmin')||p.includes('Red Flag')||p.includes('femsaidiakenya')
               return (
                 <div key={i} style={{background:isDigital?'#0A2D1A':CRD,padding:'18px 20px',borderLeft:`4px solid ${isDigital?'#FF5C28':'#2D7A3A'}`,display:'flex',gap:14}}>
                   <span style={{color:isDigital?'#FF5C28':'#2D7A3A',fontWeight:700,fontSize:20,flexShrink:0,lineHeight:1.4}}>{isDigital?'📱':'✓'}</span>
@@ -427,7 +427,7 @@ export default function RedFlagTab() {
   })
 
   const SECTIONS = [
-    {id:'profiles',   sw:'Red Flag',   en:'Perpetrator Intelligence', icon:<AlertTriangle size={13}/>},
+    {id:'profiles',   sw:<span><span style={{color:'#FF4040'}}>Red</span> Flag</span>, en:'Perpetrator Intelligence', icon:<AlertTriangle size={13}/>},
     {id:'archetypes', sw:'JiJue',      en:'Know Yourself',            icon:<Users size={13}/>},
     {id:'ecosystem',  sw:'JiTume',     en:'Take Action',              icon:<Shield size={13}/>},
     {id:'norms',      sw:'LindaLinda', en:'Protect & Share',          icon:<MessageSquare size={13}/>},
@@ -437,7 +437,10 @@ export default function RedFlagTab() {
     <div className="fade-up" style={{width:'100%'}}>
       <div style={{borderBottom:`2px solid ${A}`,paddingBottom:24,marginBottom:24}}>
         <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,letterSpacing:'.2em',textTransform:'uppercase',color:A,marginBottom:12}}>● Community intelligence · Safety education · Survivor knowledge</p>
-        <h1 style={{fontFamily:"'Lora',serif",fontSize:52,fontWeight:700,color:TXT,lineHeight:1.1,marginBottom:12}}>Red Flag</h1>
+        <h1 style={{fontFamily:"'Lora',serif",fontSize:52,fontWeight:700,lineHeight:1.1,marginBottom:12}}>
+          <span style={{color:'#CC1010'}}>Red</span>
+          <span style={{color:TXT}}> Flag</span>
+        </h1>
         <p style={{fontSize:16,color:MUT,fontFamily:"'Nunito Sans',sans-serif",lineHeight:1.7,maxWidth:600}}>Perpetrator profiles · Victim archetypes · Ecosystem guidance · Community safety norms</p>
       </div>
 

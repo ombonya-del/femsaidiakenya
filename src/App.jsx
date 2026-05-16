@@ -907,7 +907,7 @@ const TABS = [
   {id:'silencing-women', label:'Silencing Women'},
   {id:'resources',       label:'Available Help'},
   {id:'survival',         label:'Survival Guide', red:true},
-  {id:'redflag',         label:'Red flag', red:true},
+  {id:'redflag',         label:'Red Flag', red:true},
   {id:'petition',        label:'Petition', red:true},
   {id:'report',          label:'Report'},
   {id:'partners',        label:'Partners'},
@@ -1046,7 +1046,9 @@ export default function App(){
           {TABS.map(t=>(
             <button key={t.id} className={`nav-tab${activeTab===t.id?' active':''}`} disabled={t.locked===true} onClick={()=>!t.locked&&setActiveTab(t.id)} style={t.red&&activeTab!==t.id?{color:'#8A1030',fontWeight:700}:{}}>
               {t.locked&&<Lock size={10}/>}
-              {t.label}
+              {t.id==='redflag'
+                ? <span><span style={{color:'#CC1010',fontWeight:800}}>Red</span> Flag</span>
+                : t.label}
               {t.locked&&<span style={{fontSize:10,opacity:.5}}>· soon</span>}
             </button>
           ))}
