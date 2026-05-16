@@ -786,6 +786,173 @@ function AccessCodesTab() {
 }
 
 // ── CASES MANAGER ────────────────────────────────────────────────────────────
+
+// ── CASE FORM CONSTANTS (module level to prevent input focus loss) ────────────
+const STATUS_OPTIONS = [
+  'reported','investigated','charged','trial','convicted','acquitted','dismissed','cold','no_action'
+
+
+const COUNTIES = [
+  'Nairobi','Kiambu','Mombasa','Nakuru','Kisumu','Kajiado','Kwale',
+  'Machakos',"Murang'a",'Kilifi','Uasin Gishu','Trans Nzoia','Meru',
+  'Kakamega','Nyeri','Nandi','Embu','Kirinyaga','Bungoma','Homa Bay',
+  'Other',
+
+
+const STATUS_COLORS = {
+  reported:'#DDD0D0', investigated:'#E8D8C0', charged:'#D8E0C8',
+  trial:'#C8D8E8', convicted:'#C8D8C0', acquitted:'#DCC8D8',
+  dismissed:'#E0D0C0', cold:'#D0D4D8', no_action:'#E8D0C8',
+
+
+const inputSt = { fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:TXT, background:'#EAD8D8', border:`1px solid ${BD}`, padding:'7px 10px', outline:'none', width:'100%' }
+const labelSt = { fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase', display:'block', marginBottom:3, marginTop:10 }
+
+const CaseForm = ({ data, setData, onSave, onCancel, saveLabel }) => (
+  <div style={{ background:'#D4BCBC', border:`1px solid ${BD}`, padding:18, marginBottom:2 }}>
+    <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
+      {[
+        {l:'Case ref',   k:'case_ref'},
+        {l:'Victim name (if known)', k:'victim_name'},
+        {l:'County',     k:'county', type:'county'},
+        {l:'Location',   k:'location'},
+        {l:'Date',       k:'incident_date', type:'date'},
+        {l:'Status',     k:'status', type:'status'},
+        {l:'Relationship to victim', k:'perpetrator_relationship'},
+        {l:'Source type', k:'source_type'},
+        {l:'Source URL', k:'source_url'},
+        {l:'Court reference', k:'court_ref'},
+        {l:'Sentence (if convicted)', k:'sentence'},
+        {l:'Next hearing date', k:'next_hearing', type:'date'},
+        {l:'Tech platforms (comma separated)', k:'tech_platforms'},
+        {l:'Admin notes', k:'admin_notes'},
+      ].map(({l,k,type})=>(
+        <div key={k} style={{ gridColumn: ['source_url','court_ref','admin_notes'].includes(k) ? 'span 2' : 'span 1' }}>
+          <label style={labelSt}>{l}</label>
+          {type==='county' ? (
+            <select style={inputSt} value={data[k]||''} onChange={e=>setData(d=>({...d,[k]:e.target.value}))}>
+              <option value="">Select</option>
+              {COUNTIES.map(c=><option key={c} value={c}>{c}</option>)}
+            </select>
+          ) : type==='status' ? (
+            <select style={inputSt} value={data[k]||''} onChange={e=>setData(d=>({...d,[k]:e.target.value}))}>
+              {STATUS_OPTIONS.map(s=><option key={s} value={s}>{s.replace(/_/g,' ')}</option>)}
+            </select>
+          ) : type==='date' ? (
+            <input style={inputSt} type="date" value={data[k]||''} onChange={e=>setData(d=>({...d,[k]:e.target.value}))}/>
+          ) : (
+            <input style={inputSt} value={data[k]||''} onChange={e=>setData(d=>({...d,[k]:e.target.value}))}/>
+          )}
+        </div>
+      ))}
+      <div>
+        <label style={labelSt}>Tech facilitated</label>
+        <label style={{ display:'flex', gap:8, cursor:'pointer', alignItems:'center', marginTop:6 }}>
+          <input type="checkbox" checked={!!data.tech_facilitated} onChange={e=>setData(d=>({...d,tech_facilitated:e.target.checked}))} style={{ accentColor:A }}/>
+          <span style={{ fontSize:12, color:TXT, fontFamily:"'Nunito Sans',sans-serif" }}>Yes</span>
+        </label>
+      </div>
+      <div>
+        <label style={labelSt}>Verified</label>
+        <label style={{ display:'flex', gap:8, cursor:'pointer', alignItems:'center', marginTop:6 }}>
+          <input type="checkbox" checked={!!data.verified} onChange={e=>setData(d=>({...d,verified:e.target.checked}))} style={{ accentColor:A }}/>
+          <span style={{ fontSize:12, color:TXT, fontFamily:"'Nunito Sans',sans-serif" }}>Verified from source</span>
+        </label>
+      </div>
+    </div>
+    <div style={{ display:'flex', gap:8, marginTop:14 }}>
+      <button className="btn btn-primary" onClick={onSave}><Save size={13}/> {saveLabel}</button>
+      <button className="btn btn-ghost" onClick={onCancel}><X size={13}/> Cancel</button>
+    </div>
+  </div>
+)
+
+return (
+  <div className="fade-up">
+    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:20 }}>
+      <div>
+        <p className="label" style={{ marginBottom:6 }}>Femicide case database</p>
+        <h2 className="serif" style={{ fontSize:26, fontWeight:700, color:TXT }}>Case manager</h2>
+        <p style={{ fontSize:12, color:MUT, marginTop:4, fontFamily:"'Nunito Sans',sans-serif" }}>
+          {cases.length} cases on record · {cases.filter(c=>c.status==='no_action').length} with no legal action
+        </p>
+      </div>
+      <div style={{ display:'flex', gap:8 }}>
+        <button className="btn btn-ghost" onClick={load}><RefreshCw size={13}/> Refresh</button>
+        <button className="btn btn-primary" onClick={()=>setShowAdd(s=>!s)}>
+          {showAdd ? <><X size={13}/> Cancel</> : <>+ Add case</>}
+        </button>
+      </div>
+    </div>
+
+    {showAdd && (
+      <CaseForm data={newCase} setData={setNewCase} onSave={addCase} onCancel={()=>setShowAdd(false)} saveLabel="Add case"/>
+    )}
+
+    <table className="tbl">
+      <thead>
+        <tr>
+          <th>Ref</th>
+          <th>Victim</th>
+          <th>County</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Verified</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {loading ? (
+          <tr><td colSpan={7} style={{ textAlign:'center', color:MUT }}>Loading...</td></tr>
+        ) : cases.map(c=>(
+          <>
+            <tr key={c.id} style={{ opacity: c.published ? 1 : 0.5 }}>
+              <td style={{ fontFamily:'monospace', fontSize:11 }}>{c.case_ref}</td>
+              <td style={{ fontWeight:700, fontSize:13 }}>{c.victim_name||'Unknown'}</td>
+              <td>{c.county}</td>
+              <td style={{ fontSize:11, color:MUT }}>{c.incident_date ? new Date(c.incident_date).toLocaleDateString('en-KE') : '—'}</td>
+              <td>
+                <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', fontFamily:"'Nunito Sans',sans-serif", background:STATUS_COLORS[c.status]||'#DDD', border:'1px solid #B89AAA', color:TXT }}>
+                  {c.status?.replace(/_/g,' ')}
+                </span>
+              </td>
+              <td style={{ fontSize:11, color: c.verified ? '#166534' : MUT }}>{c.verified ? '✓ Yes' : 'Pending'}</td>
+              <td>
+                <div style={{ display:'flex', gap:4 }}>
+                  <button className="btn btn-ghost" style={{ padding:'4px 8px', fontSize:11 }}
+                    onClick={()=>{setEditing(c.id);setEditData({...c,tech_platforms:c.tech_platforms?.join(', ')||''})}}>
+                    <Edit2 size={11}/> Edit
+                  </button>
+                  <button className={`btn ${c.published?'btn-warning':'btn-success'}`} style={{ padding:'4px 8px', fontSize:11 }}
+                    onClick={()=>togglePublish(c.id,c.published)}>
+                    {c.published?'Hide':'Show'}
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {editing===c.id && (
+              <tr key={`edit-${c.id}`}>
+                <td colSpan={7} style={{ padding:0 }}>
+                  <CaseForm data={editData} setData={setEditData} onSave={()=>saveEdit(c.id)} onCancel={()=>setEditing(null)} saveLabel="Save changes"/>
+                </td>
+              </tr>
+            )}
+          </>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)
+}
+
+// ── LINDALINDA (SAFETY NORMS) TAB ────────────────────────────────────────────
+function LindaLindaTab() {
+const [norms,   setNorms]   = useState([])
+const [loading, setLoading] = useState(true)
+const [filter,  setFilter]  = useState('published')
+const [editing, setEditing] = useState(null)
+const [editText, setEditText] = useState({})
+
 function CasesTab() {
   const [cases, setCases]     = useState([])
   const [loading, setLoading] = useState(true)
@@ -797,7 +964,7 @@ function CasesTab() {
     incident_date:'', county:'', location:'', perpetrator_relationship:'unknown',
     tech_facilitated:false, tech_platforms:'',
     status:'reported', sentence:'', court_ref:'', next_hearing:'',
-    source_url:'', source_type:'news', verified:false, admin_notes:''
+    source_url:'', source_type:'news', verified:false, published:true, admin_notes:''
   })
 
   const STATUS_OPTIONS = [
@@ -825,13 +992,15 @@ function CasesTab() {
   }
 
   const saveEdit = async (id) => {
-    await supabase.from('femicide_cases').update({
+    const { error } = await supabase.from('femicide_cases').update({
       ...editData,
+      published: editData.published !== false ? true : false,
       tech_platforms: typeof editData.tech_platforms === 'string'
         ? editData.tech_platforms.split(',').map(p=>p.trim()).filter(Boolean)
         : editData.tech_platforms,
       updated_at: new Date().toISOString()
     }).eq('id', id)
+    if(error) console.error('Save error:', error.message)
     setEditing(null)
     load()
   }
@@ -852,153 +1021,6 @@ function CasesTab() {
     load()
   }
 
-  const inputSt = { fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:TXT, background:'#EAD8D8', border:`1px solid ${BD}`, padding:'7px 10px', outline:'none', width:'100%' }
-  const labelSt = { fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase', display:'block', marginBottom:3, marginTop:10 }
-
-  const CaseForm = ({ data, setData, onSave, onCancel, saveLabel }) => (
-    <div style={{ background:'#D4BCBC', border:`1px solid ${BD}`, padding:18, marginBottom:2 }}>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
-        {[
-          {l:'Case ref',   k:'case_ref'},
-          {l:'Victim name (if known)', k:'victim_name'},
-          {l:'County',     k:'county', type:'county'},
-          {l:'Location',   k:'location'},
-          {l:'Date',       k:'incident_date', type:'date'},
-          {l:'Status',     k:'status', type:'status'},
-          {l:'Relationship to victim', k:'perpetrator_relationship'},
-          {l:'Source type', k:'source_type'},
-          {l:'Source URL', k:'source_url'},
-          {l:'Court reference', k:'court_ref'},
-          {l:'Sentence (if convicted)', k:'sentence'},
-          {l:'Next hearing date', k:'next_hearing', type:'date'},
-          {l:'Tech platforms (comma separated)', k:'tech_platforms'},
-          {l:'Admin notes', k:'admin_notes'},
-        ].map(({l,k,type})=>(
-          <div key={k} style={{ gridColumn: ['source_url','court_ref','admin_notes'].includes(k) ? 'span 2' : 'span 1' }}>
-            <label style={labelSt}>{l}</label>
-            {type==='county' ? (
-              <select style={inputSt} value={data[k]||''} onChange={e=>setData(d=>({...d,[k]:e.target.value}))}>
-                <option value="">Select</option>
-                {COUNTIES.map(c=><option key={c} value={c}>{c}</option>)}
-              </select>
-            ) : type==='status' ? (
-              <select style={inputSt} value={data[k]||''} onChange={e=>setData(d=>({...d,[k]:e.target.value}))}>
-                {STATUS_OPTIONS.map(s=><option key={s} value={s}>{s.replace(/_/g,' ')}</option>)}
-              </select>
-            ) : type==='date' ? (
-              <input style={inputSt} type="date" value={data[k]||''} onChange={e=>setData(d=>({...d,[k]:e.target.value}))}/>
-            ) : (
-              <input style={inputSt} value={data[k]||''} onChange={e=>setData(d=>({...d,[k]:e.target.value}))}/>
-            )}
-          </div>
-        ))}
-        <div>
-          <label style={labelSt}>Tech facilitated</label>
-          <label style={{ display:'flex', gap:8, cursor:'pointer', alignItems:'center', marginTop:6 }}>
-            <input type="checkbox" checked={!!data.tech_facilitated} onChange={e=>setData(d=>({...d,tech_facilitated:e.target.checked}))} style={{ accentColor:A }}/>
-            <span style={{ fontSize:12, color:TXT, fontFamily:"'Nunito Sans',sans-serif" }}>Yes</span>
-          </label>
-        </div>
-        <div>
-          <label style={labelSt}>Verified</label>
-          <label style={{ display:'flex', gap:8, cursor:'pointer', alignItems:'center', marginTop:6 }}>
-            <input type="checkbox" checked={!!data.verified} onChange={e=>setData(d=>({...d,verified:e.target.checked}))} style={{ accentColor:A }}/>
-            <span style={{ fontSize:12, color:TXT, fontFamily:"'Nunito Sans',sans-serif" }}>Verified from source</span>
-          </label>
-        </div>
-      </div>
-      <div style={{ display:'flex', gap:8, marginTop:14 }}>
-        <button className="btn btn-primary" onClick={onSave}><Save size={13}/> {saveLabel}</button>
-        <button className="btn btn-ghost" onClick={onCancel}><X size={13}/> Cancel</button>
-      </div>
-    </div>
-  )
-
-  return (
-    <div className="fade-up">
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:20 }}>
-        <div>
-          <p className="label" style={{ marginBottom:6 }}>Femicide case database</p>
-          <h2 className="serif" style={{ fontSize:26, fontWeight:700, color:TXT }}>Case manager</h2>
-          <p style={{ fontSize:12, color:MUT, marginTop:4, fontFamily:"'Nunito Sans',sans-serif" }}>
-            {cases.length} cases on record · {cases.filter(c=>c.status==='no_action').length} with no legal action
-          </p>
-        </div>
-        <div style={{ display:'flex', gap:8 }}>
-          <button className="btn btn-ghost" onClick={load}><RefreshCw size={13}/> Refresh</button>
-          <button className="btn btn-primary" onClick={()=>setShowAdd(s=>!s)}>
-            {showAdd ? <><X size={13}/> Cancel</> : <>+ Add case</>}
-          </button>
-        </div>
-      </div>
-
-      {showAdd && (
-        <CaseForm data={newCase} setData={setNewCase} onSave={addCase} onCancel={()=>setShowAdd(false)} saveLabel="Add case"/>
-      )}
-
-      <table className="tbl">
-        <thead>
-          <tr>
-            <th>Ref</th>
-            <th>Victim</th>
-            <th>County</th>
-            <th>Date</th>
-            <th>Status</th>
-            <th>Verified</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {loading ? (
-            <tr><td colSpan={7} style={{ textAlign:'center', color:MUT }}>Loading...</td></tr>
-          ) : cases.map(c=>(
-            <>
-              <tr key={c.id} style={{ opacity: c.published ? 1 : 0.5 }}>
-                <td style={{ fontFamily:'monospace', fontSize:11 }}>{c.case_ref}</td>
-                <td style={{ fontWeight:700, fontSize:13 }}>{c.victim_name||'Unknown'}</td>
-                <td>{c.county}</td>
-                <td style={{ fontSize:11, color:MUT }}>{c.incident_date ? new Date(c.incident_date).toLocaleDateString('en-KE') : '—'}</td>
-                <td>
-                  <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', fontFamily:"'Nunito Sans',sans-serif", background:STATUS_COLORS[c.status]||'#DDD', border:'1px solid #B89AAA', color:TXT }}>
-                    {c.status?.replace(/_/g,' ')}
-                  </span>
-                </td>
-                <td style={{ fontSize:11, color: c.verified ? '#166534' : MUT }}>{c.verified ? '✓ Yes' : 'Pending'}</td>
-                <td>
-                  <div style={{ display:'flex', gap:4 }}>
-                    <button className="btn btn-ghost" style={{ padding:'4px 8px', fontSize:11 }}
-                      onClick={()=>{setEditing(c.id);setEditData({...c,tech_platforms:c.tech_platforms?.join(', ')||''})}}>
-                      <Edit2 size={11}/> Edit
-                    </button>
-                    <button className={`btn ${c.published?'btn-warning':'btn-success'}`} style={{ padding:'4px 8px', fontSize:11 }}
-                      onClick={()=>togglePublish(c.id,c.published)}>
-                      {c.published?'Hide':'Show'}
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              {editing===c.id && (
-                <tr key={`edit-${c.id}`}>
-                  <td colSpan={7} style={{ padding:0 }}>
-                    <CaseForm data={editData} setData={setEditData} onSave={()=>saveEdit(c.id)} onCancel={()=>setEditing(null)} saveLabel="Save changes"/>
-                  </td>
-                </tr>
-              )}
-            </>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-// ── LINDALINDA (SAFETY NORMS) TAB ────────────────────────────────────────────
-function LindaLindaTab() {
-  const [norms,   setNorms]   = useState([])
-  const [loading, setLoading] = useState(true)
-  const [filter,  setFilter]  = useState('published')
-  const [editing, setEditing] = useState(null)
-  const [editText, setEditText] = useState({})
 
   const load = () => {
     setLoading(true)
