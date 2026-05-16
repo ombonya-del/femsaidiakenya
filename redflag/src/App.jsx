@@ -18,6 +18,13 @@ const BD   = '#4A1828'
 const GRN  = '#1A5A2A'
 
 // ── ARCHETYPE DATA ────────────────────────────────────────────────────────────
+// Age ranges map to femicide_cases.victim_age_range DB values
+const ARCH_AGE_RANGES = {
+  naive:      'under_18',
+  precocious: '18_25',
+  allin:      '26_35',
+}
+
 const ARCHETYPES = [
   {
     id:'naive', emoji:'🌱', color:'#1A3F6F', light:'#0A1828',
@@ -205,6 +212,7 @@ function JiJueScreen() {
   const [active, setActive]   = useState(0)
   const [tab, setTab]         = useState('intro')
   const [dbContent, setDbContent] = useState({})
+  const [victims,   setVictims]   = useState({})
 
   useEffect(() => {
     sb.from('archetype_content').select('*').eq('active', true)
@@ -218,6 +226,24 @@ function JiJueScreen() {
           g[k].push(r.content)
         })
         setDbContent(g)
+      })
+
+    // Load victims for all age ranges
+    sb.from('femicide_cases')
+      .select('victim_name, victim_age, incident_date, county, victim_age_range')
+      .eq('published', true)
+      .not('victim_name', 'like', 'Name unknown%')
+      .not('victim_name', 'like', 'Unknown%')
+      .order('incident_date', { ascending: false })
+      .then(({ data }) => {
+        if (!data) return
+        const grouped = {}
+        data.forEach(v => {
+          const r = v.victim_age_range
+          if (!grouped[r]) grouped[r] = []
+          grouped[r].push(v)
+        })
+        setVictims(grouped)
       })
   }, [])
 
@@ -248,7 +274,7 @@ function JiJueScreen() {
       <div style={{padding:'0 16px'}}>
         {/* Sub-tabs */}
         <div style={{display:'flex',gap:2,margin:'16px 0'}}>
-          {[{id:'intro',label:'Who is this?'},{id:'redflags',label:'🚩 Red flags'},{id:'protect',label:'🛡️ Protect yourself'},{id:'talk',label:'💬 Real talk'}].map(t => (
+          {[{id:'intro',label:'Who is this?'},{id:'redflags',label:'🚩 Red flags'},{id:'protect',label:'🛡️ Protect yourself'},{id:'talk',label:'💬 Real talk'},{id:'remember',label:'🕯 We remember'}].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
                 padding:'7px 10px',border:'none',cursor:'pointer',flex:1,
@@ -332,6 +358,48 @@ function JiJueScreen() {
             <p style={{fontFamily:"'Lora',serif",fontSize:18,color:TXT,lineHeight:1.9,fontStyle:'italic',margin:0}}>
               "{a.sisterSays}"
             </p>
+          </div>
+        )}
+
+        {/* We Remember */}
+        {tab==='remember' && (
+          <div>
+            <div style={{background:'#0A0008',border:`1px solid #3A0820`,
+              borderLeft:`4px solid #8A1030`,padding:'20px 16px',marginBottom:16}}>
+              <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT,lineHeight:1.8}}>
+                These are women and girls whose lives were taken. They are not cautionary tales.
+                They are not statistics. They were here. We say their names.
+              </p>
+            </div>
+            {(victims[ARCH_AGE_RANGES[a.id]] || []).length === 0 ? (
+              <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT,fontStyle:'italic'}}>
+                Loading…
+              </p>
+            ) : (victims[ARCH_AGE_RANGES[a.id]] || []).map((v, i) => (
+              <div key={i} style={{borderBottom:`1px solid #2A0818`,padding:'16px 0',
+                display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12}}>
+                <div>
+                  <div style={{fontFamily:"'Lora',serif",fontSize:16,fontWeight:700,
+                    color:TXT,marginBottom:4}}>{v.victim_name}</div>
+                  <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT}}>
+                    {v.county}
+                    {v.victim_age ? ` · ${v.victim_age} years old` : ''}
+                  </div>
+                </div>
+                <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:'#5A2030',
+                  fontWeight:600,whiteSpace:'nowrap',flexShrink:0}}>
+                  {v.incident_date ? new Date(v.incident_date).toLocaleDateString('en-KE',
+                    {day:'numeric',month:'short',year:'numeric'}) : ''}
+                </div>
+              </div>
+            ))}
+            <div style={{marginTop:20,paddingTop:16,borderTop:`1px solid #2A0818`}}>
+              <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:'#5A2030',
+                lineHeight:1.7,fontStyle:'italic'}}>
+                🕯 Data from the FemSaidia Kenya femicide database. If you know of a case not recorded here,
+                report it at femsaidiakenya.org
+              </p>
+            </div>
           </div>
         )}
       </div>
