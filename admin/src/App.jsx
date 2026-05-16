@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import RedFlagTab from './RedFlag.jsx'
 import PetitionTab from './Petition.jsx'
 import ReportTab from './Report.jsx'
 import PartnersTab from './Partners.jsx'
@@ -1012,7 +1011,6 @@ export default function App(){
         {activeTab==='silencing-women' && <SilencingWomenTab/>}
         {activeTab==='resources'       && <ResourcesTab/>}
         {activeTab==='survival'        && <SurvivalGuideTab/>}
-        {activeTab==='redflag'         && <RedFlagTab/>}
         {activeTab==='petition'        && <PetitionTab/>}
         {activeTab==='report'          && <ReportTab/>}
         {activeTab==='partners'        && <PartnersTab/>}
