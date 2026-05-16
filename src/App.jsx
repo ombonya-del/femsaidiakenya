@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import RedFlagTab from './RedFlag.jsx'
 import PetitionTab from './Petition.jsx'
 import ReportTab from './Report.jsx'
@@ -13,7 +13,10 @@ import {
 } from 'recharts'
 import { Lock, ExternalLink, AlertTriangle, Download, Play, FileText, Scale, Database, Newspaper } from 'lucide-react'
 import { INCIDENTS, DOCUMENTS, RESOURCES } from './data.js'
+import KenyaCountyMap from './KenyaCountyMap.jsx'
 import './App.css'
+import { createClient } from '@supabase/supabase-js'
+const _sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY)
 
 const A   = '#8A1030'
 const A2  = '#8A4010'
@@ -161,6 +164,37 @@ function SilencingWomenTab(){
 }
 
 function DashboardTab(){
+  const [recentCases,  setRecentCases]  = useState([])
+  const [intelStats,   setIntelStats]   = useState({total:0,highMiso:0,techGBV:0,alarming:0})
+  const [countyCounts, setCountyCounts] = useState({})
+
+  useEffect(()=>{
+    _sb.from('femicide_cases')
+      .select('id,victim_name,incident_date,county,location,status,source_url,source_type')
+      .order('incident_date',{ascending:false}).limit(6)
+      .then(({data})=>{ if(data) setRecentCases(data) })
+
+    _sb.from('sentiment_articles')
+      .select('misogyny_score,tech_facilitated,gbv_relevance,sentiment')
+      .then(({data})=>{
+        if(!data) return
+        setIntelStats({
+          total:    data.length,
+          highMiso: data.filter(a=>a.misogyny_score>=7).length,
+          techGBV:  data.filter(a=>a.tech_facilitated).length,
+          alarming: data.filter(a=>a.sentiment==='alarming'||a.sentiment==='negative').length,
+        })
+      })
+
+    _sb.from('femicide_cases').select('county')
+      .then(({data})=>{
+        if(!data) return
+        const counts={}
+        data.forEach(c=>{ if(c.county) counts[c.county]=(counts[c.county]||0)+1 })
+        setCountyCounts(counts)
+      })
+  },[])
+
   return(
     <div className="fade-up" style={{width:'100%'}}>
       <div style={{borderBottom:`1px solid ${BD}`,paddingBottom:32,marginBottom:32}}>
@@ -284,44 +318,59 @@ function DashboardTab(){
               ))}
             </span>
           </div>
-          <div style={{display:'flex',flexWrap:'wrap',gap:2}}>
-            {COUNTIES.map((c,i)=>{
-              const conf=RISK[c.r]
-              return <div key={i} className="county-tile" style={{background:conf.bg,color:conf.fg}} title={`${c.n}: ${c.c} reported cases`}>{c.n.substring(0,6)}</div>
-            })}
-          </div>
-          <p style={{fontSize:11,color:MUT,marginTop:12,fontFamily:"'Nunito Sans',sans-serif"}}>Hover for case count · full geographic map in v1.1</p>
+          <KenyaCountyMap countyCounts={countyCounts}/>
         </div>
 
         <div className="card" style={{padding:24}}>
-          <div className="section-head">
-            <span>Recent incidents</span>
-            <span className="badge" style={{color:A,borderColor:BD,background:BG}}>Seeded · edit in data.js</span>
+          <div style={{borderBottom:`1px solid ${BD}`,paddingBottom:12,marginBottom:16,
+            display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <div>
+              <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
+                letterSpacing:'.12em',textTransform:'uppercase',color:A,marginBottom:4}}>● Live from database</p>
+              <h2 style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,color:TXT}}>Recent incidents</h2>
+            </div>
+            <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT,fontWeight:600}}>
+              {recentCases.length} most recent
+            </span>
           </div>
-          {INCIDENTS.map((inc,i)=>{
-            const s=SC[inc.status]||SC['open']
+          {recentCases.length===0?(
+            <p style={{fontSize:12,color:MUT,fontFamily:"'Nunito Sans',sans-serif",fontStyle:'italic'}}>Loading…</p>
+          ):recentCases.map((inc,i)=>{
+            const statusMap={convicted:{bg:'#1A5A2A',bc:'#2D7A3A',tc:'#fff'},charged:{bg:'#1A3F6F',bc:'#2A5FAF',tc:'#fff'},trial:{bg:'#5A3A8A',bc:'#7A5AAA',tc:'#fff'},investigated:{bg:'#8A4010',bc:'#AA6030',tc:'#fff'},reported:{bg:CRD,bc:BD,tc:TXT},no_action:{bg:'#8A1030',bc:'#AA2050',tc:'#fff'},dismissed:{bg:'#5A4A60',bc:'#7A6A80',tc:'#fff'}}
+            const s=statusMap[inc.status]||statusMap['reported']
+            const dateStr=inc.incident_date?new Date(inc.incident_date).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}):'—'
             return(
-              <div key={i} className="incident-row">
+              <div key={inc.id} style={{padding:'14px 0',borderBottom:i<recentCases.length-1?`1px solid ${BD}`:'none'}}>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
                   <div style={{flex:1}}>
-                    <div style={{fontWeight:600,fontSize:14,color:TXT}}>
-                      {inc.county} <span style={{color:MUT,fontWeight:400}}>· {inc.loc}</span>
+                    <div style={{fontFamily:"'Lora',serif",fontWeight:700,fontSize:15,color:TXT,marginBottom:4}}>
+                      {inc.victim_name||'Name withheld'}
                     </div>
-                    <div style={{display:'flex',alignItems:'center',gap:8,marginTop:5}}>
-                      <span style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>{inc.date}</span>
-                      <span style={{fontSize:11,color:MUT}}>·</span>
-                      <a href={inc.url} target="_blank" rel="noopener noreferrer"
-                        style={{fontSize:11,color:A,fontFamily:"'Nunito Sans',sans-serif",fontWeight:600,display:'inline-flex',alignItems:'center',gap:3,textDecoration:'none'}}>
-                        {inc.src} <ExternalLink size={10}/>
-                      </a>
+                    <div style={{fontWeight:600,fontSize:12,color:MUT,fontFamily:"'Nunito Sans',sans-serif",marginBottom:4}}>
+                      {inc.county}{inc.location?` · ${inc.location}`:''}
+                    </div>
+                    <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                      <span style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>{dateStr}</span>
+                      {inc.source_url?(
+                        <a href={inc.source_url} target="_blank" rel="noopener noreferrer"
+                          style={{fontSize:11,color:A,fontFamily:"'Nunito Sans',sans-serif",fontWeight:600,
+                            display:'inline-flex',alignItems:'center',gap:3,textDecoration:'none'}}>
+                          {inc.source_type||'Source'} <ExternalLink size={10}/>
+                        </a>
+                      ):inc.source_type?(
+                        <span style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>{inc.source_type}</span>
+                      ):null}
                     </div>
                   </div>
-                  <span className="badge" style={{background:s.bg,borderColor:s.bc,color:s.tc,whiteSpace:'nowrap',flexShrink:0}}>{inc.status}</span>
+                  <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
+                    padding:'3px 10px',background:s.bg,border:`1px solid ${s.bc}`,color:s.tc,
+                    whiteSpace:'nowrap',flexShrink:0,textTransform:'uppercase',letterSpacing:'.06em'}}>
+                    {inc.status?.replace('_',' ')||'reported'}
+                  </span>
                 </div>
               </div>
             )
           })}
-          <p style={{fontSize:11,color:MUT,marginTop:12,fontFamily:"'Nunito Sans',sans-serif"}}>Submit a verified incident via the Report tab</p>
         </div>
       </div>
 
@@ -332,10 +381,10 @@ function DashboardTab(){
         </div>
         <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:2,marginBottom:18}}>
           {[
-            {v:'14,200+',l:'Manosphere content pieces',n:'Tracked Jan–Dec 2024',    c:A},
-            {v:'3,847',  l:'Online harassment reports', n:'Against women and girls', c:'#7A3020'},
-            {v:'912',    l:'Platform reports filed',    n:'Meta · TikTok · X',       c:'#6A4010'},
-            {v:'34%',    l:'Content acted on',          n:'Of all reports filed',    c:'#1A5A2A'},
+            {v:intelStats.total>0?intelStats.total:'—',    l:'Articles & posts scanned', n:'GBV intelligence feed · live', c:A},
+            {v:intelStats.highMiso>0?intelStats.highMiso:'—', l:'High misogyny content',  n:'Scored 7+ out of 10',         c:'#7A3020'},
+            {v:intelStats.techGBV>0?intelStats.techGBV:'—',  l:'Tech-facilitated GBV',   n:'Via apps · platforms · social',c:'#6A4010'},
+            {v:intelStats.alarming>0?intelStats.alarming:'—', l:'Alarming sentiment items',n:'Alarming or negative tone',   c:'#1A5A2A'},
           ].map((m,i)=>(
             <div key={i} style={{background:'#BC9EAE',border:`1px solid ${BD}`,padding:'18px 20px'}}>
               <div className="serif" style={{fontSize:36,fontWeight:700,color:m.c,lineHeight:1}}>{m.v}</div>
@@ -874,8 +923,7 @@ const TABS = [
 ]
 
 // ── INVITE GATE ───────────────────────────────────────────────────────────────
-import { createClient } from '@supabase/supabase-js'
-const _sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY)
+
 
 function InviteGate({ children }) {
   const stored = sessionStorage.getItem('femsaidia_access')
