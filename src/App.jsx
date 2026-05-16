@@ -200,6 +200,12 @@ function DashboardTab(){
               letterSpacing:'.04em',whiteSpace:'nowrap'}}>
             Access hepa →
           </a>
+          <a href="https://redflag.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
+            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,
+              padding:'10px 20px',background:'#8A1030',color:'#fff',textDecoration:'none',
+              letterSpacing:'.04em',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:6}}>
+            🚩 <span><span style={{color:'#FF4040'}}>Red</span> Flag PWA →</span>
+          </a>
           <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.5)',
             padding:'10px 0',display:'flex',alignItems:'center',gap:6}}>
             <span style={{fontSize:16}}>📞</span>
