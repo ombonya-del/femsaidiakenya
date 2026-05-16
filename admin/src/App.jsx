@@ -1,1028 +1,1399 @@
-import { useState } from 'react'
-import PetitionTab from './Petition.jsx'
-import ReportTab from './Report.jsx'
-import PartnersTab from './Partners.jsx'
-import SocialsSentimentTab from './SocialsSentiment.jsx'
-import TechTrackerTab from './TechTracker.jsx'
-import SurvivalGuideTab from './SurvivalGuide.jsx'
-import CaseTrackerTab from './CaseTracker.jsx'
+import { Shield, BookOpen, useState, useEffect } from 'react'
+import { createClient } from '@supabase/supabase-js'
 import {
-  AreaChart, Area, BarChart, Bar,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine
-} from 'recharts'
-import { Lock, ExternalLink, AlertTriangle, Download, Play, FileText, Scale, Database, Newspaper } from 'lucide-react'
-import { INCIDENTS, DOCUMENTS, RESOURCES } from './data.js'
-import './App.css'
+  LogOut, CheckCircle, XCircle, AlertTriangle, Edit2, Save, X,
+  ChevronUp, Trash2, Eye, RefreshCw, Send, BarChart2, Flag,
+  FileText, Users, Mail
+} from 'lucide-react'
+
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 const A   = '#8A1030'
-const A2  = '#8A4010'
-const BD  = '#B89AAA'
-const BG  = '#D4BEC4'
-const CRD = '#C4AABB'
+const BD  = '#C4AABB'
+const BG  = '#F0E8E8'
+const CRD = '#E0CCCC'
 const TXT = '#180410'
 const MUT = '#7A4A60'
-const HDR = '#C8AFBA'
 
-const TREND = [
-  {m:"J'23",f:12,n:28},{m:"F'23",f:10,n:25},{m:"M'23",f:15,n:34},
-  {m:"A'23",f:13,n:30},{m:"M'23",f:17,n:40},{m:"J'23",f:15,n:38},
-  {m:"J'23",f:19,n:45},{m:"A'23",f:22,n:51},{m:"S'23",f:20,n:48},
-  {m:"O'23",f:24,n:57},{m:"N'23",f:28,n:63},{m:"D'23",f:31,n:70},
-  {m:"J'24",f:97,n:88},{m:"F'24",f:42,n:94},{m:"M'24",f:37,n:88},
-  {m:"A'24",f:33,n:82},{m:"M'24",f:29,n:76},{m:"J'24",f:32,n:79},
-  {m:"J'24",f:27,n:73},{m:"A'24",f:31,n:78},{m:"S'24",f:34,n:82},
-  {m:"O'24",f:38,n:87},{m:"N'24",f:41,n:91},{m:"D'24",f:44,n:95},
-]
+const TIER_CONFIG = {
+  reported:     { label: 'Reported',     cls: 'tier-reported'     },
+  corroborated: { label: 'Corroborated', cls: 'tier-corroborated' },
+  convicted:    { label: 'Convicted',    cls: 'tier-convicted'    },
+}
 
 const COUNTIES = [
-  {n:'Nairobi',c:142,r:0},{n:'Kiambu',c:67,r:1},{n:'Mombasa',c:54,r:1},
-  {n:'Nakuru',c:48,r:1},{n:'Kisumu',c:31,r:2},{n:'Kajiado',c:27,r:2},
-  {n:'Kwale',c:24,r:2},{n:'Machakos',c:22,r:2},{n:"Murang'a",c:20,r:2},
-  {n:'Kilifi',c:18,r:2},{n:'Uasin G.',c:15,r:3},{n:'Trans N.',c:13,r:3},
-  {n:'Meru',c:12,r:3},{n:'Kakamega',c:11,r:3},{n:'Nyeri',c:10,r:3},
-  {n:'Nandi',c:7,r:4},{n:'Embu',c:6,r:4},{n:'Kirinyaga',c:5,r:4},
-  {n:'Bungoma',c:5,r:4},{n:'Homa Bay',c:4,r:4},{n:'Nyamira',c:3,r:4},
-  {n:'Laikipia',c:3,r:5},{n:'Baringo',c:3,r:5},{n:'Narok',c:3,r:5},
-  {n:'Kericho',c:2,r:5},{n:'Bomet',c:2,r:5},{n:'Siaya',c:2,r:5},
-  {n:'Vihiga',c:2,r:5},{n:'Busia',c:2,r:5},{n:'Migori',c:1,r:5},
-  {n:'Kisii',c:1,r:5},{n:'Nyandarua',c:1,r:5},{n:'Taita-T.',c:1,r:5},
-  {n:'Kitui',c:1,r:5},{n:'Makueni',c:1,r:5},{n:'Samburu',c:0,r:5},
-  {n:'Lamu',c:0,r:5},{n:'Tana R.',c:0,r:5},{n:'Garissa',c:0,r:5},
-  {n:'Wajir',c:0,r:5},{n:'Mandera',c:0,r:5},{n:'Marsabit',c:0,r:5},
-  {n:'Isiolo',c:0,r:5},{n:'Turkana',c:0,r:5},{n:'W. Pokot',c:0,r:5},
-  {n:'Elgeyo',c:0,r:5},{n:'Tharaka',c:0,r:5},
+  'Nairobi','Kiambu','Mombasa','Nakuru','Kisumu','Kajiado','Kwale',
+  'Machakos',"Murang'a",'Kilifi','Uasin Gishu','Trans Nzoia','Meru',
+  'Kakamega','Nyeri','Nandi','Embu','Kirinyaga','Bungoma','Homa Bay',
+  'Nyamira','Laikipia','Baringo','Narok','Kericho','Bomet','Siaya',
+  'Vihiga','Busia','Migori','Kisii','Nyandarua','Taita Taveta','Kitui',
+  'Makueni','Samburu','Lamu','Tana River','Garissa','Wajir','Mandera',
+  'Marsabit','Isiolo','Turkana','West Pokot','Elgeyo Marakwet','Tharaka Nithi',
 ]
 
-const RISK = [
-  {label:'Critical',      bg:'#B07080', fg:'#200010'},
-  {label:'High',          bg:'#C08898', fg:'#280818'},
-  {label:'Elevated',      bg:'#C09878', fg:'#281808'},
-  {label:'Medium',        bg:'#C0B080', fg:'#282000'},
-  {label:'Low',           bg:'#90B898', fg:'#102818'},
-  {label:'Gap / minimal', bg:'#C8B8C0', fg:'#7A5068'},
-]
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+function LoginScreen() {
+  const [email, setEmail]     = useState('')
+  const [sent, setSent]       = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState('')
 
-const TOP = COUNTIES.filter(c=>c.c>0).sort((a,b)=>b.c-a.c).slice(0,12).map(c=>({name:c.n,cases:c.c}))
+  const sendMagicLink = async () => {
+    if (!email) { setError('Email is required'); return }
+    setLoading(true)
+    setError('')
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: window.location.origin,
+      }
+    })
+    if (error) setError(error.message)
+    else setSent(true)
+    setLoading(false)
+  }
 
-const SC = {
-  'open':          {bg:'#C89AAA',bc:'#8A1030',tc:'#4A0818'},
-  'arrested':      {bg:'#98B8A0',bc:'#1A6A2A',tc:'#0A3A18'},
-  'investigation': {bg:'#C8B490',bc:'#7A5010',tc:'#4A3000'},
-  'at large':      {bg:'#C87888',bc:'#8A0020',tc:'#4A0010'},
-}
+  return (
+    <div style={{
+      minHeight:'100vh', background:BG,
+      display:'flex', alignItems:'center', justifyContent:'center',
+      padding:24,
+    }}>
+      <div style={{width:'100%', maxWidth:420}}>
 
-const CAT_ICON = {
-  'Dataset':    <Database size={13}/>,
-  'Report':     <FileText size={13}/>,
-  'Law / Act':  <Scale size={13}/>,
-  'Video':      <Play size={13}/>,
-  'Media':      <Newspaper size={13}/>,
-}
-
-const CAT_COLOR = {
-  'Dataset':    {bg:'#BC9EAE', tc:A},
-  'Report':     {bg:'#C4AABB', tc:'#4A2030'},
-  'Law / Act':  {bg:'#C0B490', tc:'#3A2800'},
-  'Video':      {bg:'#A8B8C0', tc:'#102030'},
-  'Media':      {bg:'#C0B8A8', tc:'#302010'},
-}
-
-const CATEGORIES = ['Dataset','Report','Law / Act','Video','Media']
-
-function ChartTip({active,payload,label}){
-  if(!active||!payload?.length) return null
-  return(
-    <div style={{background:CRD,color:TXT,border:`1px solid ${BD}`,fontFamily:"'Nunito Sans',sans-serif",fontSize:11,padding:'8px 12px'}}>
-      <div style={{opacity:.5,marginBottom:4}}>{label}</div>
-      {payload.map((p,i)=><div key={i} style={{color:p.color}}>{p.name}: <strong>{p.value}</strong></div>)}
-    </div>
-  )
-}
-
-function ADHCard(){
-  return(
-    <div style={{background:'#BC9EAE',border:`2px solid ${A}`,padding:'24px 28px',marginBottom:2,position:'relative'}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:24}}>
-        <div style={{flex:1}}>
-          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
-            <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,letterSpacing:'.12em',color:'#fff',background:A,padding:'3px 10px',textTransform:'uppercase',fontWeight:600}}>Featured Dataset</span>
-            <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT}}>Africa Data Hub · Odipodev · Africa Uncensored · 2024</span>
+        {/* Logo */}
+        <div style={{textAlign:'center', marginBottom:32}}>
+          <div className="serif" style={{fontSize:32,fontWeight:700,color:TXT}}>
+            Fem<span style={{color:A}}>Saidia</span> Kenya
           </div>
-          <h2 className="serif" style={{fontSize:22,fontWeight:700,color:TXT,lineHeight:1.3,marginBottom:10}}>
-            Silencing Women:<br/><em style={{color:A}}>Femicide in Kenya</em>
-          </h2>
-          <p style={{fontSize:13,color:MUT,lineHeight:1.8,fontFamily:"'Nunito Sans',sans-serif",maxWidth:680,fontWeight:300}}>
-            The most comprehensive femicide dataset for Kenya — covering 842 verified cases spanning 2016–2024,
-            drawn from court records and media reports. Tracks county distribution, victim profiles,
-            perpetrator relationships, and justice outcomes. The primary data source for FemSaidia Kenya.
-          </p>
-          <div style={{display:'flex',gap:10,marginTop:16}}>
-            <a href="https://www.africadatahub.org/femicide-kenya" target="_blank" rel="noopener noreferrer"
-              style={{display:'inline-flex',alignItems:'center',gap:6,background:A,color:'#F0D0D8',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:600,padding:'9px 18px',textDecoration:'none',letterSpacing:'.04em'}}>
-              Explore full dataset <ExternalLink size={13}/>
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function SilencingWomenTab(){
-  return(
-    <div className="fade-up" style={{width:'100%'}}>
-      <div style={{borderBottom:`1px solid ${BD}`,paddingBottom:20,marginBottom:24}}>
-        <p className="label" style={{marginBottom:10,color:A}}>Featured dataset · Africa Data Hub · Odipodev · Africa Uncensored</p>
-        <h1 className="serif" style={{fontSize:36,fontWeight:700,color:TXT}}>Silencing Women: Femicide in Kenya</h1>
-        <p style={{fontSize:13,color:MUT,marginTop:8,fontFamily:"'Nunito Sans',sans-serif",fontWeight:300,lineHeight:1.8}}>
-          842 verified femicide cases · 2016–2024 · court records + media reports · live interactive data.
-          Use the filters to explore by county, year, perpetrator relationship and more.
-        </p>
-        <a href="https://www.africadatahub.org/femicide-kenya" target="_blank" rel="noopener noreferrer"
-          style={{display:'inline-flex',alignItems:'center',gap:6,marginTop:14,color:A,fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:600,letterSpacing:'.04em',textDecoration:'none'}}>
-          Open in full screen <ExternalLink size={12}/>
-        </a>
-      </div>
-      <div style={{width:'100%',border:`1px solid ${BD}`,background:CRD,overflow:'hidden'}}>
-        <iframe
-          src="https://www.africadatahub.org/femicide-kenya"
-          title="Silencing Women: Femicide in Kenya — Africa Data Hub"
-          style={{width:'100%',height:'80vh',border:'none',display:'block'}}
-          allowFullScreen
-        />
-      </div>
-      <p style={{fontSize:11,color:MUT,marginTop:10,fontFamily:"'Nunito Sans',sans-serif"}}>
-        Data by Africa Data Hub, Odipodev and Africa Uncensored ·
-        <a href="https://www.africadatahub.org" target="_blank" rel="noopener noreferrer" style={{color:A,marginLeft:4}}>africadatahub.org</a>
-      </p>
-    </div>
-  )
-}
-
-function DashboardTab(){
-  return(
-    <div className="fade-up" style={{width:'100%'}}>
-      <div style={{borderBottom:`1px solid ${BD}`,paddingBottom:32,marginBottom:32}}>
-        <p className="label" style={{marginBottom:14,color:A,letterSpacing:'.15em'}}>● Kenya · Active crisis · 2023–2026</p>
-        <h1 className="serif" style={{fontSize:52,fontWeight:700,lineHeight:1.2,color:TXT}}>
-          A woman is killed<br/><em style={{color:A}}>every 47 hours</em><br/>in Kenya.
-        </h1>
-        <p style={{marginTop:18,fontSize:15,color:MUT,maxWidth:640,lineHeight:1.9,fontWeight:300,fontFamily:"'Nunito Sans',sans-serif"}}>
-          FemSaidia Kenya maps the femicide epidemic — connecting incident data,
-          misogynistic online narratives, and the digital pathways perpetrators exploit.
-          Built in memory of those already lost. Built for those still here.
-        </p>
-      </div>
-
-      <ADHCard/>
-
-      {/* ── HEPA BANNER ── */}
-      <div style={{
-        background:'#0A2D1A', padding:'20px 24px', marginBottom:2, marginTop:2,
-        display:'flex', justifyContent:'space-between', alignItems:'center',
-        flexWrap:'wrap', gap:16,
-      }}>
-        <div>
-          <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:6}}>
-            <div style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,color:'#FF5C28'}}>hepa</div>
-            <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:'rgba(255,255,255,0.5)',letterSpacing:'.12em',textTransform:'uppercase',fontWeight:700}}>Personal safety tool for women</div>
-          </div>
-          <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.6)',lineHeight:1.7,maxWidth:560}}>
-            A personal safety tool with offline survival guidance, emergency contacts and location sharing.
-            Also accessible via USSD — <strong style={{color:'rgba(255,255,255,0.9)'}}>*384*89056#</strong> — on any phone, any network, no internet needed.
+          <p style={{fontSize:12,color:MUT,marginTop:6,fontFamily:"'Nunito Sans',sans-serif",letterSpacing:'.08em'}}>
+            ADMIN DASHBOARD
           </p>
         </div>
-        <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
-          <a href="https://hepa.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
-            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,
-              padding:'10px 20px',background:'#FF5C28',color:'#fff',textDecoration:'none',
-              letterSpacing:'.04em',whiteSpace:'nowrap'}}>
-            Access hepa →
-          </a>
-          <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.5)',
-            padding:'10px 0',display:'flex',alignItems:'center',gap:6}}>
-            <span style={{fontSize:16}}>📞</span>
-            Dial <strong style={{color:'#FF5C28'}}>*384*89056#</strong>
-          </div>
-        </div>
-      </div>
 
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:2,marginBottom:2,marginTop:2}}>
-        {[
-          {v:'600+', l:'Reported cases',        s:'2023–2025 · verified',                   c:A},
-          {v:'47',   l:'Counties affected',      s:'No county is untouched',                 c:A2},
-          {v:'4',    l:'Critical risk counties', s:'Nairobi · Kiambu · Mombasa · Nakuru',    c:A},
-          {v:'+312%',l:'Spike in Jan 2024',      s:'#TotalShutdownKE was the turning point', c:A},
-        ].map((s,i)=>(
-          <div key={i} className="stat-block">
-            <div className="serif" style={{fontSize:52,fontWeight:700,color:s.c,lineHeight:1}}>{s.v}</div>
-            <p style={{fontSize:14,color:TXT,fontWeight:600,marginTop:10,fontFamily:"'Nunito Sans',sans-serif"}}>{s.l}</p>
-            <p style={{fontSize:11,color:MUT,marginTop:5,fontFamily:"'Nunito Sans',sans-serif"}}>{s.s}</p>
-          </div>
-        ))}
-      </div>
-
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:2,marginTop:2}}>
-        <div className="card" style={{padding:24}}>
-          <div className="section-head">
-            <span>Reported cases by county · top 12</span>
-            <span style={{color:A}}>Indicative</span>
-          </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={TOP} layout="vertical" margin={{left:8,right:20,top:0,bottom:0}}>
-              <XAxis type="number" tick={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fill:MUT}} tickLine={false} axisLine={{stroke:BD}}/>
-              <YAxis type="category" dataKey="name" width={76} tick={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fill:TXT}} tickLine={false} axisLine={false}/>
-              <Tooltip content={<ChartTip/>}/>
-              <Bar dataKey="cases" name="Reported cases" fill={A} radius={0}/>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="card" style={{padding:24}}>
-          <div className="section-head">
-            <span>Incident trend vs online misogyny index · 2023–2024</span>
-          </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={TREND} margin={{left:0,right:12,top:10,bottom:0}}>
-              <defs>
-                <linearGradient id="gF" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor={A}  stopOpacity={0.35}/><stop offset="95%" stopColor={A}  stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="gN" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor={A2} stopOpacity={0.25}/><stop offset="95%" stopColor={A2} stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="m" interval={3} tick={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fill:MUT}} tickLine={false} axisLine={{stroke:BD}}/>
-              <YAxis tick={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fill:MUT}} tickLine={false} axisLine={false}/>
-              <Tooltip content={<ChartTip/>}/>
-              <ReferenceLine x="J'24" stroke={A} strokeDasharray="3 3"
-                label={{value:'#TotalShutdownKE',position:'insideTopLeft',fill:A,fontSize:10,fontFamily:"'Nunito Sans',sans-serif"}}/>
-              <Area type="monotone" dataKey="n" name="Misogyny index"    stroke={A2} strokeWidth={1.5} fill="url(#gN)" dot={false}/>
-              <Area type="monotone" dataKey="f" name="Reported incidents" stroke={A} strokeWidth={2}   fill="url(#gF)" dot={false}/>
-            </AreaChart>
-          </ResponsiveContainer>
-          <p style={{fontSize:11,color:MUT,marginTop:8,fontFamily:"'Nunito Sans',sans-serif"}}>Misogyny index = composite online narrative signal · indicative</p>
-        </div>
-      </div>
-
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:2,marginTop:2}}>
-        <div className="card" style={{padding:24}}>
-          <div className="section-head" style={{flexDirection:'column',alignItems:'flex-start',gap:8}}>
-            <span>All 47 counties · risk level</span>
-            <span style={{display:'flex',flexWrap:'wrap',gap:10}}>
-              {RISK.map((r,i)=>(
-                <span key={i} style={{display:'flex',alignItems:'center',gap:4}}>
-                  <span style={{width:8,height:8,background:r.bg,border:`1px solid ${BD}`,display:'inline-block'}}/>
-                  <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT}}>{r.label}</span>
-                </span>
-              ))}
-            </span>
-          </div>
-          <div style={{display:'flex',flexWrap:'wrap',gap:2}}>
-            {COUNTIES.map((c,i)=>{
-              const conf=RISK[c.r]
-              return <div key={i} className="county-tile" style={{background:conf.bg,color:conf.fg}} title={`${c.n}: ${c.c} reported cases`}>{c.n.substring(0,6)}</div>
-            })}
-          </div>
-          <p style={{fontSize:11,color:MUT,marginTop:12,fontFamily:"'Nunito Sans',sans-serif"}}>Hover for case count · full geographic map in v1.1</p>
-        </div>
-
-        <div className="card" style={{padding:24}}>
-          <div className="section-head">
-            <span>Recent incidents</span>
-            <span className="badge" style={{color:A,borderColor:BD,background:BG}}>Seeded · edit in data.js</span>
-          </div>
-          {INCIDENTS.map((inc,i)=>{
-            const s=SC[inc.status]||SC['open']
-            return(
-              <div key={i} className="incident-row">
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
-                  <div style={{flex:1}}>
-                    <div style={{fontWeight:600,fontSize:14,color:TXT}}>
-                      {inc.county} <span style={{color:MUT,fontWeight:400}}>· {inc.loc}</span>
-                    </div>
-                    <div style={{display:'flex',alignItems:'center',gap:8,marginTop:5}}>
-                      <span style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>{inc.date}</span>
-                      <span style={{fontSize:11,color:MUT}}>·</span>
-                      <a href={inc.url} target="_blank" rel="noopener noreferrer"
-                        style={{fontSize:11,color:A,fontFamily:"'Nunito Sans',sans-serif",fontWeight:600,display:'inline-flex',alignItems:'center',gap:3,textDecoration:'none'}}>
-                        {inc.src} <ExternalLink size={10}/>
-                      </a>
-                    </div>
-                  </div>
-                  <span className="badge" style={{background:s.bg,borderColor:s.bc,color:s.tc,whiteSpace:'nowrap',flexShrink:0}}>{inc.status}</span>
-                </div>
+        <div className="card" style={{padding:28}}>
+          {!sent ? (
+            <>
+              <div className="serif" style={{fontSize:20,fontWeight:700,color:TXT,marginBottom:6}}>
+                Sign in
               </div>
-            )
-          })}
-          <p style={{fontSize:11,color:MUT,marginTop:12,fontFamily:"'Nunito Sans',sans-serif"}}>Submit a verified incident via the Report tab</p>
-        </div>
-      </div>
-
-      <div className="card" style={{padding:24,marginTop:2}}>
-        <div className="section-head">
-          <span>Online narrative & misogyny intelligence</span>
-          <span style={{fontSize:11,color:MUT}}>Social listening integration pending</span>
-        </div>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:2,marginBottom:18}}>
-          {[
-            {v:'14,200+',l:'Manosphere content pieces',n:'Tracked Jan–Dec 2024',    c:A},
-            {v:'3,847',  l:'Online harassment reports', n:'Against women and girls', c:'#7A3020'},
-            {v:'912',    l:'Platform reports filed',    n:'Meta · TikTok · X',       c:'#6A4010'},
-            {v:'34%',    l:'Content acted on',          n:'Of all reports filed',    c:'#1A5A2A'},
-          ].map((m,i)=>(
-            <div key={i} style={{background:'#BC9EAE',border:`1px solid ${BD}`,padding:'18px 20px'}}>
-              <div className="serif" style={{fontSize:36,fontWeight:700,color:m.c,lineHeight:1}}>{m.v}</div>
-              <p style={{fontSize:13,color:TXT,marginTop:10,fontWeight:600,fontFamily:"'Nunito Sans',sans-serif"}}>{m.l}</p>
-              <p style={{fontSize:11,color:MUT,marginTop:5,fontFamily:"'Nunito Sans',sans-serif"}}>{m.n}</p>
+              <p style={{fontSize:12,color:MUT,fontFamily:"'Nunito Sans',sans-serif",marginBottom:20,lineHeight:1.6}}>
+                Enter your admin email. We'll send you a one-click magic link — no password needed.
+              </p>
+              <label style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif",letterSpacing:'.08em',textTransform:'uppercase',fontWeight:600,display:'block',marginBottom:6}}>
+                Admin email
+              </label>
+              <input
+                className="input"
+                type="email"
+                value={email}
+                onChange={e=>setEmail(e.target.value)}
+                onKeyDown={e=>e.key==='Enter'&&sendMagicLink()}
+                placeholder="cmt.kenya@gmail.com"
+                style={{marginBottom:12}}
+              />
+              {error && <p style={{fontSize:11,color:A,fontFamily:"'Nunito Sans',sans-serif",marginBottom:10}}>{error}</p>}
+              <button className="btn btn-primary" onClick={sendMagicLink} disabled={loading}
+                style={{width:'100%',justifyContent:'center',padding:'11px'}}>
+                <Mail size={14}/>
+                {loading ? 'Sending...' : 'Send magic link'}
+              </button>
+            </>
+          ) : (
+            <div style={{textAlign:'center', padding:'10px 0'}}>
+              <CheckCircle size={40} color="#1A6A2A" style={{margin:'0 auto 16px'}}/>
+              <div className="serif" style={{fontSize:18,fontWeight:700,color:TXT,marginBottom:8}}>
+                Check your email
+              </div>
+              <p style={{fontSize:13,color:MUT,fontFamily:"'Nunito Sans',sans-serif",lineHeight:1.7}}>
+                We sent a magic link to <strong>{email}</strong>. Click it to sign in — it expires in 1 hour.
+              </p>
+              <button onClick={()=>setSent(false)}
+                style={{marginTop:16,background:'none',border:'none',cursor:'pointer',
+                  color:A,fontSize:12,fontFamily:"'Nunito Sans',sans-serif",fontWeight:600}}>
+                Use a different email
+              </button>
             </div>
-          ))}
+          )}
         </div>
-        <div className="pullquote">
-          <p className="serif" style={{fontSize:16,fontStyle:'italic',color:TXT,lineHeight:1.9}}>
-            "When the manosphere grows, women die. The data makes this correlation undeniable. FemSaidia Kenya exists to force that reckoning — in policy, in platforms, and in public conscience."
-          </p>
-          <p style={{fontSize:11,color:MUT,marginTop:10,fontFamily:"'Nunito Sans',sans-serif"}}>FemSaidia Kenya research framework · 2026</p>
-        </div>
-      </div>
 
-      <div style={{paddingTop:18,marginTop:18,borderTop:`1px solid ${BD}`}}>
-        <p className="label" style={{marginBottom:8}}>Primary data sources</p>
-        <p style={{fontSize:11,color:MUT,lineHeight:2.2,fontFamily:"'Nunito Sans',sans-serif"}}>
-          Africa Data Hub · Odipodev · Africa Uncensored · NGEC Kenya · Usikimye ·
-          Nation / Standard / The Star / Citizen Digital · UNFPA Kenya ·
-          Kenya Police Service · Ministry of Health · GVRC · #TotalShutdownKE ·
-          Femicide Count Kenya · Crowdsourced submissions (verified before publication)
+        <p style={{fontSize:11,color:MUT,textAlign:'center',marginTop:16,fontFamily:"'Nunito Sans',sans-serif"}}>
+          FemSaidia Kenya Admin · Restricted access
         </p>
       </div>
     </div>
   )
 }
 
-function DataTab(){
-  const [activeCategory, setActiveCategory] = useState('All')
-  const [editMode, setEditMode] = useState(false)
-  const storageKey = 'femsaidia_documents'
+// ── SUBMISSIONS QUEUE ─────────────────────────────────────────────────────────
+function SubmissionsTab() {
+  const [submissions, setSubmissions] = useState([])
+  const [loading, setLoading]         = useState(true)
+  const [filter, setFilter]           = useState('pending')
+  const [editing, setEditing]         = useState(null)
+  const [editData, setEditData]       = useState({})
+  const [expanded, setExpanded]       = useState(null)
 
-  const loadDocs = () => {
-    try {
-      const saved = localStorage.getItem(storageKey)
-      return saved ? JSON.parse(saved) : DOCUMENTS.map(d=>({...d}))
-    } catch { return DOCUMENTS.map(d=>({...d})) }
+  const load = async () => {
+    setLoading(true)
+    const q = supabase.from('redflag_submissions').select('*').order('created_at', {ascending:false})
+    if (filter !== 'all') q.eq('status', filter)
+    const { data } = await q
+    setSubmissions(data || [])
+    setLoading(false)
   }
 
-  const [docs, setDocs] = useState(loadDocs)
+  useEffect(() => { load() }, [filter])
 
-  const updateField = (idx, field, value) => {
-    const updated = docs.map((d,i) => i===idx ? {...d, [field]: value} : d)
-    setDocs(updated)
-    try { localStorage.setItem(storageKey, JSON.stringify(updated)) } catch {}
+  const approve = async (s) => {
+    const platforms = s.platforms?.split(',').map(p=>p.trim()).filter(Boolean) || []
+    const { error } = await supabase.from('redflag_profiles').insert([{
+      tier: 'reported',
+      status: 'approved',
+      name: s.accused_name || null,
+      aliases: s.accused_aliases ? [s.accused_aliases] : [],
+      county: s.accused_county,
+      modus_operandi: s.modus_operandi,
+      platforms,
+      photo_url: s.photo_url || null,
+      social_link: s.social_link || null,
+      court_ref: s.court_ref || null,
+    }])
+    if (!error) {
+      await supabase.from('redflag_submissions')
+        .update({ status:'approved', processed_at: new Date().toISOString() })
+        .eq('id', s.id)
+      load()
+    }
   }
 
-  const resetDocs = () => {
-    const reset = DOCUMENTS.map(d=>({...d}))
-    setDocs(reset)
-    try { localStorage.removeItem(storageKey) } catch {}
+  const updateStatus = async (id, status) => {
+    await supabase.from('redflag_submissions')
+      .update({ status, processed_at: new Date().toISOString() })
+      .eq('id', id)
+    load()
   }
 
-  const allCategories = ['All', ...CATEGORIES]
-  const filtered = activeCategory === 'All'
-    ? docs.map((d,i)=>({...d,_idx:i}))
-    : docs.map((d,i)=>({...d,_idx:i})).filter(d => d.category === activeCategory)
-
-  const inputStyle = {
-    fontFamily:"'Nunito Sans',sans-serif",
-    fontSize:13,
-    color:TXT,
-    background:'#DDD0D0',
-    border:`1px solid ${A}`,
-    padding:'4px 8px',
-    width:'100%',
-    outline:'none',
-    marginBottom:4,
-  }
-  const urlInputStyle = {
-    ...inputStyle,
-    fontSize:11,
-    color:'#5A1030',
-    fontFamily:'monospace',
-    background:'#E8D8D8',
+  const saveEdit = async (id) => {
+    await supabase.from('redflag_submissions').update(editData).eq('id', id)
+    setEditing(null)
+    load()
   }
 
-  return(
-    <div className="fade-up" style={{width:'100%'}}>
-      <div style={{borderBottom:`1px solid ${BD}`,paddingBottom:20,marginBottom:24}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
-          <div>
-            <p className="label" style={{marginBottom:10}}>Evidence base</p>
-            <h1 className="serif" style={{fontSize:36,fontWeight:700,color:TXT}}>Reports, research & source documents</h1>
-            <p style={{fontSize:13,color:MUT,marginTop:8,fontFamily:"'Nunito Sans',sans-serif",fontWeight:300}}>
-              {docs.length} resources · {editMode ? 'Edit mode on — click any title or URL to update it.' : 'Admin can edit titles and links using the Edit button.'}
-            </p>
-          </div>
-          <div style={{display:'flex',gap:8,flexShrink:0,marginTop:4}}>
-            {editMode && (
-              <button onClick={resetDocs}
-                style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:600,
-                  padding:'8px 14px',border:`1px solid ${BD}`,background:CRD,
-                  color:MUT,cursor:'pointer',letterSpacing:'.04em'}}>
-                Reset to defaults
-              </button>
-            )}
-            <button onClick={()=>setEditMode(e=>!e)}
-              style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:600,
-                padding:'8px 16px',border:`1px solid ${editMode ? A : BD}`,
-                background: editMode ? A : CRD,
-                color: editMode ? '#F0D0D8' : MUT,
-                cursor:'pointer',letterSpacing:'.06em'}}>
-              {editMode ? '✓ Done editing' : '✎ Edit links'}
-            </button>
-          </div>
+  const STATUS_FILTERS = ['all','pending','approved','rejected','duplicate']
+
+  return (
+    <div className="fade-up">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20}}>
+        <div>
+          <p className="label" style={{marginBottom:6}}>Review queue</p>
+          <h2 className="serif" style={{fontSize:26,fontWeight:700,color:TXT}}>Submissions</h2>
         </div>
+        <button className="btn btn-ghost" onClick={load}>
+          <RefreshCw size={13}/> Refresh
+        </button>
       </div>
 
-      {/* Category filter */}
-      <div style={{display:'flex',gap:2,marginBottom:2,flexWrap:'wrap'}}>
-        {allCategories.map(cat=>(
-          <button key={cat}
-            onClick={()=>setActiveCategory(cat)}
+      {/* Filter tabs */}
+      <div style={{display:'flex',gap:2,marginBottom:16,flexWrap:'wrap'}}>
+        {STATUS_FILTERS.map(f=>(
+          <button key={f} onClick={()=>setFilter(f)}
             style={{
-              fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:600,
-              padding:'7px 14px',border:`1px solid ${activeCategory===cat ? A : BD}`,
-              background: activeCategory===cat ? A : CRD,
-              color: activeCategory===cat ? '#F0D0D8' : MUT,
-              cursor:'pointer',letterSpacing:'.04em',
-              display:'inline-flex',alignItems:'center',gap:5,
+              fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
+              padding:'6px 14px',border:`1px solid ${filter===f?A:BD}`,
+              background:filter===f?A:CRD,
+              color:filter===f?'#F0D0D8':MUT,
+              cursor:'pointer',letterSpacing:'.04em',textTransform:'capitalize',
             }}>
-            {CAT_ICON[cat]} {cat}
-            <span style={{opacity:.6,fontSize:10}}>
-              ({cat==='All' ? docs.length : docs.filter(d=>d.category===cat).length})
-            </span>
+            {f}
           </button>
         ))}
       </div>
 
-      <div className="card" style={{padding:0,overflow:'hidden'}}>
-        {filtered.map((d,i)=>{
-          const cc = CAT_COLOR[d.category] || {bg:CRD,tc:MUT}
-          const idx = d._idx
-          return(
-            <div key={idx} style={{
-              display:'flex',justifyContent:'space-between',alignItems: editMode ? 'flex-start' : 'center',
-              padding:'16px 24px',
-              borderBottom:i<filtered.length-1?`1px solid ${BD}`:'none',
-              gap:16,
-              background: d.featured ? '#BC9EAE' : 'transparent',
-            }}>
-              <div style={{flex:1}}>
-                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
-                  {d.featured&&(
-                    <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:'#fff',background:A,padding:'2px 8px',letterSpacing:'.08em',fontWeight:600}}>
-                      Primary dataset
-                    </span>
-                  )}
-                  <span style={{
-                    fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:600,
-                    padding:'2px 8px',background:cc.bg,color:cc.tc,
-                    display:'inline-flex',alignItems:'center',gap:4,letterSpacing:'.04em',
-                  }}>
-                    {CAT_ICON[d.category]} {d.category}
-                  </span>
-                  <span style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>{d.y}</span>
+      {loading ? (
+        <p style={{color:MUT,fontSize:12}}>Loading...</p>
+      ) : submissions.length === 0 ? (
+        <div style={{textAlign:'center',padding:40,background:CRD,border:`1px solid ${BD}`}}>
+          <CheckCircle size={28} color="#1A6A2A" style={{margin:'0 auto 10px'}}/>
+          <p style={{fontSize:13,color:MUT}}>No {filter} submissions</p>
+        </div>
+      ) : (
+        <div>
+          {submissions.map((s,i)=>(
+            <div key={s.id} style={{background:CRD,border:`1px solid ${BD}`,marginBottom:2,overflow:'hidden'}}>
+
+              {/* Row header */}
+              <div style={{padding:'14px 18px',display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,cursor:'pointer'}}
+                onClick={()=>setExpanded(expanded===s.id?null:s.id)}>
+                <div style={{flex:1}}>
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+                    <span className={`badge status-${s.status}`}>{s.status}</span>
+                    <span style={{fontSize:13,fontWeight:700,color:TXT}}>{s.accused_name||'No name'}</span>
+                    <span style={{fontSize:12,color:MUT}}>· {s.accused_county}</span>
+                  </div>
+                  <p style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>
+                    {new Date(s.created_at).toLocaleDateString('en-KE')} ·
+                    {s.submitter_email} · {s.platforms||'No platforms'}
+                  </p>
                 </div>
-                {editMode ? (
-                  <>
-                    <input
-                      value={d.t}
-                      onChange={e=>updateField(idx,'t',e.target.value)}
-                      style={inputStyle}
-                      placeholder="Document title"
-                    />
-                    <input
-                      value={d.url}
-                      onChange={e=>updateField(idx,'url',e.target.value)}
-                      style={urlInputStyle}
-                      placeholder="https://..."
-                    />
-                  </>
-                ) : (
-                  <div style={{fontWeight:600,fontSize:d.featured?15:14,color:TXT,lineHeight:1.5}}>{d.t}</div>
-                )}
+                <div style={{display:'flex',gap:6,flexShrink:0}}>
+                  {s.status==='pending' && <>
+                    <button className="btn btn-success" style={{padding:'6px 12px',fontSize:11}}
+                      onClick={e=>{e.stopPropagation();approve(s)}}>
+                      <CheckCircle size={12}/> Approve
+                    </button>
+                    <button className="btn btn-warning" style={{padding:'6px 12px',fontSize:11}}
+                      onClick={e=>{e.stopPropagation();updateStatus(s.id,'duplicate')}}>
+                      Duplicate
+                    </button>
+                    <button className="btn btn-danger" style={{padding:'6px 12px',fontSize:11}}
+                      onClick={e=>{e.stopPropagation();updateStatus(s.id,'rejected')}}>
+                      <XCircle size={12}/> Reject
+                    </button>
+                  </>}
+                  <button className="btn btn-ghost" style={{padding:'6px 10px',fontSize:11}}
+                    onClick={e=>{e.stopPropagation();setEditing(s.id);setEditData({...s})}}>
+                    <Edit2 size={12}/>
+                  </button>
+                </div>
               </div>
-              <div style={{display:'flex',gap:8,flexShrink:0}}>
-                <a href={d.url} target="_blank" rel="noopener noreferrer"
-                  style={{
-                    color:A,display:'inline-flex',alignItems:'center',gap:4,
-                    fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:600,
-                    padding:'7px 14px',border:`1px solid ${A}`,textDecoration:'none',
-                    opacity: d.url ? 1 : 0.4,
-                    pointerEvents: d.url ? 'auto' : 'none',
-                  }}>
-                  {d.category==='Video' ? 'Watch' : 'View'} <ExternalLink size={11}/>
-                </a>
-                {d.pdf&&(
-                  <a href={d.url} target="_blank" rel="noopener noreferrer" download
-                    style={{
-                      color:MUT,display:'inline-flex',alignItems:'center',gap:4,
-                      fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:600,
-                      padding:'7px 12px',border:`1px solid ${BD}`,textDecoration:'none',
-                    }}>
-                    <Download size={12}/> PDF
-                  </a>
-                )}
-              </div>
+
+              {/* Expanded detail */}
+              {expanded===s.id && (
+                <div style={{padding:'0 18px 18px',borderTop:`1px solid ${BD}`}}>
+                  {editing===s.id ? (
+                    // Edit mode
+                    <div style={{paddingTop:14}}>
+                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+                        {[
+                          {l:'Name / alias',    k:'accused_name'},
+                          {l:'Other aliases',   k:'accused_aliases'},
+                          {l:'Platforms',       k:'platforms'},
+                          {l:'Court reference', k:'court_ref'},
+                          {l:'Social link',     k:'social_link'},
+                          {l:'Admin notes',     k:'admin_notes'},
+                        ].map(({l,k})=>(
+                          <div key={k}>
+                            <p style={{fontSize:10,color:MUT,fontFamily:"'Nunito Sans',sans-serif",letterSpacing:'.08em',textTransform:'uppercase',marginBottom:4}}>{l}</p>
+                            <input className="input" value={editData[k]||''} onChange={e=>setEditData(d=>({...d,[k]:e.target.value}))}/>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{marginBottom:10}}>
+                        <p style={{fontSize:10,color:MUT,fontFamily:"'Nunito Sans',sans-serif",letterSpacing:'.08em',textTransform:'uppercase',marginBottom:4}}>Mode of operation</p>
+                        <textarea className="input" style={{minHeight:80,resize:'vertical'}}
+                          value={editData.modus_operandi||''} onChange={e=>setEditData(d=>({...d,modus_operandi:e.target.value}))}/>
+                      </div>
+                      <div style={{display:'flex',gap:8}}>
+                        <button className="btn btn-primary" onClick={()=>saveEdit(s.id)}>
+                          <Save size={13}/> Save changes
+                        </button>
+                        <button className="btn btn-ghost" onClick={()=>setEditing(null)}>
+                          <X size={13}/> Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    // View mode
+                    <div style={{paddingTop:14,display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
+                      <div>
+                        <p style={{fontSize:10,color:MUT,fontFamily:"'Nunito Sans',sans-serif",letterSpacing:'.08em',textTransform:'uppercase',marginBottom:4}}>Mode of operation</p>
+                        <p style={{fontSize:13,color:TXT,lineHeight:1.7}}>{s.modus_operandi}</p>
+                      </div>
+                      <div>
+                        <p style={{fontSize:10,color:MUT,fontFamily:"'Nunito Sans',sans-serif",letterSpacing:'.08em',textTransform:'uppercase',marginBottom:4}}>Submitter (confidential)</p>
+                        <p style={{fontSize:13,color:TXT}}>{s.submitter_name||'Anonymous'}</p>
+                        <p style={{fontSize:12,color:MUT}}>{s.submitter_email} · {s.submitter_phone}</p>
+                        {s.additional_info && <p style={{fontSize:12,color:TXT,marginTop:6}}>{s.additional_info}</p>}
+                      </div>
+                      {s.photo_url && (
+                        <div>
+                          <p style={{fontSize:10,color:MUT,fontFamily:"'Nunito Sans',sans-serif",letterSpacing:'.08em',textTransform:'uppercase',marginBottom:4}}>Photo</p>
+                          <img src={s.photo_url} alt="Submitted" style={{maxHeight:120,maxWidth:200,objectFit:'cover',display:'block'}}/>
+                        </div>
+                      )}
+                      {s.social_link && (
+                        <div>
+                          <p style={{fontSize:10,color:MUT,fontFamily:"'Nunito Sans',sans-serif",letterSpacing:'.08em',textTransform:'uppercase',marginBottom:4}}>Social link</p>
+                          <a href={s.social_link} target="_blank" rel="noopener noreferrer"
+                            style={{fontSize:12,color:A,wordBreak:'break-all'}}>{s.social_link}</a>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          )
-        })}
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── PROFILES MANAGER ──────────────────────────────────────────────────────────
+function ProfilesTab() {
+  const [profiles, setProfiles] = useState([])
+  const [loading, setLoading]   = useState(true)
+  const [editing, setEditing]   = useState(null)
+  const [editData, setEditData] = useState({})
+  const [filter, setFilter]     = useState('all')
+
+  const load = async () => {
+    setLoading(true)
+    const q = supabase.from('redflag_profiles').select('*').order('created_at',{ascending:false})
+    if (filter !== 'all') q.eq('tier', filter)
+    const { data } = await q
+    setProfiles(data || [])
+    setLoading(false)
+  }
+
+  useEffect(() => { load() }, [filter])
+
+  const saveEdit = async (id) => {
+    const platforms = typeof editData.platforms === 'string'
+      ? editData.platforms.split(',').map(p=>p.trim())
+      : editData.platforms
+    await supabase.from('redflag_profiles').update({...editData, platforms, updated_at: new Date().toISOString()}).eq('id', id)
+    setEditing(null)
+    load()
+  }
+
+  const promote = async (id, currentTier) => {
+    const next = currentTier==='reported' ? 'corroborated' : 'convicted'
+    await supabase.from('redflag_profiles').update({
+      tier: next,
+      promoted_from: currentTier,
+      updated_at: new Date().toISOString()
+    }).eq('id', id)
+    load()
+  }
+
+  const remove = async (id) => {
+    if (!confirm('Remove this profile from public view?')) return
+    await supabase.from('redflag_profiles').update({status:'removed'}).eq('id',id)
+    load()
+  }
+
+  return (
+    <div className="fade-up">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20}}>
+        <div>
+          <p className="label" style={{marginBottom:6}}>Published profiles</p>
+          <h2 className="serif" style={{fontSize:26,fontWeight:700,color:TXT}}>Profile manager</h2>
+        </div>
+        <button className="btn btn-ghost" onClick={load}><RefreshCw size={13}/> Refresh</button>
+      </div>
+
+      {/* Tier filter */}
+      <div style={{display:'flex',gap:2,marginBottom:16}}>
+        {['all','reported','corroborated','convicted'].map(f=>(
+          <button key={f} onClick={()=>setFilter(f)}
+            style={{
+              fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
+              padding:'6px 14px',border:`1px solid ${filter===f?A:BD}`,
+              background:filter===f?A:CRD,
+              color:filter===f?'#F0D0D8':MUT,
+              cursor:'pointer',letterSpacing:'.04em',textTransform:'capitalize',
+            }}>
+            {f}
+          </button>
+        ))}
+      </div>
+
+      {loading ? <p style={{color:MUT,fontSize:12}}>Loading...</p> : (
+        <table className="tbl">
+          <thead>
+            <tr>
+              <th>Name / Alias</th>
+              <th>County</th>
+              <th>Tier</th>
+              <th>Platforms</th>
+              <th>Added</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {profiles.map(p=>(
+              <>
+                <tr key={p.id}>
+                  <td style={{fontWeight:700}}>{p.name || <em style={{color:MUT}}>Withheld</em>}</td>
+                  <td>{p.county}</td>
+                  <td><span className={`badge ${TIER_CONFIG[p.tier]?.cls}`}>{TIER_CONFIG[p.tier]?.label}</span></td>
+                  <td style={{fontSize:11,color:MUT}}>{p.platforms?.join(', ')||'—'}</td>
+                  <td style={{fontSize:11,color:MUT}}>{new Date(p.created_at).toLocaleDateString('en-KE')}</td>
+                  <td>
+                    <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
+                      <button className="btn btn-ghost" style={{padding:'4px 8px',fontSize:11}}
+                        onClick={()=>{setEditing(p.id);setEditData({...p,platforms:p.platforms?.join(', ')||''})}}>
+                        <Edit2 size={11}/> Edit
+                      </button>
+                      {p.tier !== 'convicted' && (
+                        <button className="btn btn-warning" style={{padding:'4px 8px',fontSize:11}}
+                          onClick={()=>promote(p.id,p.tier)}>
+                          <ChevronUp size={11}/> Promote
+                        </button>
+                      )}
+                      <button className="btn btn-danger" style={{padding:'4px 8px',fontSize:11}}
+                        onClick={()=>remove(p.id)}>
+                        <Trash2 size={11}/> Remove
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                {editing===p.id && (
+                  <tr key={`edit-${p.id}`}>
+                    <td colSpan={6} style={{background:'#D4BCBC',padding:18}}>
+                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginBottom:10}}>
+                        {[
+                          {l:'Name',           k:'name'},
+                          {l:'Aliases (comma separated)', k:'aliases'},
+                          {l:'County',         k:'county'},
+                          {l:'Platforms (comma separated)', k:'platforms'},
+                          {l:'Court reference',k:'court_ref'},
+                          {l:'Social link',    k:'social_link'},
+                        ].map(({l,k})=>(
+                          <div key={k}>
+                            <p style={{fontSize:10,color:MUT,fontFamily:"'Nunito Sans',sans-serif",letterSpacing:'.08em',textTransform:'uppercase',marginBottom:4}}>{l}</p>
+                            {k==='county' ? (
+                              <select className="input" value={editData[k]||''} onChange={e=>setEditData(d=>({...d,[k]:e.target.value}))}>
+                                {COUNTIES.map(c=><option key={c} value={c}>{c}</option>)}
+                              </select>
+                            ) : (
+                              <input className="input" value={editData[k]||''} onChange={e=>setEditData(d=>({...d,[k]:e.target.value}))}/>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{marginBottom:10}}>
+                        <p style={{fontSize:10,color:MUT,fontFamily:"'Nunito Sans',sans-serif",letterSpacing:'.08em',textTransform:'uppercase',marginBottom:4}}>Mode of operation</p>
+                        <textarea className="input" style={{minHeight:80,resize:'vertical'}}
+                          value={editData.modus_operandi||''} onChange={e=>setEditData(d=>({...d,modus_operandi:e.target.value}))}/>
+                      </div>
+                      <div style={{display:'flex',gap:8}}>
+                        <button className="btn btn-primary" onClick={()=>saveEdit(p.id)}><Save size={13}/> Save</button>
+                        <button className="btn btn-ghost" onClick={()=>setEditing(null)}><X size={13}/> Cancel</button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  )
+}
+
+// ── ANALYTICS ─────────────────────────────────────────────────────────────────
+function AnalyticsTab() {
+  const [stats, setStats] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      const [subs, profiles] = await Promise.all([
+        supabase.from('redflag_submissions').select('status, accused_county, created_at'),
+        supabase.from('redflag_profiles').select('tier, county, status, created_at'),
+      ])
+
+      const submissions = subs.data || []
+      const profs = profiles.data || []
+
+      // County breakdown
+      const countyMap = {}
+      submissions.forEach(s => {
+        countyMap[s.accused_county] = (countyMap[s.accused_county]||0) + 1
+      })
+      const topCounties = Object.entries(countyMap)
+        .sort((a,b)=>b[1]-a[1]).slice(0,8)
+
+      // Monthly submissions
+      const monthMap = {}
+      submissions.forEach(s => {
+        const m = new Date(s.created_at).toLocaleDateString('en-KE',{month:'short',year:'numeric'})
+        monthMap[m] = (monthMap[m]||0) + 1
+      })
+
+      setStats({
+        totalSubmissions: submissions.length,
+        pending:    submissions.filter(s=>s.status==='pending').length,
+        approved:   submissions.filter(s=>s.status==='approved').length,
+        rejected:   submissions.filter(s=>s.status==='rejected').length,
+        totalProfiles: profs.filter(p=>p.status==='approved').length,
+        reported:   profs.filter(p=>p.tier==='reported').length,
+        corroborated: profs.filter(p=>p.tier==='corroborated').length,
+        convicted:  profs.filter(p=>p.tier==='convicted').length,
+        topCounties,
+      })
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  if (loading) return <p style={{color:MUT,fontSize:12}}>Loading analytics...</p>
+
+  return (
+    <div className="fade-up">
+      <div style={{marginBottom:20}}>
+        <p className="label" style={{marginBottom:6}}>Platform overview</p>
+        <h2 className="serif" style={{fontSize:26,fontWeight:700,color:TXT}}>Analytics</h2>
+      </div>
+
+      {/* Summary stats */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:2,marginBottom:16}}>
+        {[
+          {v:stats.totalSubmissions, l:'Total submissions',  c:A},
+          {v:stats.pending,          l:'Pending review',     c:'#8A5010'},
+          {v:stats.totalProfiles,    l:'Published profiles', c:'#1A6A2A'},
+          {v:stats.convicted,        l:'Convicted profiles', c:'#1A4810'},
+        ].map((s,i)=>(
+          <div key={i} style={{background:CRD,border:`1px solid ${BD}`,padding:'20px 22px',
+            borderLeft:`4px solid ${s.c}`}}>
+            <div className="serif" style={{fontSize:36,fontWeight:700,color:s.c,lineHeight:1}}>{s.v}</div>
+            <p style={{fontSize:12,color:TXT,fontWeight:600,marginTop:8,fontFamily:"'Nunito Sans',sans-serif"}}>{s.l}</p>
+          </div>
+        ))}
+      </div>
+
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+        {/* Tier breakdown */}
+        <div className="card" style={{padding:20}}>
+          <div className="section-head"><span>Profiles by tier</span></div>
+          {[
+            {l:'Reported',     v:stats.reported,     c:'#B07060'},
+            {l:'Corroborated', v:stats.corroborated, c:'#A07040'},
+            {l:'Convicted',    v:stats.convicted,    c:'#60A050'},
+          ].map((t,i)=>(
+            <div key={i} style={{display:'flex',alignItems:'center',gap:12,marginBottom:12}}>
+              <div style={{width:90,fontSize:12,fontWeight:700,color:TXT}}>{t.l}</div>
+              <div style={{flex:1,height:20,background:'#D4BCBC',position:'relative'}}>
+                <div style={{
+                  height:'100%',background:t.c,
+                  width:`${stats.totalProfiles>0?(t.v/stats.totalProfiles)*100:0}%`,
+                  transition:'width .4s',
+                }}/>
+              </div>
+              <div style={{width:24,fontSize:13,fontWeight:700,color:t.c,textAlign:'right'}}>{t.v}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Top counties */}
+        <div className="card" style={{padding:20}}>
+          <div className="section-head"><span>Top counties by submissions</span></div>
+          {stats.topCounties.map(([county,count],i)=>(
+            <div key={i} style={{display:'flex',alignItems:'center',gap:12,marginBottom:10}}>
+              <div style={{width:90,fontSize:12,fontWeight:700,color:TXT,flexShrink:0}}>{county}</div>
+              <div style={{flex:1,height:18,background:'#D4BCBC',position:'relative'}}>
+                <div style={{
+                  height:'100%',background:A,
+                  width:`${stats.topCounties[0]?( count/stats.topCounties[0][1])*100:0}%`,
+                  transition:'width .4s',
+                }}/>
+              </div>
+              <div style={{width:24,fontSize:12,fontWeight:700,color:A,textAlign:'right'}}>{count}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Submission status */}
+        <div className="card" style={{padding:20}}>
+          <div className="section-head"><span>Submissions by status</span></div>
+          {[
+            {l:'Pending',   v:stats.pending,   c:'#8A5010'},
+            {l:'Approved',  v:stats.approved,  c:'#1A6A2A'},
+            {l:'Rejected',  v:stats.rejected,  c:A},
+          ].map((s,i)=>(
+            <div key={i} style={{display:'flex',alignItems:'center',gap:12,marginBottom:12}}>
+              <div style={{width:70,fontSize:12,fontWeight:700,color:TXT}}>{s.l}</div>
+              <div style={{flex:1,height:18,background:'#D4BCBC'}}>
+                <div style={{
+                  height:'100%',background:s.c,
+                  width:`${stats.totalSubmissions>0?(s.v/stats.totalSubmissions)*100:0}%`,
+                }}/>
+              </div>
+              <div style={{width:24,fontSize:12,fontWeight:700,color:s.c,textAlign:'right'}}>{s.v}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )
 }
 
-function ResourcesTab(){
-  const [editMode, setEditMode] = useState(false)
-  const storageKey = 'femsaidia_resources'
+// ── MAIN APP ──────────────────────────────────────────────────────────────────
+// ── ACCESS CODES ─────────────────────────────────────────────────────────────
+function AccessCodesTab() {
+  const [codes, setCodes]   = useState([])
+  const [loading, setLoading] = useState(true)
+  const [form, setForm]     = useState({ code:'', label:'', expires_at:'', uses_limit:'' })
+  const [adding, setAdding] = useState(false)
 
-  const loadRes = () => {
-    try {
-      const saved = localStorage.getItem(storageKey)
-      return saved ? JSON.parse(saved) : RESOURCES.map(r=>({...r}))
-    } catch { return RESOURCES.map(r=>({...r})) }
+  const load = async () => {
+    setLoading(true)
+    const { data } = await supabase.from('invite_codes').select('*').order('created_at', { ascending:false })
+    setCodes(data || [])
+    setLoading(false)
   }
 
-  const [res, setRes] = useState(loadRes)
+  useEffect(() => { load() }, [])
 
-  const updateField = (idx, field, value) => {
-    const updated = res.map((r,i) => i===idx ? {...r, [field]: value} : r)
-    setRes(updated)
-    try { localStorage.setItem(storageKey, JSON.stringify(updated)) } catch {}
+  const generate = () => {
+    const words = ['savher','justice','femke','saidia','ngec','shield','voice','arise']
+    const word  = words[Math.floor(Math.random()*words.length)]
+    const num   = Math.floor(1000+Math.random()*9000)
+    setForm(f => ({ ...f, code:`${word}-${num}` }))
   }
 
-  const resetRes = () => {
-    const reset = RESOURCES.map(r=>({...r}))
-    setRes(reset)
-    try { localStorage.removeItem(storageKey) } catch {}
+  const add = async () => {
+    if (!form.code || !form.label) return
+    setAdding(true)
+    await supabase.from('invite_codes').insert([{
+      code:       form.code.trim().toLowerCase(),
+      label:      form.label.trim(),
+      active:     true,
+      expires_at: form.expires_at || null,
+      uses_limit: form.uses_limit ? parseInt(form.uses_limit) : null,
+    }])
+    setForm({ code:'', label:'', expires_at:'', uses_limit:'' })
+    setAdding(false)
+    load()
   }
 
-  const urgent  = res.map((r,i)=>({...r,_idx:i})).filter(r=>r.urgent)
-  const support = res.map((r,i)=>({...r,_idx:i})).filter(r=>!r.urgent)
-
-  const inputStyle = {
-    fontFamily:"'Nunito Sans',sans-serif",
-    fontSize:13,color:TXT,
-    background:'#DDD0D0',
-    border:`1px solid ${A}`,
-    padding:'4px 8px',width:'100%',
-    outline:'none',marginBottom:4,
-  }
-  const urlInputStyle = {
-    ...inputStyle,fontSize:11,
-    color:'#5A1030',fontFamily:'monospace',
-    background:'#E8D8D8',
-  }
-  const phoneInputStyle = {
-    ...inputStyle,fontSize:12,
-    fontFamily:"'Lora',serif",fontWeight:600,
-    color:A,
+  const toggle = async (id, active) => {
+    await supabase.from('invite_codes').update({ active: !active }).eq('id', id)
+    load()
   }
 
-  const ResRow = ({r, size='large'}) => {
-    const idx = r._idx
-    return editMode ? (
-      <div style={{padding: size==='large' ? '16px 0' : '12px 0', borderBottom:`1px solid ${BD}`}}>
-        <input value={r.n} onChange={e=>updateField(idx,'n',e.target.value)} style={inputStyle} placeholder="Organisation name"/>
-        <input value={r.t} onChange={e=>updateField(idx,'t',e.target.value)} style={{...inputStyle,fontSize:11,color:MUT}} placeholder="Type / description"/>
-        <input value={r.p} onChange={e=>updateField(idx,'p',e.target.value)} style={phoneInputStyle} placeholder="Phone number"/>
-        <input value={r.url||''} onChange={e=>updateField(idx,'url',e.target.value)} style={urlInputStyle} placeholder="https://..."/>
-      </div>
-    ) : (
-      <div style={{padding: size==='large' ? '16px 0' : '12px 0', borderBottom:`1px solid ${BD}`, display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+  const remove = async (id) => {
+    if (!confirm('Delete this code?')) return
+    await supabase.from('invite_codes').delete().eq('id', id)
+    load()
+  }
+
+  const copy = (code) => {
+    navigator.clipboard.writeText(code)
+  }
+
+  const inputSt = {
+    fontFamily:"'Nunito Sans',sans-serif", fontSize:13, color:TXT,
+    background:'#EAD8D8', border:`1px solid ${BD}`, padding:'8px 12px',
+    outline:'none', flex:1,
+  }
+
+  return (
+    <div className="fade-up">
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:20 }}>
         <div>
-          <a href={r.url} target="_blank" rel="noopener noreferrer" style={{textDecoration:'none'}}>
-            <div style={{fontWeight:600,fontSize: size==='large' ? 14 : 13,color:A,fontFamily:"'Nunito Sans',sans-serif",display:'inline-flex',alignItems:'center',gap:5}}>
-              {r.n} {r.url && <ExternalLink size={11}/>}
-            </div>
-          </a>
-          <p className="label" style={{margin:'5px 0'}}>{r.t}</p>
-          {size==='large' && <p className="serif" style={{fontSize:22,color:A,fontWeight:700}}>{r.p}</p>}
-          {size==='small' && <p style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>{r.p}</p>}
+          <p className="label" style={{ marginBottom:6 }}>Preview access management</p>
+          <h2 className="serif" style={{ fontSize:26, fontWeight:700, color:TXT }}>Access codes</h2>
+          <p style={{ fontSize:12, color:MUT, marginTop:6, fontFamily:"'Nunito Sans',sans-serif", maxWidth:500 }}>
+            Create and manage invite codes for femsaidiakenya.org. Share a code with each reviewer — they enter it on the invite gate to access the platform.
+          </p>
         </div>
+        <button className="btn btn-ghost" onClick={load}><RefreshCw size={13}/> Refresh</button>
       </div>
-    )
-  }
 
-  return(
-    <div className="fade-up" style={{width:'100%'}}>
-      <div style={{borderBottom:`1px solid ${BD}`,paddingBottom:20,marginBottom:24}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
-          <div>
-            <p className="label" style={{marginBottom:10,color:A}}>If you are in danger, call now</p>
-            <h1 className="serif" style={{fontSize:36,fontWeight:700,color:TXT}}>Help is available. You are not alone.</h1>
-            <p style={{fontSize:13,color:MUT,marginTop:8,fontFamily:"'Nunito Sans',sans-serif",fontWeight:300}}>
-              {res.length} organisations · {editMode ? 'Edit mode on — update names, numbers and links directly.' : 'Admin can update contacts using the Edit button.'}
-            </p>
+      {/* Add new code */}
+      <div className="card" style={{ padding:20, marginBottom:16 }}>
+        <div className="section-head"><span>Create new code</span></div>
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'flex-end' }}>
+          <div style={{ flex:1, minWidth:200 }}>
+            <p style={{ fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase', marginBottom:4 }}>Code</p>
+            <div style={{ display:'flex', gap:6 }}>
+              <input style={inputSt} value={form.code} onChange={e=>setForm(f=>({...f,code:e.target.value}))} placeholder="e.g. ngec-2026"/>
+              <button className="btn btn-ghost" style={{ padding:'8px 12px', fontSize:11, whiteSpace:'nowrap' }} onClick={generate}>Generate</button>
+            </div>
           </div>
-          <div style={{display:'flex',gap:8,flexShrink:0,marginTop:4}}>
-            {editMode && (
-              <button onClick={resetRes}
-                style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:600,
-                  padding:'8px 14px',border:`1px solid ${BD}`,background:CRD,
-                  color:MUT,cursor:'pointer',letterSpacing:'.04em'}}>
-                Reset to defaults
-              </button>
-            )}
-            <button onClick={()=>setEditMode(e=>!e)}
-              style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:600,
-                padding:'8px 16px',border:`1px solid ${editMode ? A : BD}`,
-                background: editMode ? A : CRD,
-                color: editMode ? '#F0D0D8' : MUT,
-                cursor:'pointer',letterSpacing:'.06em'}}>
-              {editMode ? '✓ Done editing' : '✎ Edit contacts'}
-            </button>
+          <div style={{ flex:1, minWidth:160 }}>
+            <p style={{ fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase', marginBottom:4 }}>Label (who is this for)</p>
+            <input style={{...inputSt, width:'100%'}} value={form.label} onChange={e=>setForm(f=>({...f,label:e.target.value}))} placeholder="e.g. NGEC Kenya"/>
           </div>
+          <div style={{ minWidth:140 }}>
+            <p style={{ fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase', marginBottom:4 }}>Expires (optional)</p>
+            <input style={{...inputSt, width:'100%'}} type="date" value={form.expires_at} onChange={e=>setForm(f=>({...f,expires_at:e.target.value}))}/>
+          </div>
+          <div style={{ minWidth:100 }}>
+            <p style={{ fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase', marginBottom:4 }}>Max uses</p>
+            <input style={{...inputSt, width:'100%'}} type="number" value={form.uses_limit} onChange={e=>setForm(f=>({...f,uses_limit:e.target.value}))} placeholder="∞"/>
+          </div>
+          <button className="btn btn-primary" onClick={add} disabled={adding || !form.code || !form.label} style={{ whiteSpace:'nowrap' }}>
+            {adding ? 'Adding...' : '+ Add code'}
+          </button>
         </div>
       </div>
 
-      <div style={{background:'#BC9EAE',border:`1px solid ${BD}`,padding:'20px 26px',marginBottom:2,display:'flex',alignItems:'center',gap:18}}>
-        <AlertTriangle size={24} color={A}/>
-        <div>
-          <div style={{fontWeight:600,fontSize:16,color:TXT,fontFamily:"'Nunito Sans',sans-serif"}}>Emergency? Call 999 or 112 immediately.</div>
-          <p style={{fontSize:12,color:MUT,marginTop:4,fontFamily:"'Nunito Sans',sans-serif"}}>DCI Gender Desk: 0800 722 203 · Available 24 hours</p>
-        </div>
-      </div>
-
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:2,marginTop:2}}>
-        <div className="card" style={{padding:24}}>
-          <div className="section-head"><span>Emergency lines</span><span style={{color:A}}>24/7</span></div>
-          {urgent.map((r,i)=><ResRow key={i} r={r} size="large"/>)}
-        </div>
-        <div className="card" style={{padding:24}}>
-          <div className="section-head"><span>CSO, legal & data support</span></div>
-          {support.map((r,i)=><ResRow key={i} r={r} size="small"/>)}
-        </div>
-      </div>
-
-      {/* ── SAFETY GUIDES ── */}
-      <div style={{marginTop:2}}>
-
-        {/* Section header */}
-        <div style={{borderTop:`1px solid ${BD}`,paddingTop:24,marginTop:2,marginBottom:2}}>
-          <p className="label" style={{marginBottom:8}}>Safety guides & referral pathways</p>
-          <h2 className="serif" style={{fontSize:28,fontWeight:700,color:TXT,lineHeight:1.3}}>
-            Know your rights. Know what to do.<br/>
-            <em style={{color:A,fontWeight:400}}>Step by step.</em>
-          </h2>
-        </div>
-
-        {/* Guide cards grid */}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:2,marginBottom:2}}>
-
-          {/* How to Report */}
-          <div style={{background:'#B89AAA',border:'1px solid #A07888',padding:24}}>
-            <div style={{marginBottom:16}}>
-              <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,letterSpacing:'.12em',color:'#8A1030',textTransform:'uppercase',fontWeight:700,marginBottom:6}}>Referral pathway · Step by step</p>
-              <div style={{fontFamily:"'Lora',serif",fontSize:18,fontWeight:700,color:'#180410',borderBottom:'2px solid #8A1030',paddingBottom:10}}>How to report an incident</div>
-            </div>
-            {[
-              {n:'1', title:'Ensure immediate safety first', body:'If in danger, leave the location. Go to a neighbour, public place, or call 999/112. Do not confront the perpetrator alone.'},
-              {n:'2', title:'Go to the nearest police station', body:'Report at the Gender Desk. You have the right to be attended to immediately. If turned away, ask for the OCS (Officer in Charge of Station).'},
-              {n:'3', title:'Obtain and fill a P3 Form', body:'The P3 is a police medical form required to document injuries. Request it at the station — it is free of charge. Take it to a government hospital for examination.'},
-              {n:'4', title:'Visit a government hospital', body:'A medical officer fills the P3 form documenting injuries. This is critical evidence in court. Go within 72 hours of the incident — the sooner the better.'},
-              {n:'5', title:'File an official statement', body:'Return the completed P3 to the police. Ensure you receive a copy of your OB (Occurrence Book) number. This is your case reference — keep it safe.'},
-              {n:'6', title:'Follow up regularly', body:'Cases stall when survivors stop following up. Visit the station every 2 weeks. Note the name and badge number of your investigating officer.'},
-            ].map((s,i)=>(
-              <div key={i} style={{display:'flex',gap:14,paddingBottom:14,marginBottom:14,borderBottom:i<5?`1px solid ${BD}`:'none'}}>
-                <div style={{
-                  width:28,height:28,borderRadius:'50%',
-                  background:A,color:'#F0D0D8',
-                  display:'flex',alignItems:'center',justifyContent:'center',
-                  fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,
-                  flexShrink:0,marginTop:2,
-                }}>{s.n}</div>
-                <div>
-                  <div style={{fontWeight:700,fontSize:13,color:TXT,fontFamily:"'Nunito Sans',sans-serif",marginBottom:4}}>{s.title}</div>
-                  <p style={{fontSize:12,color:'#2A0818',lineHeight:1.7,fontFamily:"'Nunito Sans',sans-serif"}}>{s.body}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* P3 Form + Evidence */}
-          <div style={{display:'flex',flexDirection:'column',gap:2}}>
-            <div style={{background:'#B89AAA',border:'1px solid #A07888',padding:24}}>
-              <div style={{marginBottom:16}}>
-                <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,letterSpacing:'.12em',color:'#8A1030',textTransform:'uppercase',fontWeight:700,marginBottom:6}}>Legal tool · Know your rights</p>
-                <div style={{fontFamily:"'Lora',serif",fontSize:18,fontWeight:700,color:'#180410',borderBottom:'2px solid #8A1030',paddingBottom:10}}>The P3 Form — what you need to know</div>
-              </div>
-              {[
-                {q:'What is a P3 Form?', a:'A Police Medical Form used to document physical injuries in cases of assault, GBV or attempted murder. It is legally admissible evidence in Kenyan courts.'},
-                {q:'Where do I get it?', a:'From any police station in Kenya. It is free. You do not need money to obtain one. If asked to pay, report it to the IPOA (Independent Policing Oversight Authority).'},
-                {q:'Who fills it?', a:'A medical officer at a government hospital (or approved facility) completes the medical section. The police complete the other sections.'},
-                {q:'How long do I have?', a:'Injuries heal and forensic evidence degrades. Go within 72 hours. Courts can accept late P3s but early documentation is far stronger evidence.'},
-                {q:'What if I am refused?', a:'You have a legal right to a P3. Contact FIDA Kenya (020 387 1231), Kituo Cha Sheria (0800 720 434) or COVAW (020 273 8881) immediately.'},
-              ].map((item,i,arr)=>(
-                <div key={i} style={{paddingBottom:12,marginBottom:12,borderBottom:i<arr.length-1?`1px solid ${BD}`:'none'}}>
-                  <div style={{fontWeight:700,fontSize:12,color:A,fontFamily:"'Nunito Sans',sans-serif",marginBottom:3}}>{item.q}</div>
-                  <p style={{fontSize:12,color:'#2A0818',lineHeight:1.7,fontFamily:"'Nunito Sans',sans-serif"}}>{item.a}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Preserving Evidence */}
-            <div style={{background:'#B89AAA',border:'1px solid #A07888',padding:24}}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingBottom:10,borderBottom:'1px solid #A07888',marginBottom:14,fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:'#5A3050',letterSpacing:'.06em'}}>
-                <span>Preserving material evidence</span>
-                <span style={{color:'#8A1030',fontWeight:700}}>Critical</span>
-              </div>
-              {[
-                {icon:'📱', tip:'Screenshot all threatening messages, calls, social media posts. Back them up to email or cloud immediately.'},
-                {icon:'👕', tip:'Do not wash clothing worn during an incident. Place in a paper bag (not plastic) and hand to police or hospital.'},
-                {icon:'📸', tip:'Photograph injuries immediately — with timestamps on. Use a trusted friend as witness if possible.'},
-                {icon:'🏠', tip:'Do not clean the scene. If possible, lock the area until police arrive to document it.'},
-                {icon:'✍️', tip:'Write down everything you remember — time, sequence, exact words used — while memory is fresh.'},
-                {icon:'👥', tip:'Identify any witnesses. Get their names and contacts before they leave the scene.'},
-              ].map((e,i)=>(
-                <div key={i} style={{display:'flex',gap:10,paddingBottom:10,marginBottom:10,borderBottom:i<5?`1px solid ${BD}`:'none',alignItems:'flex-start'}}>
-                  <span style={{fontSize:16,flexShrink:0}}>{e.icon}</span>
-                  <p style={{fontSize:12,color:'#2A0818',lineHeight:1.7,fontFamily:"'Nunito Sans',sans-serif"}}>{e.tip}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Meeting someone / Safety protocols */}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:2,marginBottom:2}}>
-
-          <div className="card" style={{padding:24}}>
-            <div style={{marginBottom:16}}>
-              <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,letterSpacing:'.12em',color:'#8A1030',textTransform:'uppercase',fontWeight:700,marginBottom:6}}>Safety protocol</p>
-              <div style={{fontFamily:"'Lora',serif",fontSize:18,fontWeight:700,color:'#180410',borderBottom:'2px solid #8A1030',paddingBottom:10,marginBottom:2}}>Meeting someone for the first time</div>
-            </div>
-            {[
-              'Always meet in a public place — café, mall, busy street. Never a private residence or Airbnb first.',
-              'Tell a trusted person where you are going, who you are meeting and when you expect to be back.',
-              'Share your live location with someone you trust before the meeting.',
-              'Arrange your own transport. Do not depend on the person you are meeting to get home.',
-              'Keep your phone charged and accessible at all times.',
-              'If anything feels wrong — leave. You do not owe anyone an explanation.',
-              'Run their name, phone number or social media handle through available safety databases before meeting.',
-            ].map((tip,i)=>(
-              <div key={i} style={{display:'flex',gap:10,paddingBottom:10,marginBottom:10,borderBottom:i<6?`1px solid ${BD}`:'none'}}>
-                <span style={{color:A,fontWeight:700,fontFamily:"'Nunito Sans',sans-serif",fontSize:13,flexShrink:0}}>{i+1}.</span>
-                <p style={{fontSize:12,color:'#2A0818',lineHeight:1.7,fontFamily:"'Nunito Sans',sans-serif"}}>{tip}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="card" style={{padding:24}}>
-            <div style={{marginBottom:16}}>
-              <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,letterSpacing:'.12em',color:'#8A1030',textTransform:'uppercase',fontWeight:700,marginBottom:6}}>Engagement safety</p>
-              <div style={{fontFamily:"'Lora',serif",fontSize:18,fontWeight:700,color:'#180410',borderBottom:'2px solid #8A1030',paddingBottom:10,marginBottom:2}}>Communication & engagement protocols</div>
-            </div>
-            {[
-              {t:'Online dating safety', b:'Use platforms with verified profiles. Never share your home address, workplace or daily routine early in a relationship.'},
-              {t:'Red flags in messaging', b:'Excessive urgency, pressure for money, requests for intimate images, isolation from family/friends — these are warning signs.'},
-              {t:'Protect your location', b:'Turn off location metadata on photos before sending. Use messaging apps that do not expose your IP address.'},
-              {t:'Financial independence', b:'Never allow a new partner access to your finances, accounts or property. Financial control is a key precursor to violence.'},
-              {t:'Trust your instincts', b:'If a person makes you feel unsafe, uncomfortable or controlled — that feeling is valid data. Act on it.'},
-              {t:'Document patterns', b:'Screenshot controlling behaviour, threats or manipulation. Patterns matter in court, not just single incidents.'},
-            ].map((item,i,arr)=>(
-              <div key={i} style={{paddingBottom:12,marginBottom:12,borderBottom:i<arr.length-1?`1px solid ${BD}`:'none'}}>
-                <div style={{fontWeight:700,fontSize:12,color:A,fontFamily:"'Nunito Sans',sans-serif",marginBottom:3}}>{item.t}</div>
-                <p style={{fontSize:12,color:'#2A0818',lineHeight:1.7,fontFamily:"'Nunito Sans',sans-serif"}}>{item.b}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="card" style={{padding:24}}>
-            <div style={{marginBottom:16}}>
-              <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,letterSpacing:'.12em',color:'#8A1030',textTransform:'uppercase',fontWeight:700,marginBottom:6}}>Expert voices</p>
-              <div style={{fontFamily:"'Lora',serif",fontSize:18,fontWeight:700,color:'#180410',borderBottom:'2px solid #8A1030',paddingBottom:10,marginBottom:2}}>Survival tips from professionals</div>
-            </div>
-            {[
-              {src:'GVRC Kenya', tip:'"Document everything. A medical report, a screenshot, a witness name — each one is a brick in your case. Build it from day one."'},
-              {src:'Kituo Cha Sheria', tip:'"You do not need money to access justice. Legal aid is your right. Do not let anyone tell you otherwise."'},
-              {src:'FIDA Kenya', tip:'"Report even when you are not ready to prosecute. A recorded complaint creates a paper trail that protects you later."'},
-              {src:'Usikimye', tip:'"Reach out. The silence protects the abuser, not you. Over 150 women call our helpline every day — you will not be judged."'},
-              {src:'COVAW', tip:'"Court delays are real but not permanent. Cases with strong early evidence — P3, photos, messages — move faster and result in convictions."'},
-            ].map((item,i,arr)=>(
-              <div key={i} style={{paddingBottom:14,marginBottom:14,borderBottom:i<arr.length-1?`1px solid ${BD}`:'none'}}>
-                <div className="pullquote" style={{marginTop:0,padding:'12px 16px'}}>
-                  <p className="serif" style={{fontSize:12,fontStyle:'italic',color:TXT,lineHeight:1.8}}>{item.tip}</p>
-                  <p style={{fontSize:10,color:MUT,marginTop:6,fontFamily:"'Nunito Sans',sans-serif",letterSpacing:'.06em',textTransform:'uppercase'}}>{item.src}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Survivor videos */}
-        <div className="card" style={{padding:24}}>
-          <div className="section-head">
-            <span>Survivor voices & expert testimonials</span>
-            <span style={{fontSize:11,color:MUT}}>Opens on YouTube</span>
-          </div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:2}}>
-            {[
-              {title:'France 24 · The 51%: Confronting femicide in Kenya',         year:'2025', url:'https://www.youtube.com/watch?v=sdE-bO9vNrA',  desc:'Feminist & security professor Awino Okech on the systemic roots of femicide in Kenya.'},
-              {title:'Al Jazeera: Femicide in Kenya exposes a dark reality',        year:'2026', url:'https://www.youtube.com/watch?v=CD27I4tK0fg',  desc:'Investigative report on patterns of femicide and the failure of state response.'},
-              {title:'Voice of the Global South: Protests erupt over femicides',   year:'2024', url:'https://www.youtube.com/watch?v=t9fB5Wm3e7s',  desc:'Coverage of the January 2024 #TotalShutdownKE marches — 10,000 women in the streets.'},
-            ].map((v,i)=>(
-              <a key={i} href={v.url} target="_blank" rel="noopener noreferrer"
-                style={{textDecoration:'none',display:'block',background:'#BC9EAE',border:`1px solid ${BD}`,padding:18}}>
-                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
-                  <div style={{width:36,height:36,background:A,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                    <span style={{color:'#F0D0D8',fontSize:14}}>▶</span>
+      {/* Codes table */}
+      {loading ? <p style={{ color:MUT, fontSize:12 }}>Loading...</p> : (
+        <table className="tbl">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Label</th>
+              <th>Status</th>
+              <th>Uses</th>
+              <th>Expires</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {codes.map(c => (
+              <tr key={c.id}>
+                <td>
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <code style={{ fontFamily:'monospace', fontSize:13, color:A, fontWeight:700 }}>{c.code}</code>
+                    <button onClick={()=>copy(c.code)} style={{ background:'none', border:'none', cursor:'pointer', color:MUT, fontSize:10, fontFamily:"'Nunito Sans',sans-serif" }}>
+                      Copy
+                    </button>
                   </div>
-                  <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT,letterSpacing:'.06em'}}>{v.year}</span>
-                </div>
-                <div style={{fontWeight:600,fontSize:13,color:TXT,lineHeight:1.4,marginBottom:6,fontFamily:"'Nunito Sans',sans-serif"}}>{v.title}</div>
-                <p style={{fontSize:11,color:MUT,lineHeight:1.6,fontFamily:"'Nunito Sans',sans-serif"}}>{v.desc}</p>
-                <div style={{marginTop:10,display:'inline-flex',alignItems:'center',gap:4,color:A,fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:600}}>
-                  Watch <ExternalLink size={10}/>
-                </div>
-              </a>
+                </td>
+                <td style={{ fontSize:13, color:TXT }}>{c.label}</td>
+                <td>
+                  <span className={`badge ${c.active ? 'status-approved' : 'status-rejected'}`}>
+                    {c.active ? 'Active' : 'Revoked'}
+                  </span>
+                </td>
+                <td style={{ fontSize:13, color:MUT }}>
+                  {c.uses_count || 0}{c.uses_limit ? ` / ${c.uses_limit}` : ''}
+                </td>
+                <td style={{ fontSize:12, color:MUT }}>
+                  {c.expires_at ? new Date(c.expires_at).toLocaleDateString('en-KE') : '—'}
+                </td>
+                <td>
+                  <div style={{ display:'flex', gap:4 }}>
+                    <button className={`btn ${c.active ? 'btn-warning' : 'btn-success'}`} style={{ padding:'4px 10px', fontSize:11 }}
+                      onClick={()=>toggle(c.id, c.active)}>
+                      {c.active ? 'Revoke' : 'Restore'}
+                    </button>
+                    <button className="btn btn-danger" style={{ padding:'4px 10px', fontSize:11 }}
+                      onClick={()=>remove(c.id)}>
+                      Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
             ))}
-          </div>
-        </div>
+          </tbody>
+        </table>
+      )}
+    </div>
+  )
+}
 
+// ── CASES MANAGER ────────────────────────────────────────────────────────────
+function CasesTab() {
+  const [cases, setCases]     = useState([])
+  const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState(null)
+  const [editData, setEditData] = useState({})
+  const [showAdd, setShowAdd] = useState(false)
+  const [newCase, setNewCase] = useState({
+    case_ref:'', victim_name:'', victim_age_range:'unknown',
+    incident_date:'', county:'', location:'', perpetrator_relationship:'unknown',
+    tech_facilitated:false, tech_platforms:'',
+    status:'reported', sentence:'', court_ref:'', next_hearing:'',
+    source_url:'', source_type:'news', verified:false, admin_notes:''
+  })
+
+  const STATUS_OPTIONS = [
+    'reported','investigated','charged','trial','convicted','acquitted','dismissed','cold','no_action'
+  ]
+  const COUNTIES = [
+    'Nairobi','Kiambu','Mombasa','Nakuru','Kisumu','Kajiado','Kwale',
+    'Machakos',"Murang'a",'Kilifi','Uasin Gishu','Trans Nzoia','Meru',
+    'Kakamega','Nyeri','Nandi','Embu','Kirinyaga','Bungoma','Homa Bay',
+    'Other',
+  ]
+  const STATUS_COLORS = {
+    reported:'#DDD0D0', investigated:'#E8D8C0', charged:'#D8E0C8',
+    trial:'#C8D8E8', convicted:'#C8D8C0', acquitted:'#DCC8D8',
+    dismissed:'#E0D0C0', cold:'#D0D4D8', no_action:'#E8D0C8',
+  }
+
+  useEffect(() => { load() }, [])
+
+  const load = async () => {
+    setLoading(true)
+    const { data } = await supabase.from('femicide_cases').select('*').order('incident_date',{ascending:false})
+    setCases(data||[])
+    setLoading(false)
+  }
+
+  const saveEdit = async (id) => {
+    await supabase.from('femicide_cases').update({
+      ...editData,
+      tech_platforms: typeof editData.tech_platforms === 'string'
+        ? editData.tech_platforms.split(',').map(p=>p.trim()).filter(Boolean)
+        : editData.tech_platforms,
+      updated_at: new Date().toISOString()
+    }).eq('id', id)
+    setEditing(null)
+    load()
+  }
+
+  const addCase = async () => {
+    await supabase.from('femicide_cases').insert([{
+      ...newCase,
+      tech_platforms: newCase.tech_platforms.split(',').map(p=>p.trim()).filter(Boolean),
+      case_ref: newCase.case_ref || `FSK-${new Date().getFullYear()}-${String(cases.length+1).padStart(3,'0')}`,
+    }])
+    setShowAdd(false)
+    setNewCase({case_ref:'',victim_name:'',victim_age_range:'unknown',incident_date:'',county:'',location:'',perpetrator_relationship:'unknown',tech_facilitated:false,tech_platforms:'',status:'reported',sentence:'',court_ref:'',next_hearing:'',source_url:'',source_type:'news',verified:false,admin_notes:''})
+    load()
+  }
+
+  const togglePublish = async (id, published) => {
+    await supabase.from('femicide_cases').update({ published:!published }).eq('id',id)
+    load()
+  }
+
+  const inputSt = { fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:TXT, background:'#EAD8D8', border:`1px solid ${BD}`, padding:'7px 10px', outline:'none', width:'100%' }
+  const labelSt = { fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase', display:'block', marginBottom:3, marginTop:10 }
+
+  const CaseForm = ({ data, setData, onSave, onCancel, saveLabel }) => (
+    <div style={{ background:'#D4BCBC', border:`1px solid ${BD}`, padding:18, marginBottom:2 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
+        {[
+          {l:'Case ref',   k:'case_ref'},
+          {l:'Victim name (if known)', k:'victim_name'},
+          {l:'County',     k:'county', type:'county'},
+          {l:'Location',   k:'location'},
+          {l:'Date',       k:'incident_date', type:'date'},
+          {l:'Status',     k:'status', type:'status'},
+          {l:'Relationship to victim', k:'perpetrator_relationship'},
+          {l:'Source type', k:'source_type'},
+          {l:'Source URL', k:'source_url'},
+          {l:'Court reference', k:'court_ref'},
+          {l:'Sentence (if convicted)', k:'sentence'},
+          {l:'Next hearing date', k:'next_hearing', type:'date'},
+          {l:'Tech platforms (comma separated)', k:'tech_platforms'},
+          {l:'Admin notes', k:'admin_notes'},
+        ].map(({l,k,type})=>(
+          <div key={k} style={{ gridColumn: ['source_url','court_ref','admin_notes'].includes(k) ? 'span 2' : 'span 1' }}>
+            <label style={labelSt}>{l}</label>
+            {type==='county' ? (
+              <select style={inputSt} value={data[k]||''} onChange={e=>setData(d=>({...d,[k]:e.target.value}))}>
+                <option value="">Select</option>
+                {COUNTIES.map(c=><option key={c} value={c}>{c}</option>)}
+              </select>
+            ) : type==='status' ? (
+              <select style={inputSt} value={data[k]||''} onChange={e=>setData(d=>({...d,[k]:e.target.value}))}>
+                {STATUS_OPTIONS.map(s=><option key={s} value={s}>{s.replace(/_/g,' ')}</option>)}
+              </select>
+            ) : type==='date' ? (
+              <input style={inputSt} type="date" value={data[k]||''} onChange={e=>setData(d=>({...d,[k]:e.target.value}))}/>
+            ) : (
+              <input style={inputSt} value={data[k]||''} onChange={e=>setData(d=>({...d,[k]:e.target.value}))}/>
+            )}
+          </div>
+        ))}
+        <div>
+          <label style={labelSt}>Tech facilitated</label>
+          <label style={{ display:'flex', gap:8, cursor:'pointer', alignItems:'center', marginTop:6 }}>
+            <input type="checkbox" checked={!!data.tech_facilitated} onChange={e=>setData(d=>({...d,tech_facilitated:e.target.checked}))} style={{ accentColor:A }}/>
+            <span style={{ fontSize:12, color:TXT, fontFamily:"'Nunito Sans',sans-serif" }}>Yes</span>
+          </label>
+        </div>
+        <div>
+          <label style={labelSt}>Verified</label>
+          <label style={{ display:'flex', gap:8, cursor:'pointer', alignItems:'center', marginTop:6 }}>
+            <input type="checkbox" checked={!!data.verified} onChange={e=>setData(d=>({...d,verified:e.target.checked}))} style={{ accentColor:A }}/>
+            <span style={{ fontSize:12, color:TXT, fontFamily:"'Nunito Sans',sans-serif" }}>Verified from source</span>
+          </label>
+        </div>
       </div>
+      <div style={{ display:'flex', gap:8, marginTop:14 }}>
+        <button className="btn btn-primary" onClick={onSave}><Save size={13}/> {saveLabel}</button>
+        <button className="btn btn-ghost" onClick={onCancel}><X size={13}/> Cancel</button>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="fade-up">
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:20 }}>
+        <div>
+          <p className="label" style={{ marginBottom:6 }}>Femicide case database</p>
+          <h2 className="serif" style={{ fontSize:26, fontWeight:700, color:TXT }}>Case manager</h2>
+          <p style={{ fontSize:12, color:MUT, marginTop:4, fontFamily:"'Nunito Sans',sans-serif" }}>
+            {cases.length} cases on record · {cases.filter(c=>c.status==='no_action').length} with no legal action
+          </p>
+        </div>
+        <div style={{ display:'flex', gap:8 }}>
+          <button className="btn btn-ghost" onClick={load}><RefreshCw size={13}/> Refresh</button>
+          <button className="btn btn-primary" onClick={()=>setShowAdd(s=>!s)}>
+            {showAdd ? <><X size={13}/> Cancel</> : <>+ Add case</>}
+          </button>
+        </div>
+      </div>
+
+      {showAdd && (
+        <CaseForm data={newCase} setData={setNewCase} onSave={addCase} onCancel={()=>setShowAdd(false)} saveLabel="Add case"/>
+      )}
+
+      <table className="tbl">
+        <thead>
+          <tr>
+            <th>Ref</th>
+            <th>Victim</th>
+            <th>County</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Verified</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {loading ? (
+            <tr><td colSpan={7} style={{ textAlign:'center', color:MUT }}>Loading...</td></tr>
+          ) : cases.map(c=>(
+            <>
+              <tr key={c.id} style={{ opacity: c.published ? 1 : 0.5 }}>
+                <td style={{ fontFamily:'monospace', fontSize:11 }}>{c.case_ref}</td>
+                <td style={{ fontWeight:700, fontSize:13 }}>{c.victim_name||'Unknown'}</td>
+                <td>{c.county}</td>
+                <td style={{ fontSize:11, color:MUT }}>{c.incident_date ? new Date(c.incident_date).toLocaleDateString('en-KE') : '—'}</td>
+                <td>
+                  <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', fontFamily:"'Nunito Sans',sans-serif", background:STATUS_COLORS[c.status]||'#DDD', border:'1px solid #B89AAA', color:TXT }}>
+                    {c.status?.replace(/_/g,' ')}
+                  </span>
+                </td>
+                <td style={{ fontSize:11, color: c.verified ? '#166534' : MUT }}>{c.verified ? '✓ Yes' : 'Pending'}</td>
+                <td>
+                  <div style={{ display:'flex', gap:4 }}>
+                    <button className="btn btn-ghost" style={{ padding:'4px 8px', fontSize:11 }}
+                      onClick={()=>{setEditing(c.id);setEditData({...c,tech_platforms:c.tech_platforms?.join(', ')||''})}}>
+                      <Edit2 size={11}/> Edit
+                    </button>
+                    <button className={`btn ${c.published?'btn-warning':'btn-success'}`} style={{ padding:'4px 8px', fontSize:11 }}
+                      onClick={()=>togglePublish(c.id,c.published)}>
+                      {c.published?'Hide':'Show'}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              {editing===c.id && (
+                <tr key={`edit-${c.id}`}>
+                  <td colSpan={7} style={{ padding:0 }}>
+                    <CaseForm data={editData} setData={setEditData} onSave={()=>saveEdit(c.id)} onCancel={()=>setEditing(null)} saveLabel="Save changes"/>
+                  </td>
+                </tr>
+              )}
+            </>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+// ── LINDALINDA (SAFETY NORMS) TAB ────────────────────────────────────────────
+function LindaLindaTab() {
+  const [norms,   setNorms]   = useState([])
+  const [loading, setLoading] = useState(true)
+  const [filter,  setFilter]  = useState('published')
+  const [editing, setEditing] = useState(null)
+  const [editText, setEditText] = useState({})
+
+  const load = () => {
+    setLoading(true)
+    supabase.from('safety_norms').select('*')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => { setNorms(data || []); setLoading(false) })
+  }
+
+  useEffect(() => { load() }, [])
+
+  const update = async (id, updates) => {
+    await supabase.from('safety_norms').update(updates).eq('id', id)
+    load()
+    setEditing(null)
+  }
+
+  const filtered = norms.filter(n => filter === 'all' ? true : n.status === filter)
+
+  const counts = {
+    published: norms.filter(n=>n.status==='published').length,
+    flagged:   norms.filter(n=>n.status==='flagged').length,
+    removed:   norms.filter(n=>n.status==='removed').length,
+    all:       norms.length,
+  }
+
+  return (
+    <div>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start',
+        marginBottom:20, flexWrap:'wrap', gap:12 }}>
+        <div>
+          <h2 style={{ fontFamily:"'Lora',serif", fontSize:22, fontWeight:700, color:TXT, marginBottom:4 }}>
+            LindaLinda · Safety Norms
+          </h2>
+          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT }}>
+            Community-submitted safety stories. Review, add caveats, flag or remove as needed.
+          </p>
+        </div>
+        <div style={{ display:'flex', gap:8 }}>
+          {[
+            { id:'published', label:`Published (${counts.published})` },
+            { id:'flagged',   label:`Flagged (${counts.flagged})` },
+            { id:'removed',   label:`Removed (${counts.removed})` },
+            { id:'all',       label:`All (${counts.all})` },
+          ].map(f => (
+            <button key={f.id} onClick={() => setFilter(f.id)}
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                padding:'6px 12px', border:`1px solid ${BD}`, cursor:'pointer',
+                background: filter===f.id ? A : CRD, color: filter===f.id ? '#fff' : MUT }}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading ? (
+        <p style={{ color:MUT, fontFamily:"'Nunito Sans',sans-serif", fontSize:12 }}>Loading…</p>
+      ) : filtered.length === 0 ? (
+        <p style={{ color:MUT, fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontStyle:'italic' }}>
+          No stories in this category yet.
+        </p>
+      ) : filtered.map(norm => (
+        <div key={norm.id} style={{ background:CRD, border:`1px solid ${BD}`,
+          marginBottom:12, padding:16 }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start',
+            gap:12, marginBottom:10 }}>
+            <div style={{ flex:1 }}>
+              <div style={{ fontFamily:"'Lora',serif", fontSize:15, fontWeight:700,
+                color:TXT, marginBottom:4 }}>{norm.title}</div>
+              <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT }}>
+                {norm.submitted_by || 'Anonymous'} · {norm.context || 'General'} ·{' '}
+                {norm.created_at && new Date(norm.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}
+              </div>
+            </div>
+            <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+              <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+                padding:'2px 8px', letterSpacing:'.08em', textTransform:'uppercase',
+                background: norm.status==='published'?'#1A5A2A':norm.status==='flagged'?'#CA8A04':'#8A1030',
+                color:'#fff' }}>
+                {norm.status}
+              </span>
+            </div>
+          </div>
+
+          {editing === norm.id ? (
+            <div>
+              <textarea
+                value={editText.story ?? norm.story}
+                onChange={e => setEditText({...editText, story:e.target.value})}
+                rows={4}
+                style={{ width:'100%', padding:'8px 12px', fontFamily:"'Nunito Sans',sans-serif",
+                  fontSize:12, background:'rgba(255,255,255,0.7)', border:`1px solid ${BD}`,
+                  color:TXT, outline:'none', resize:'vertical', boxSizing:'border-box', marginBottom:8 }}/>
+              <div style={{ marginBottom:8 }}>
+                <label style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                  letterSpacing:'.08em', textTransform:'uppercase', color:MUT, display:'block', marginBottom:4 }}>
+                  Admin caveat (optional — shown below the story)
+                </label>
+                <input
+                  value={editText.caveat ?? norm.caveat ?? ''}
+                  onChange={e => setEditText({...editText, caveat:e.target.value})}
+                  placeholder="e.g. Editor note: this practice may not work in all situations..."
+                  style={{ width:'100%', padding:'8px 12px', fontFamily:"'Nunito Sans',sans-serif",
+                    fontSize:12, background:'rgba(255,255,255,0.7)', border:`1px solid ${BD}`,
+                    color:TXT, outline:'none', boxSizing:'border-box' }}/>
+              </div>
+              <div style={{ display:'flex', gap:8 }}>
+                <button onClick={() => update(norm.id, { story:editText.story??norm.story, caveat:editText.caveat??norm.caveat??'' })}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                    padding:'6px 14px', background:'#1A5A2A', color:'#fff', border:'none', cursor:'pointer' }}>
+                  Save changes
+                </button>
+                <button onClick={() => { setEditing(null); setEditText({}) }}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                    padding:'6px 14px', background:CRD, color:MUT, border:`1px solid ${BD}`, cursor:'pointer' }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:TXT,
+                lineHeight:1.7, marginBottom: norm.caveat ? 8 : 0 }}>{norm.story}</p>
+              {norm.caveat && (
+                <div style={{ background:'rgba(202,138,4,0.1)', borderLeft:'3px solid #CA8A04',
+                  padding:'8px 12px', marginTop:8 }}>
+                  <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:'#8A6000',
+                    fontStyle:'italic' }}>📝 Admin note: {norm.caveat}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {editing !== norm.id && (
+            <div style={{ display:'flex', gap:8, marginTop:12, flexWrap:'wrap' }}>
+              <button onClick={() => { setEditing(norm.id); setEditText({}) }}
+                style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                  padding:'5px 12px', background:CRD, color:MUT, border:`1px solid ${BD}`, cursor:'pointer' }}>
+                Edit / Add caveat
+              </button>
+              {norm.status !== 'published' && (
+                <button onClick={() => update(norm.id, { status:'published' })}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                    padding:'5px 12px', background:'#1A5A2A', color:'#fff', border:'none', cursor:'pointer' }}>
+                  Publish
+                </button>
+              )}
+              {norm.status !== 'flagged' && (
+                <button onClick={() => update(norm.id, { status:'flagged' })}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                    padding:'5px 12px', background:'#CA8A04', color:'#fff', border:'none', cursor:'pointer' }}>
+                  Flag
+                </button>
+              )}
+              {norm.status !== 'removed' && (
+                <button onClick={() => update(norm.id, { status:'removed' })}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                    padding:'5px 12px', background:A, color:'#fff', border:'none', cursor:'pointer' }}>
+                  Remove
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ── ARCHETYPES CONTENT EDITOR ────────────────────────────────────────────────
+function ArchetypesTab() {
+  const ARCH_IDS = [
+    {id:'naive',      label:'The Naive',      color:'#1A3F6F'},
+    {id:'precocious', label:'The Precocious',  color:'#8A4010'},
+    {id:'allin',      label:'The All-In',      color:'#3A1870'},
+  ]
+  const SECTIONS = [
+    {id:'protective', label:'Protect Yourself'},
+    {id:'redflags',   label:'Red Flags'},
+  ]
+  const [items,      setItems]      = useState([])
+  const [loading,    setLoading]    = useState(true)
+  const [activeArch, setActiveArch] = useState('naive')
+  const [activeSec,  setActiveSec]  = useState('protective')
+  const [editing,    setEditing]    = useState(null)
+  const [editText,   setEditText]   = useState('')
+  const [newText,    setNewText]    = useState('')
+  const [adding,     setAdding]     = useState(false)
+
+  const load = () => {
+    setLoading(true)
+    supabase.from('archetype_content').select('*')
+      .order('sort_order',{ascending:true})
+      .then(({data})=>{ setItems(data||[]); setLoading(false) })
+  }
+
+  useEffect(()=>{ load() },[])
+
+  const filtered = items.filter(i=>i.archetype_id===activeArch && i.section===activeSec)
+
+  const save = async (id) => {
+    await supabase.from('archetype_content').update({content:editText,updated_at:new Date().toISOString()}).eq('id',id)
+    setEditing(null); setEditText(''); load()
+  }
+
+  const toggle = async (id, active) => {
+    await supabase.from('archetype_content').update({active:!active}).eq('id',id)
+    load()
+  }
+
+  const addNew = async () => {
+    if(!newText.trim()) return
+    const maxOrder = filtered.reduce((m,i)=>Math.max(m,i.sort_order||0),0)
+    await supabase.from('archetype_content').insert({
+      archetype_id: activeArch, section: activeSec,
+      content: newText.trim(), sort_order: maxOrder+1, active: true
+    })
+    setNewText(''); setAdding(false); load()
+  }
+
+  const arch = ARCH_IDS.find(a=>a.id===activeArch)
+
+  return (
+    <div>
+      <div style={{marginBottom:20}}>
+        <h2 style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,color:TXT,marginBottom:4}}>JiJue · JiTume Content Editor</h2>
+        <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT}}>Edit protective measures and red flags for each archetype. Changes go live immediately on femsaidiakenya.org.</p>
+      </div>
+
+      <div style={{display:'flex',gap:2,marginBottom:12}}>
+        {ARCH_IDS.map(a=>(
+          <button key={a.id} onClick={()=>setActiveArch(a.id)}
+            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,padding:'8px 16px',border:'none',cursor:'pointer',background:activeArch===a.id?a.color:CRD,color:activeArch===a.id?'#fff':MUT}}>
+            {a.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{display:'flex',gap:2,marginBottom:16}}>
+        {SECTIONS.map(s=>(
+          <button key={s.id} onClick={()=>setActiveSec(s.id)}
+            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,padding:'6px 14px',border:'none',cursor:'pointer',background:activeSec===s.id?arch?.color||A:CRD,color:activeSec===s.id?'#fff':MUT}}>
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <p style={{color:MUT,fontFamily:"'Nunito Sans',sans-serif",fontSize:12}}>Loading…</p>
+      ) : (
+        <>
+          {filtered.map((item,i)=>(
+            <div key={item.id} style={{background:item.active?CRD:'rgba(180,150,160,0.3)',border:`1px solid ${BD}`,marginBottom:8,padding:14,opacity:item.active?1:0.6}}>
+              {editing===item.id ? (
+                <div>
+                  <textarea value={editText} onChange={e=>setEditText(e.target.value)} rows={3}
+                    style={{width:'100%',padding:'8px 12px',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,background:'rgba(255,255,255,0.8)',border:`1px solid ${BD}`,color:TXT,outline:'none',resize:'vertical',boxSizing:'border-box',marginBottom:8}}/>
+                  <div style={{display:'flex',gap:8}}>
+                    <button onClick={()=>save(item.id)} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,padding:'5px 12px',background:'#1A5A2A',color:'#fff',border:'none',cursor:'pointer'}}>Save</button>
+                    <button onClick={()=>{setEditing(null);setEditText('')}} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,padding:'5px 12px',background:CRD,color:MUT,border:`1px solid ${BD}`,cursor:'pointer'}}>Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,marginBottom:4}}>#{i+1}</div>
+                    <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:TXT,lineHeight:1.6}}>{item.content}</div>
+                  </div>
+                  <div style={{display:'flex',gap:6,flexShrink:0}}>
+                    <button onClick={()=>{setEditing(item.id);setEditText(item.content)}}
+                      style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,padding:'4px 10px',background:CRD,color:MUT,border:`1px solid ${BD}`,cursor:'pointer'}}>Edit</button>
+                    <button onClick={()=>toggle(item.id,item.active)}
+                      style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,padding:'4px 10px',background:item.active?A:'#1A5A2A',color:'#fff',border:'none',cursor:'pointer'}}>
+                      {item.active?'Hide':'Show'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {filtered.length===0 && (
+            <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT,fontStyle:'italic',marginBottom:12}}>No items yet for this archetype/section. Add one below.</p>
+          )}
+
+          {adding ? (
+            <div style={{background:'rgba(255,255,255,0.5)',border:`1px solid ${BD}`,padding:14,marginTop:8}}>
+              <textarea value={newText} onChange={e=>setNewText(e.target.value)}
+                placeholder="Enter new item..." rows={3}
+                style={{width:'100%',padding:'8px 12px',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,background:'rgba(255,255,255,0.8)',border:`1px solid ${BD}`,color:TXT,outline:'none',resize:'vertical',boxSizing:'border-box',marginBottom:8}}/>
+              <div style={{display:'flex',gap:8}}>
+                <button onClick={addNew} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,padding:'5px 12px',background:arch?.color||A,color:'#fff',border:'none',cursor:'pointer'}}>Add item</button>
+                <button onClick={()=>{setAdding(false);setNewText('')}} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,padding:'5px 12px',background:CRD,color:MUT,border:`1px solid ${BD}`,cursor:'pointer'}}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={()=>setAdding(true)}
+              style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,padding:'8px 16px',background:arch?.color||A,color:'#fff',border:'none',cursor:'pointer',marginTop:8}}>
+              + Add new item
+            </button>
+          )}
+        </>
+      )}
     </div>
   )
 }
 
 const TABS = [
-  {id:'dashboard',       label:'Dashboard'},
-  {id:'data',            label:'Data & reports'},
-  {id:'silencing-women', label:'Silencing Women'},
-  {id:'resources',       label:'Available Help'},
-  {id:'survival',         label:'Survival Guide', red:true},
-  {id:'redflag',         label:'Red Flag', red:true},
-  {id:'petition',        label:'Petition', red:true},
-  {id:'report',          label:'Report'},
-  {id:'partners',        label:'Partners'},
-  {id:'sentiment',       label:'Socials & Sentiment'},
-  {id:'tech-tracker',    label:'Tech Tracker'},
-  {id:'cases',           label:'Case Tracker', red:true},
+  { id:'submissions', label:'Submissions',    icon:<Flag size={14}/> },
+  { id:'profiles',    label:'Profiles',       icon:<Users size={14}/> },
+  { id:'lindalinda',  label:'LindaLinda',     icon:<Shield size={14}/> },
+  { id:'archetypes',  label:'JiJue / JiTume', icon:<BookOpen size={14}/> },
+  { id:'analytics',   label:'Analytics',      icon:<BarChart2 size={14}/> },
+  { id:'cases',       label:'Case tracker',   icon:<FileText size={14}/> },
+  { id:'codes',       label:'Access codes',   icon:<Users size={14}/> },
 ]
 
-// ── INVITE GATE ───────────────────────────────────────────────────────────────
-import { createClient } from '@supabase/supabase-js'
-const _sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY)
+export default function App() {
+  const [session, setSession] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [tab, setTab]         = useState('submissions')
 
-function InviteGate({ children }) {
-  const stored = sessionStorage.getItem('femsaidia_access')
-  const [unlocked, setUnlocked] = useState(!!stored)
-  const [code, setCode]         = useState('')
-  const [error, setError]       = useState('')
-  const [loading, setLoading]   = useState(false)
-
-  const tryCode = async () => {
-    if (!code.trim()) return
-    setLoading(true)
-    setError('')
-    const { data } = await _sb
-      .from('invite_codes')
-      .select('id, uses_limit, uses_count, expires_at')
-      .eq('code', code.trim().toLowerCase())
-      .eq('active', true)
-      .single()
-
-    if (!data) {
-      setError('Invalid access code. Please check your invitation.')
-      setCode('')
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
       setLoading(false)
-      return
-    }
-    if (data.expires_at && new Date(data.expires_at) < new Date()) {
-      setError('This access code has expired.')
-      setCode('')
-      setLoading(false)
-      return
-    }
-    if (data.uses_limit && data.uses_count >= data.uses_limit) {
-      setError('This access code has reached its usage limit.')
-      setCode('')
-      setLoading(false)
-      return
-    }
-    // Increment uses
-    await _sb.from('invite_codes').update({ uses_count: (data.uses_count||0) + 1 }).eq('id', data.id)
-    sessionStorage.setItem('femsaidia_access', '1')
-    setUnlocked(true)
-    setLoading(false)
-  }
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
 
-  if (unlocked) return children
-
-  return (
-    <div style={{
-      minHeight:'100vh', background:'#D4BEC4',
-      display:'flex', alignItems:'center', justifyContent:'center',
-      padding:24, fontFamily:"'Nunito Sans',sans-serif",
-    }}>
-      <div style={{ width:'100%', maxWidth:400 }}>
-        <div style={{ textAlign:'center', marginBottom:32 }}>
-          <div style={{ fontFamily:"'Lora',serif", fontSize:32, fontWeight:700, color:'#180410' }}>
-            Fem<span style={{ color:'#8A1030' }}>Saidia</span> Kenya
-          </div>
-          <p style={{ fontSize:12, color:'#7A4A60', marginTop:6, letterSpacing:'.08em', fontFamily:"'Lora',serif", fontStyle:'italic' }}>
-            A Woman is Killed Every 47 Hours in Kenya
-          </p>
-        </div>
-        <div style={{ background:'#C4AABB', border:'1px solid #B89AAA', padding:28 }}>
-          <div style={{ fontFamily:"'Lora',serif", fontSize:18, fontWeight:700, color:'#180410', marginBottom:8 }}>
-            Preview access
-          </div>
-          <p style={{ fontSize:12, color:'#7A4A60', lineHeight:1.7, marginBottom:20 }}>
-            FemSaidia Kenya is currently in preview. Enter your access code to continue.
-          </p>
-          <input
-            value={code}
-            onChange={e => setCode(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && tryCode()}
-            placeholder="Enter access code"
-            style={{
-              width:'100%', fontFamily:"'Nunito Sans',sans-serif", fontSize:13,
-              color:'#180410', background:'#DDD0D0', border:'1px solid #B89AAA',
-              padding:'10px 12px', outline:'none', marginBottom:10,
-            }}
-          />
-          {error && (
-            <p style={{ fontSize:11, color:'#8A1030', marginBottom:10, fontFamily:"'Nunito Sans',sans-serif" }}>{error}</p>
-          )}
-          <button onClick={tryCode} disabled={loading}
-            style={{
-              width:'100%', fontFamily:"'Nunito Sans',sans-serif", fontSize:13,
-              fontWeight:700, padding:'11px', background: loading ? '#7A4A60' : '#8A1030',
-              color:'#F0D0D8', border:'none', cursor: loading ? 'wait' : 'pointer', letterSpacing:'.04em',
-            }}>
-            {loading ? 'Checking...' : 'Access platform →'}
-          </button>
-        </div>
-        <p style={{ fontSize:11, color:'#7A4A60', textAlign:'center', marginTop:16, fontFamily:"'Nunito Sans',sans-serif" }}>
-          To request access contact admin@femsaidiakenya.org
-        </p>
-      </div>
+  if (loading) return (
+    <div style={{minHeight:'100vh',background:BG,display:'flex',alignItems:'center',justifyContent:'center'}}>
+      <p style={{color:MUT,fontSize:13,fontFamily:"'Nunito Sans',sans-serif"}}>Loading...</p>
     </div>
   )
-}
 
-export default function App(){
-  const [activeTab,setActiveTab]=useState('dashboard')
-  return(
-    <InviteGate>
+  if (!session) return <LoginScreen/>
+
+  return (
     <div style={{fontFamily:"'Nunito Sans',sans-serif",color:TXT,minHeight:'100vh',background:BG,width:'100%'}}>
-      <div style={{background:A,color:'#F0D0D8',padding:'7px 32px',display:'flex',alignItems:'center',gap:12,fontSize:11,fontFamily:"'Nunito Sans',sans-serif",width:'100%'}}>
-        <span className="pulse" style={{display:'inline-block'}}>●</span>
-        <span>FemSaidia Kenya — femicide is a national emergency. Share this platform. Submit verified incidents.</span>
-        <span style={{marginLeft:'auto',opacity:.7}}>femsaidiakenya.org</span>
-      </div>
-      <header style={{background:HDR,borderBottom:`1px solid ${BD}`,padding:'0 32px',width:'100%'}}>
-        <div style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',padding:'28px 0 20px',borderBottom:`1px solid ${BD}`}}>
+
+      {/* Header */}
+      <header style={{background:'#D4BCBC',borderBottom:`1px solid ${BD}`,padding:'0 32px'}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'16px 0',borderBottom:`1px solid ${BD}`}}>
           <div>
-            <div className="serif" style={{fontSize:56,fontWeight:700,color:TXT,letterSpacing:'-.02em',lineHeight:1}}>
+            <div className="serif" style={{fontSize:28,fontWeight:700,color:TXT,lineHeight:1}}>
               Fem<span style={{color:A}}>Saidia</span> Kenya
             </div>
-            <p style={{fontSize:11,color:MUT,marginTop:8,fontFamily:"'Lora',serif",fontStyle:'italic',fontWeight:400,letterSpacing:'.01em'}}>
-              A Woman is Killed Every 47 Hours in Kenya
+            <p style={{fontSize:11,color:MUT,marginTop:4,fontFamily:"'Nunito Sans',sans-serif",letterSpacing:'.1em',fontWeight:700}}>
+              ADMIN DASHBOARD
             </p>
           </div>
-          <div style={{textAlign:'right',paddingBottom:4}}>
-            <p style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>Last updated</p>
-            <p style={{fontSize:12,color:'#5A3050',fontFamily:"'Nunito Sans',sans-serif",marginTop:2}}>04 May 2026 · 08:00 EAT</p>
+          <div style={{display:'flex',alignItems:'center',gap:12}}>
+            <p style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>
+              {session.user.email}
+            </p>
+            <button className="btn btn-ghost" style={{padding:'7px 12px',fontSize:11}}
+              onClick={()=>supabase.auth.signOut()}>
+              <LogOut size={12}/> Sign out
+            </button>
           </div>
         </div>
-        <nav style={{display:'flex',overflowX:'auto'}}>
+        <nav style={{display:'flex'}}>
           {TABS.map(t=>(
-            <button key={t.id} className={`nav-tab${activeTab===t.id?' active':''}`} disabled={t.locked===true} onClick={()=>!t.locked&&setActiveTab(t.id)} style={t.red&&activeTab!==t.id?{color:'#8A1030',fontWeight:700}:{}}>
-              {t.locked&&<Lock size={10}/>}
-              {t.id==='redflag'
-                ? <span><span style={{color:'#CC1010',fontWeight:800}}>Red</span> Flag</span>
-                : t.label}
-              {t.locked&&<span style={{fontSize:10,opacity:.5}}>· soon</span>}
+            <button key={t.id} className={`nav-tab${tab===t.id?' active':''}`}
+              onClick={()=>setTab(t.id)}>
+              {t.icon} {t.label}
             </button>
           ))}
+          <a href="https://femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
+            style={{marginLeft:'auto',display:'inline-flex',alignItems:'center',gap:6,
+              fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif",padding:'12px 0',
+              textDecoration:'none',fontWeight:600}}>
+            <Eye size={13}/> View public site
+          </a>
         </nav>
       </header>
+
       <main style={{padding:'28px 32px',width:'100%'}}>
-        {activeTab==='dashboard'       && <DashboardTab/>}
-        {activeTab==='data'            && <DataTab/>}
-        {activeTab==='silencing-women' && <SilencingWomenTab/>}
-        {activeTab==='resources'       && <ResourcesTab/>}
-        {activeTab==='survival'        && <SurvivalGuideTab/>}
-        {activeTab==='petition'        && <PetitionTab/>}
-        {activeTab==='report'          && <ReportTab/>}
-        {activeTab==='partners'        && <PartnersTab/>}
-        {activeTab==='sentiment'       && <SocialsSentimentTab/>}
-        {activeTab==='tech-tracker'    && <TechTrackerTab/>}
-        {activeTab==='cases'           && <CaseTrackerTab/>}
+        {tab==='submissions' && <SubmissionsTab/>}
+        {tab==='profiles'    && <ProfilesTab/>}
+        {tab==='lindalinda'  && <LindaLindaTab/>}
+        {tab==='archetypes'  && <ArchetypesTab/>}
+        {tab==='analytics'   && <AnalyticsTab/>}
+        {tab==='codes'       && <AccessCodesTab/>}
+        {tab==='cases'       && <CasesTab/>}
       </main>
-      <footer style={{borderTop:`1px solid ${BD}`,padding:'18px 32px',display:'flex',justifyContent:'space-between',alignItems:'center',background:HDR,width:'100%'}}>
-        <p style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>FemSaidia Kenya · femsaidiakenya.org · 2026</p>
-        <p className="serif" style={{fontSize:12,color:MUT,fontStyle:'italic'}}>Built for justice · in memory of those we lost</p>
+
+      <footer style={{borderTop:`1px solid ${BD}`,padding:'14px 32px',
+        display:'flex',justifyContent:'space-between',background:'#D4BCBC'}}>
+        <p style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>FemSaidia Kenya Admin · Restricted access</p>
+        <p style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>Built for justice</p>
       </footer>
     </div>
-    </InviteGate>
   )
 }
