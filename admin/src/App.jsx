@@ -1,9 +1,9 @@
-import { Shield, BookOpen, useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import {
   LogOut, CheckCircle, XCircle, AlertTriangle, Edit2, Save, X,
   ChevronUp, Trash2, Eye, RefreshCw, Send, BarChart2, Flag,
-  FileText, Users, Mail
+  FileText, Users, Mail, Shield, BookOpen
 } from 'lucide-react'
 
 // ── CONFIG ────────────────────────────────────────────────────────────────────
