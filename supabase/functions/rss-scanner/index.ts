@@ -71,6 +71,66 @@ async function updateMisogynyIndex() {
   console.log(`Misogyny index: ${score}/100 from ${total} articles`)
 }
 
+async function sendCaseAlert(articles: any[]) {
+  const RESEND_KEY = Deno.env.get('RESEND_API_KEY') || ''
+  if (!RESEND_KEY) return
+
+  // Only alert on very high GBV relevance articles
+  const highPriority = articles.filter(a =>
+    a.gbv_relevance >= 8 && (a.sentiment === 'alarming' || a.sentiment === 'negative')
+  )
+  if (!highPriority.length) return
+
+  const articleList = highPriority.map(a =>
+    `• ${a.article_title}\n  Source: ${a.source_name}\n  GBV Score: ${a.gbv_relevance}/10 · Sentiment: ${a.sentiment}\n  ${a.article_url ? `Read: ${a.article_url}` : ''}\n  Snippet: ${a.article_snippet?.slice(0,150) || ''}...`
+  ).join('\n\n')
+
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${RESEND_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'FemSaidia Kenya <alerts@femsaidiakenya.org>',
+      to: ['ombonya@gmail.com'],
+      subject: `🚨 ${highPriority.length} new high-priority GBV case${highPriority.length > 1 ? 's' : ''} detected — FemSaidia Kenya`,
+      text: `FemSaidia Kenya — Case Alert\n\nThe RSS scanner has detected ${highPriority.length} new high-priority article${highPriority.length > 1 ? 's' : ''} that may represent new femicide or GBV cases requiring documentation.\n\n${articleList}\n\n---\nLog these cases at: https://admin.femsaidiakenya.org\n\nThis is an automated alert from the FemSaidia Kenya intelligence scanner. The scanner runs every 6 hours.`,
+      html: `
+        <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#180410;">
+          <div style="background:#8A1030;padding:20px;margin-bottom:0;">
+            <h1 style="color:#fff;margin:0;font-size:20px;">🚨 FemSaidia Kenya — Case Alert</h1>
+          </div>
+          <div style="background:#F5E8ED;padding:20px;border-left:4px solid #8A1030;margin-bottom:16px;">
+            <p style="margin:0;font-size:14px;">The RSS scanner has detected <strong>${highPriority.length} new high-priority article${highPriority.length > 1 ? 's' : ''}</strong> that may represent new femicide or GBV cases requiring documentation in the Case Tracker.</p>
+          </div>
+          ${highPriority.map(a => `
+            <div style="border:1px solid #B89AAA;padding:16px;margin-bottom:12px;background:#fff;">
+              <h3 style="margin:0 0 8px;font-size:15px;color:#8A1030;">${a.article_title}</h3>
+              <p style="margin:0 0 6px;font-size:12px;color:#7A4A60;">
+                Source: ${a.source_name} &nbsp;·&nbsp;
+                GBV Score: <strong>${a.gbv_relevance}/10</strong> &nbsp;·&nbsp;
+                Sentiment: <strong>${a.sentiment}</strong>
+              </p>
+              <p style="margin:0 0 10px;font-size:13px;color:#180410;">${a.article_snippet?.slice(0,200) || ''}...</p>
+              ${a.article_url ? `<a href="${a.article_url}" style="color:#8A1030;font-size:12px;font-weight:bold;">Read full article →</a>` : ''}
+            </div>
+          `).join('')}
+          <div style="background:#180410;padding:16px;text-align:center;margin-top:20px;">
+            <a href="https://admin.femsaidiakenya.org" style="color:#fff;font-weight:bold;font-size:14px;text-decoration:none;">
+              Log these cases in the Admin Portal →
+            </a>
+          </div>
+          <p style="font-size:11px;color:#7A4A60;margin-top:12px;text-align:center;">
+            Automated alert from FemSaidia Kenya intelligence scanner · Runs every 6 hours
+          </p>
+        </div>
+      `,
+    }),
+  })
+  console.log(`Case alert sent for ${highPriority.length} articles`)
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method==='GET') return new Response(JSON.stringify({status:'ok'}),{headers:{'Content-Type':'application/json'}})
   try {
@@ -122,6 +182,7 @@ Deno.serve(async (req: Request) => {
     }
 
     await updateMisogynyIndex()
+    await sendCaseAlert(toInsert)
 
     return new Response(JSON.stringify({success:true,fetched:allArticles.length,relevant:relevant.length,classified:classified.length,inserted:toInsert.length}),{status:200})
   } catch(err:any) {
