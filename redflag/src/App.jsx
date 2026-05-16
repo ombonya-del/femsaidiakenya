@@ -133,10 +133,10 @@ function EmergencyBar() {
             padding:'5px 10px',background:GRN,color:'#fff',textDecoration:'none',display:'inline-flex',alignItems:'center',gap:4}}>
           📱 Install hepa
         </a>
-        <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
-          padding:'5px 10px',background:'#8A1030',color:'#fff'}}>
+        <a href="tel:*384*89056%23" style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
+          padding:'5px 10px',background:'#8A1030',color:'#fff',textDecoration:'none',display:'inline-block'}}>
           📞 Salmin *384*89056#
-        </span>
+        </a>
         <a href="https://femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
           style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,textDecoration:'none'}}>
           femsaidiakenya.org
