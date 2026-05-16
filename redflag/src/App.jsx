@@ -79,7 +79,7 @@ const ARCHETYPES = [
     sisterSays:`The women in this category are often the ones who end up most shocked when something goes wrong. Because they thought they were too smart, too experienced, too self-aware. They were not targeted despite those things. They were targeted because of them.`,
   },
   {
-    id:'allin', emoji:'⚡', color:'#3A1870', light:'#0C0418',
+    id:'allin', emoji:'⚡', color:'#6A3AAA', light:'#180830',
     label:'The All-In', age:'24–27 · Graduates & junior professionals',
     intro:`You are ambitious, you know what you want, and you are not willing to wait. You have probably had relationships that were more strategic than romantic — and that is fine.\n\nI am not here to judge that. I am here to tell you what the risks look like in your specific lane — because they are different from everyone else's, and most safety advice was not written for you.`,
     redFlags:[
@@ -207,6 +207,57 @@ function HomeScreen({ setTab }) {
   )
 }
 
+// ── VICTIM CARD ──────────────────────────────────────────────────────────────
+function VictimCard({ v }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div onClick={() => setOpen(!open)}
+      style={{borderBottom:`1px solid #2A0818`,padding:'16px 0',cursor:'pointer'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12}}>
+        <div style={{flex:1}}>
+          <div style={{fontFamily:"'Lora',serif",fontSize:16,fontWeight:700,
+            color:'#F5E8ED',marginBottom:4}}>{v.victim_name}</div>
+          <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'#B89AAA'}}>
+            {v.county}{v.victim_age ? ` · ${v.victim_age} years old` : ''}
+          </div>
+        </div>
+        <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4,flexShrink:0}}>
+          <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,
+            color:'#7A2030',fontWeight:600}}>
+            {v.incident_date ? new Date(v.incident_date).toLocaleDateString('en-KE',
+              {day:'numeric',month:'short',year:'numeric'}) : ''}
+          </div>
+          <span style={{fontSize:12,color:'#5A2030'}}>{open ? '▲' : '▼'}</span>
+        </div>
+      </div>
+      {open && (
+        <div style={{marginTop:12,background:'#1A0008',padding:'14px',
+          borderLeft:'3px solid #8A1030'}}>
+          {[
+            ['County', v.county],
+            ['Age', v.victim_age ? `${v.victim_age} years old` : v.victim_age_range?.replace(/_/g,' ') || '—'],
+            ['Date', v.incident_date ? new Date(v.incident_date).toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'}) : '—'],
+            ['Incident type', v.incident_type || 'Femicide'],
+          ].map(([label, val], j) => (
+            <div key={j} style={{marginBottom:8}}>
+              <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,fontWeight:700,
+                letterSpacing:'.1em',textTransform:'uppercase',color:'#5A2030',marginBottom:2}}>
+                {label}
+              </div>
+              <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,
+                color:'#F5E8ED',textTransform:'capitalize'}}>{val}</div>
+            </div>
+          ))}
+          <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,
+            color:'#5A2030',fontStyle:'italic',marginTop:8,lineHeight:1.6}}>
+            🕯 May she rest in power.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── JIJUE SCREEN ──────────────────────────────────────────────────────────────
 function JiJueScreen() {
   const [active, setActive]   = useState(0)
@@ -230,10 +281,12 @@ function JiJueScreen() {
 
     // Load victims for all age ranges
     sb.from('femicide_cases')
-      .select('victim_name, victim_age, incident_date, county, victim_age_range')
+      .select('victim_name, victim_age, incident_date, county, victim_age_range, incident_type')
       .eq('published', true)
       .not('victim_name', 'like', 'Name unknown%')
       .not('victim_name', 'like', 'Unknown%')
+      .not('victim_name', 'like', "%niece%")
+      .or('victim_age.is.null,victim_age.gte.14')
       .order('incident_date', { ascending: false })
       .then(({ data }) => {
         if (!data) return
@@ -376,22 +429,7 @@ function JiJueScreen() {
                 Loading…
               </p>
             ) : (victims[ARCH_AGE_RANGES[a.id]] || []).map((v, i) => (
-              <div key={i} style={{borderBottom:`1px solid #2A0818`,padding:'16px 0',
-                display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12}}>
-                <div>
-                  <div style={{fontFamily:"'Lora',serif",fontSize:16,fontWeight:700,
-                    color:TXT,marginBottom:4}}>{v.victim_name}</div>
-                  <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT}}>
-                    {v.county}
-                    {v.victim_age ? ` · ${v.victim_age} years old` : ''}
-                  </div>
-                </div>
-                <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:'#5A2030',
-                  fontWeight:600,whiteSpace:'nowrap',flexShrink:0}}>
-                  {v.incident_date ? new Date(v.incident_date).toLocaleDateString('en-KE',
-                    {day:'numeric',month:'short',year:'numeric'}) : ''}
-                </div>
-              </div>
+              <VictimCard key={i} v={v}/>
             ))}
             <div style={{marginTop:20,paddingTop:16,borderTop:`1px solid #2A0818`}}>
               <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:'#5A2030',
