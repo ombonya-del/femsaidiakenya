@@ -287,8 +287,7 @@ function JiJueScreen() {
       .not('victim_name', 'like', 'Unknown%')
       .not('victim_name', 'like', "%niece%")
       .not('victim_name', 'like', "%years old%")
-      .not('victim_name', 'like', "%niece%")
-      .not('victim_age', 'lt', 15)
+      .not('victim_name', 'like', "Amina%niece%")
       .order('incident_date', { ascending: false })
       .then(({ data }) => {
         if (!data) return
