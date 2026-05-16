@@ -20,14 +20,14 @@ const GRN  = '#1A5A2A'
 // ── ARCHETYPE DATA ────────────────────────────────────────────────────────────
 // Age ranges map to femicide_cases.victim_age_range DB values
 const ARCH_AGE_RANGES = {
-  naive:      'under_18',
+  naive:      '18_25',
   precocious: '18_25',
   allin:      '26_35',
 }
 
 const ARCHETYPES = [
   {
-    id:'naive', emoji:'🌱', color:'#1A3F6F', light:'#0A1828',
+    id:'naive', emoji:'🌱', color:'#1A3F6F', light:'#E8F2FF', bg:'#F0F6FF', surf:'#E0ECFF', card:'#fff', text:'#0A1828', muted:'#3A5A8A',
     label:'The Naive', age:'17–19 · School leavers & 1st-2nd year students',
     intro:`You just got into university, moved to a new town, or started living alone for the first time. Everything is exciting and you want to experience it all — and there is nothing wrong with that.\n\nBut here is what nobody warned you about: you are the most targeted. Not because you are stupid. Because you are new. You have not seen the patterns yet.`,
     redFlags:[
@@ -53,7 +53,7 @@ const ARCHETYPES = [
     sisterSays:`The man who seems the most interested, the most attentive, the most keen to spend time with you one-on-one? He is sometimes the one you need to watch most carefully. Real interest respects your pace. Pressure disguised as affection is still pressure.`,
   },
   {
-    id:'precocious', emoji:'🔥', color:'#8A4010', light:'#1A0C04',
+    id:'precocious', emoji:'🔥', color:'#C06020', light:'#FFF0E0', bg:'#FFF8F0', surf:'#FFEEDD', card:'#fff', text:'#2A1000', muted:'#8A5010',
     label:'The Precocious', age:'21–23 · 3rd-4th year students & early graduates',
     intro:`You have been around a bit. You know what you like and how to handle yourself. You are not naive — you are adventurous. Older men do not intimidate you.\n\nHere is the thing: the people who are most dangerous to you know that. They are not going to try the lines that work on younger girls. They are going to offer you access. A lifestyle. The feeling of being chosen from a higher shelf.`,
     redFlags:[
@@ -79,7 +79,7 @@ const ARCHETYPES = [
     sisterSays:`The women in this category are often the ones who end up most shocked when something goes wrong. Because they thought they were too smart, too experienced, too self-aware. They were not targeted despite those things. They were targeted because of them.`,
   },
   {
-    id:'allin', emoji:'⚡', color:'#6A3AAA', light:'#180830',
+    id:'allin', emoji:'⚡', color:'#7A4ABA', light:'#F0E8FF', bg:'#F8F0FF', surf:'#EEE0FF', card:'#fff', text:'#180830', muted:'#6A3A9A',
     label:'The All-In', age:'24–27 · Graduates & junior professionals',
     intro:`You are ambitious, you know what you want, and you are not willing to wait. You have probably had relationships that were more strategic than romantic — and that is fine.\n\nI am not here to judge that. I am here to tell you what the risks look like in your specific lane — because they are different from everyone else's, and most safety advice was not written for you.`,
     redFlags:[
@@ -287,7 +287,8 @@ function JiJueScreen() {
       .not('victim_name', 'like', 'Unknown%')
       .not('victim_name', 'like', "%niece%")
       .not('victim_name', 'like', "%years old%")
-      .not('victim_age_range', 'eq', 'under_18')
+      .not('victim_name', 'like', "%niece%")
+      .not('victim_age', 'lt', 15)
       .order('incident_date', { ascending: false })
       .then(({ data }) => {
         if (!data) return
@@ -305,7 +306,7 @@ function JiJueScreen() {
   const getC = (id, sec, fallback) => dbContent[`${id}_${sec}`]?.length ? dbContent[`${id}_${sec}`] : fallback
 
   return (
-    <div style={{paddingBottom:16}}>
+    <div style={{paddingBottom:16,background:a.bg||BG,minHeight:'100vh'}}>
       {/* Archetype selector */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:2,marginBottom:0}}>
         {ARCHETYPES.map((arch, i) => (
@@ -342,7 +343,7 @@ function JiJueScreen() {
         {/* Intro */}
         {tab==='intro' && (
           <div>
-            <div style={{background:a.light,border:`1px solid ${a.color}`,
+            <div style={{background:a.surf,border:`1px solid ${a.color}30`,
               borderLeft:`4px solid ${a.color}`,padding:'20px 16px',marginBottom:12}}>
               <div style={{fontFamily:"'Lora',serif",fontSize:26,fontWeight:700,color:TXT,marginBottom:4}}>
                 {a.emoji} {a.label}
