@@ -306,18 +306,19 @@ function JiJueScreen() {
   const getC = (id, sec, fallback) => dbContent[`${id}_${sec}`]?.length ? dbContent[`${id}_${sec}`] : fallback
 
   return (
-    <div style={{paddingBottom:16,background:a.bg||BG,minHeight:'100vh'}}>
+    <div style={{paddingBottom:16,background:'#faf4f7',minHeight:'100vh'}}>
       {/* Archetype selector */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:2,marginBottom:0}}>
         {ARCHETYPES.map((arch, i) => (
           <button key={arch.id} onClick={() => { setActive(i); setTab('intro') }}
             style={{fontFamily:"'Nunito Sans',sans-serif",border:'none',cursor:'pointer',
-              padding:'14px 8px',background:active===i?arch.color:arch.surf||SURF,
-              borderBottom:active===i?`3px solid #fff`:'3px solid transparent',
+              padding:'14px 8px',
+              background:active===i?'#fff':'#f8f0f4',
+              borderBottom:active===i?`3px solid ${arch.color}`:'3px solid transparent',
               display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
             <span style={{fontSize:24}}>{arch.emoji}</span>
-            <span style={{fontSize:12,fontWeight:700,color:active===i?'#fff':MUT}}>{arch.label}</span>
-            <span style={{fontSize:9,color:active===i?'rgba(255,255,255,0.7)':BD,
+            <span style={{fontSize:12,fontWeight:700,color:active===i?arch.color:'#7A4A60'}}>{arch.label}</span>
+            <span style={{fontSize:9,color:'#B89AAA',
               textTransform:'uppercase',letterSpacing:'.06em'}}>
               {arch.age.split('·')[0].trim()}
             </span>
@@ -326,7 +327,7 @@ function JiJueScreen() {
       </div>
 
       {/* Content area — archetype-specific background */}
-      <div style={{padding:'0 16px',background:a.bg||BG,minHeight:'60vh',transition:'background 0.3s'}}>
+      <div style={{padding:'0 16px',background:'#fff',minHeight:'60vh'}}>
         {/* Sub-tabs */}
         <div style={{display:'flex',gap:2,margin:'16px 0'}}>
           {[{id:'intro',label:'Who is this?'},{id:'redflags',label:'🚩 Red flags'},{id:'protect',label:'🛡️ Protect yourself'},{id:'talk',label:'💬 Real talk'},{id:'remember',label:'🕯 We remember'}].map(t => (
@@ -343,7 +344,7 @@ function JiJueScreen() {
         {/* Intro */}
         {tab==='intro' && (
           <div>
-            <div style={{background:a.surf,border:`1px solid ${a.color}30`,
+            <div style={{background:'#fff',border:'1px solid #e8dde4',
               borderLeft:`4px solid ${a.color}`,padding:'20px 16px',marginBottom:12}}>
               <div style={{fontFamily:"'Lora',serif",fontSize:26,fontWeight:700,color:TXT,marginBottom:4}}>
                 {a.emoji} {a.label}
@@ -354,7 +355,7 @@ function JiJueScreen() {
               </div>
               {a.intro.split('\n\n').map((p, i) => (
                 <p key={i} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:14,
-                  color:a.text||TXT,lineHeight:1.8,marginBottom:i<a.intro.split('\n\n').length-1?12:0}}>{p}</p>
+                  color:#180410,lineHeight:1.8,marginBottom:i<a.intro.split('\n\n').length-1?12:0}}>{p}</p>
               ))}
             </div>
           </div>
@@ -368,16 +369,16 @@ function JiJueScreen() {
                   const [flag,...rest] = text.split(' — ')
                   const why = rest.join(' — ')
                   return (
-                    <div key={i} style={{background:a.card||CARD,padding:'16px',borderLeft:`4px solid ${a.color}`}}>
-                      <div style={{fontFamily:"'Lora',serif",fontSize:15,fontWeight:700,color:a.text||TXT,marginBottom:6}}>🚩 {flag}</div>
-                      {why && <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:a.muted||MUT,lineHeight:1.6}}>{why}</div>}
+                    <div key={i} style={{background:'#fff',padding:'16px',borderLeft:`3px solid ${a.color}`,border:'1px solid #e8dde4',borderLeft:`3px solid ${a.color}`}}>
+                      <div style={{fontFamily:"'Lora',serif",fontSize:15,fontWeight:700,color:#180410,marginBottom:6}}>🚩 {flag}</div>
+                      {why && <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:#7A4A60,lineHeight:1.6}}>{why}</div>}
                     </div>
                   )
                 })
               : a.redFlags.map((rf,i) => (
-                  <div key={i} style={{background:a.card||CARD,padding:'16px',borderLeft:`4px solid ${a.color}`}}>
-                    <div style={{fontFamily:"'Lora',serif",fontSize:15,fontWeight:700,color:a.text||TXT,marginBottom:6}}>🚩 {rf.flag}</div>
-                    <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:a.muted||MUT,lineHeight:1.6}}>{rf.why}</div>
+                  <div key={i} style={{background:'#fff',padding:'16px',borderLeft:`3px solid ${a.color}`,border:'1px solid #e8dde4',borderLeft:`3px solid ${a.color}`}}>
+                    <div style={{fontFamily:"'Lora',serif",fontSize:15,fontWeight:700,color:#180410,marginBottom:6}}>🚩 {rf.flag}</div>
+                    <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:#7A4A60,lineHeight:1.6}}>{rf.why}</div>
                   </div>
                 ))
             )}
@@ -390,12 +391,12 @@ function JiJueScreen() {
             {(getC(a.id,'protective',null) || a.protective).map((p,i) => {
               const isDigital = p.includes('hepa')||p.includes('Salmin')||p.includes('Red Flag')||p.includes('femsaidiakenya')
               return (
-                <div key={i} style={{background:isDigital?'#0A1A10':a.card||CARD,padding:'16px',
+                <div key={i} style={{background:isDigital?'#F0FFF4':a.card||'#fff',padding:'16px',
                   borderLeft:`4px solid ${isDigital?GRN:'#2D7A3A'}`,display:'flex',gap:12}}>
                   <span style={{color:isDigital?'#4ACA70':'#2D7A3A',fontWeight:700,
                     fontSize:18,flexShrink:0,lineHeight:1.3}}>{isDigital?'📱':'✓'}</span>
                   <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:14,
-                    color:isDigital?'#C0E8D0':a.text||TXT,lineHeight:1.7}}>{p}</div>
+                    color:isDigital?'#166534':'#180410',lineHeight:1.7}}>{p}</div>
                 </div>
               )
             })}
@@ -410,7 +411,7 @@ function JiJueScreen() {
               letterSpacing:'.15em',textTransform:'uppercase',color:a.color,marginBottom:20}}>
               From someone who has seen this
             </div>
-            <p style={{fontFamily:"'Lora',serif",fontSize:18,color:a.text||TXT,lineHeight:1.9,fontStyle:'italic',margin:0}}>
+            <p style={{fontFamily:"'Lora',serif",fontSize:18,color:#180410,lineHeight:1.9,fontStyle:'italic',margin:0}}>
               "{a.sisterSays}"
             </p>
           </div>
@@ -474,13 +475,13 @@ function JiTumeScreen() {
           </div>
 
           {open===i && (
-            <div style={{background:SURF,border:`1px solid ${role.color}`,borderTop:'none'}}>
+            <div style={{background:'#faf4f7',border:'1px solid #e8dde4',borderTop:'none'}}>
               <div style={{display:'flex',gap:2,padding:'12px 12px 0'}}>
                 {[{id:'signs',label:'What to watch for'},{id:'actions',label:'What to do'}].map(t => (
                   <button key={t.id} onClick={() => setTab(t.id)}
                     style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
                       padding:'7px 14px',border:'none',cursor:'pointer',
-                      background:tab===t.id?role.color:CARD,color:tab===t.id?'#fff':MUT}}>
+                      background:tab===t.id?role.color:'#f0e8ed',color:tab===t.id?'#fff':'#7A4A60'}}>
                     {t.label}
                   </button>
                 ))}
@@ -488,7 +489,7 @@ function JiTumeScreen() {
               <div style={{padding:'12px'}}>
                 {(tab==='signs'?role.signs:role.actions).map((item,j) => (
                   <div key={j} style={{display:'flex',gap:12,padding:'12px 14px',
-                    background:CARD,borderLeft:`3px solid ${tab==='signs'?role.color:GRN}`,
+                    background:'#fff',border:'1px solid #e8dde4',borderLeft:`3px solid ${tab==='signs'?role.color:GRN}`,
                     marginBottom:6}}>
                     <span style={{flexShrink:0,fontSize:16}}>{tab==='signs'?'👁':'→'}</span>
                     <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,
