@@ -790,20 +790,20 @@ function AccessCodesTab() {
 // ── CASE FORM CONSTANTS (module level to prevent input focus loss) ────────────
 const STATUS_OPTIONS = [
   'reported','investigated','charged','trial','convicted','acquitted','dismissed','cold','no_action'
-
+]
 
 const COUNTIES = [
   'Nairobi','Kiambu','Mombasa','Nakuru','Kisumu','Kajiado','Kwale',
   'Machakos',"Murang'a",'Kilifi','Uasin Gishu','Trans Nzoia','Meru',
   'Kakamega','Nyeri','Nandi','Embu','Kirinyaga','Bungoma','Homa Bay',
   'Other',
-
+]
 
 const STATUS_COLORS = {
   reported:'#DDD0D0', investigated:'#E8D8C0', charged:'#D8E0C8',
   trial:'#C8D8E8', convicted:'#C8D8C0', acquitted:'#DCC8D8',
   dismissed:'#E0D0C0', cold:'#D0D4D8', no_action:'#E8D0C8',
-
+}
 
 const inputSt = { fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:TXT, background:'#EAD8D8', border:`1px solid ${BD}`, padding:'7px 10px', outline:'none', width:'100%' }
 const labelSt = { fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase', display:'block', marginBottom:3, marginTop:10 }
