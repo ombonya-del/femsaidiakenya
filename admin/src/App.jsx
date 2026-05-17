@@ -47,13 +47,14 @@ const CaseForm = ({ data, setData, onSave, onCancel, saveLabel }) => (
   <div style={{ background:'#D4BCBC', border:`1px solid ${BD}`, padding:18, marginBottom:2 }}>
     <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
       {[
-        {l:'Case ref',   k:'case_ref'},
         {l:'Victim name (if known)', k:'victim_name'},
         {l:'County',     k:'county', type:'county'},
         {l:'Location',   k:'location'},
-        {l:'Date',       k:'incident_date', type:'date'},
+        {l:'Date of incident', k:'incident_date', type:'date'},
+        {l:'Age (if known)', k:'victim_age', type:'number'},
+        {l:'Age range',  k:'victim_age_range', type:'age_range'},
         {l:'Status',     k:'status', type:'status'},
-        {l:'Relationship to victim', k:'perpetrator_relationship'},
+        {l:'Perpetrator relationship to victim', k:'perpetrator_relationship', type:'relationship'},
         {l:'Source type', k:'source_type'},
         {l:'Source URL', k:'source_url'},
         {l:'Court reference', k:'court_ref'},
@@ -75,6 +76,28 @@ const CaseForm = ({ data, setData, onSave, onCancel, saveLabel }) => (
             </select>
           ) : type==='date' ? (
             <input style={inputSt} type="date" value={data[k]||''} onChange={e=>setData(d=>({...d,[k]:e.target.value}))}/>
+          ) : type==='number' ? (
+            <input style={inputSt} type="number" value={data[k]||''} onChange={e=>setData(d=>({...d,[k]:e.target.value?parseInt(e.target.value):null}))}/>
+          ) : type==='age_range' ? (
+            <select style={inputSt} value={data[k]||'unknown'} onChange={e=>setData(d=>({...d,[k]:e.target.value}))}>
+              <option value='unknown'>Unknown</option>
+              <option value='under_18'>Under 18</option>
+              <option value='18_25'>18-25</option>
+              <option value='26_35'>26-35</option>
+              <option value='36_45'>36-45</option>
+              <option value='46_plus'>46+</option>
+            </select>
+          ) : type==='relationship' ? (
+            <select style={inputSt} value={data[k]||'unknown'} onChange={e=>setData(d=>({...d,[k]:e.target.value}))}>
+              <option value='unknown'>Unknown</option>
+              <option value='intimate_partner'>Intimate partner</option>
+              <option value='ex_partner'>Ex-partner</option>
+              <option value='family_member'>Family member</option>
+              <option value='acquaintance'>Acquaintance</option>
+              <option value='stranger'>Stranger</option>
+              <option value='employer'>Employer / person of authority</option>
+              <option value='online_contact'>Online contact</option>
+            </select>
           ) : (
             <input style={inputSt} value={data[k]||''} onChange={e=>setData(d=>({...d,[k]:e.target.value}))}/>
           )}
