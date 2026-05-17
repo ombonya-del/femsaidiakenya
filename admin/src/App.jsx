@@ -1284,6 +1284,287 @@ function HighlightsTab() {
   )
 }
 
+
+// ── RESPONDERS TAB ────────────────────────────────────────────────────────────
+function RespondersTab() {
+  const ROLES = [
+    'Boda-boda rider','Social worker','Community health worker','SRHR advocate',
+    'Paralegal / legal aid','Nurse / clinical officer','Faith leader',
+    'Community elder','Organisation staff','Other',
+  ]
+  const [responders, setResponders] = useState([])
+  const [alerts,     setAlerts]     = useState([])
+  const [loading,    setLoading]    = useState(true)
+  const [filter,     setFilter]     = useState('all')
+  const [search,     setSearch]     = useState('')
+  const [editing,    setEditing]    = useState(null)
+  const [editData,   setEditData]   = useState({})
+  const [activeTab,  setActiveTab]  = useState('responders')
+
+  const load = () => {
+    setLoading(true)
+    Promise.all([
+      supabase.from('responders').select('*').order('created_at',{ascending:false}),
+      supabase.from('responder_alerts').select('*').order('created_at',{ascending:false}).limit(50),
+    ]).then(([r,a]) => {
+      setResponders(r.data||[])
+      setAlerts(a.data||[])
+      setLoading(false)
+    })
+  }
+  useEffect(()=>{ load() },[])
+
+  const update = async (id, updates) => {
+    await supabase.from('responders').update(updates).eq('id',id)
+    load(); setEditing(null)
+  }
+
+  const counts = {
+    all:      responders.length,
+    active:   responders.filter(r=>r.active&&r.verified).length,
+    pending:  responders.filter(r=>!r.verified).length,
+    inactive: responders.filter(r=>r.verified&&!r.active).length,
+  }
+
+  const filtered = responders.filter(r => {
+    const matchFilter = filter==='all'?true:filter==='active'?(r.active&&r.verified):filter==='pending'?!r.verified:(r.verified&&!r.active)
+    const matchSearch = !search || r.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+      r.county?.toLowerCase().includes(search.toLowerCase()) ||
+      r.role?.toLowerCase().includes(search.toLowerCase())
+    return matchFilter && matchSearch
+  })
+
+  const roleColor = {
+    'Boda-boda rider':         '#CA8A04',
+    'Social worker':           '#1A5A2A',
+    'Community health worker': '#1A3F6F',
+    'SRHR advocate':           '#8A1030',
+    'Paralegal / legal aid':   '#5A1870',
+    'Nurse / clinical officer':'#0A5A5A',
+  }
+
+  return (
+    <div>
+      <div style={{marginBottom:20}}>
+        <h2 style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,color:TXT,marginBottom:4}}>
+          Itika · First Responder Network
+        </h2>
+        <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT}}>
+          Verify, activate and manage responders. Monitor alerts and responses across all counties.
+        </p>
+      </div>
+
+      {/* Sub-tabs */}
+      <div style={{display:'flex',gap:2,marginBottom:16}}>
+        {[{id:'responders',l:'Responders'},{id:'alerts',l:'Alerts & Responses'}].map(t=>(
+          <button key={t.id} onClick={()=>setActiveTab(t.id)}
+            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,
+              padding:'8px 20px',border:'none',cursor:'pointer',
+              background:activeTab===t.id?A:CRD,color:activeTab===t.id?'#fff':MUT}}>
+            {t.l}
+          </button>
+        ))}
+      </div>
+
+      {activeTab==='responders' && (
+        <div>
+          {/* Stats */}
+          <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,marginBottom:16}}>
+            {[
+              {l:'Total',c:counts.all,col:A},
+              {l:'Active',c:counts.active,col:'#1A5A2A'},
+              {l:'Pending',c:counts.pending,col:'#CA8A04'},
+              {l:'Inactive',c:counts.inactive,col:MUT},
+            ].map((s,i)=>(
+              <div key={i} style={{background:CRD,border:`1px solid ${BD}`,padding:'12px 16px'}}>
+                <div style={{fontFamily:"'Lora',serif",fontSize:28,fontWeight:700,color:s.col}}>{s.c}</div>
+                <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT}}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Filters */}
+          <div style={{display:'flex',gap:8,marginBottom:12,flexWrap:'wrap'}}>
+            {['all','active','pending','inactive'].map(f=>(
+              <button key={f} onClick={()=>setFilter(f)}
+                style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
+                  padding:'5px 12px',border:`1px solid ${BD}`,cursor:'pointer',
+                  background:filter===f?A:CRD,color:filter===f?'#fff':MUT,textTransform:'capitalize'}}>
+                {f} ({counts[f]||0})
+              </button>
+            ))}
+            <input value={search} onChange={e=>setSearch(e.target.value)}
+              placeholder="Search name, county, role..."
+              style={{...inputSt,width:200,marginTop:0}}/>
+          </div>
+
+          {loading?<p style={{color:MUT,fontFamily:"'Nunito Sans',sans-serif",fontSize:12}}>Loading...</p>
+          :filtered.map(r=>(
+            <div key={r.id} style={{background:CRD,border:`1px solid ${BD}`,marginBottom:8,padding:14,
+              opacity:r.active?1:0.7}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12,marginBottom:8}}>
+                <div style={{flex:1}}>
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+                    <span style={{fontFamily:"'Lora',serif",fontSize:15,fontWeight:700,color:TXT}}>{r.full_name}</span>
+                    <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,fontWeight:700,
+                      padding:'2px 8px',letterSpacing:'.06em',textTransform:'uppercase',
+                      background:r.verified&&r.active?'#1A5A2A':r.verified?'#CA8A04':'#8A1030',
+                      color:'#fff'}}>
+                      {r.verified&&r.active?'Active':r.verified?'Inactive':'Pending'}
+                    </span>
+                  </div>
+                  <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT}}>
+                    <span style={{padding:'1px 6px',marginRight:6,fontSize:9,fontWeight:700,
+                      background:roleColor[r.role]||BD,color:'#fff'}}>{r.role}</span>
+                    {r.county} · {r.phone}
+                    {r.organisation?` · ${r.organisation}`:''}
+                  </div>
+                </div>
+                <div style={{display:'flex',gap:6,flexShrink:0,flexWrap:'wrap',justifyContent:'flex-end'}}>
+                  {!r.verified&&(
+                    <button onClick={()=>update(r.id,{verified:true,active:true})}
+                      style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
+                        padding:'4px 10px',background:'#1A5A2A',color:'#fff',border:'none',cursor:'pointer'}}>
+                      ✓ Verify & activate
+                    </button>
+                  )}
+                  {r.verified&&!r.active&&(
+                    <button onClick={()=>update(r.id,{active:true})}
+                      style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
+                        padding:'4px 10px',background:'#1A5A2A',color:'#fff',border:'none',cursor:'pointer'}}>
+                      Activate
+                    </button>
+                  )}
+                  {r.active&&(
+                    <button onClick={()=>update(r.id,{active:false})}
+                      style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
+                        padding:'4px 10px',background:A,color:'#fff',border:'none',cursor:'pointer'}}>
+                      Deactivate
+                    </button>
+                  )}
+                  <button onClick={()=>{setEditing(editing===r.id?null:r.id);setEditData({...r,skills:(r.skills||[]).join(', ')})}}
+                    style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
+                      padding:'4px 10px',background:CRD,color:MUT,border:`1px solid ${BD}`,cursor:'pointer'}}>
+                    {editing===r.id?'Close':'Edit'}
+                  </button>
+                </div>
+              </div>
+
+              {r.skills?.length>0&&editing!==r.id&&(
+                <div style={{display:'flex',flexWrap:'wrap',gap:4,marginTop:6}}>
+                  {r.skills.map((s,i)=>(
+                    <span key={i} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,
+                      padding:'2px 8px',background:'rgba(26,106,58,0.3)',color:'#4ACA70',
+                      border:'1px solid rgba(26,106,58,0.4)'}}>{s}</span>
+                  ))}
+                </div>
+              )}
+
+              {editing===r.id&&(
+                <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${BD}`}}>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
+                    {[
+                      {k:'full_name',l:'Name'},
+                      {k:'phone',l:'Phone'},
+                      {k:'organisation',l:'Organisation'},
+                      {k:'county',l:'County'},
+                    ].map(f=>(
+                      <div key={f.k}>
+                        <label style={labelSt}>{f.l}</label>
+                        <input value={editData[f.k]||''} onChange={e=>setEditData({...editData,[f.k]:e.target.value})} style={inputSt}/>
+                      </div>
+                    ))}
+                    <div>
+                      <label style={labelSt}>Role</label>
+                      <select value={editData.role||''} onChange={e=>setEditData({...editData,role:e.target.value})} style={inputSt}>
+                        {ROLES.map(r=><option key={r} value={r}>{r}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={labelSt}>Skills (comma separated)</label>
+                      <input value={editData.skills||''} onChange={e=>setEditData({...editData,skills:e.target.value})} style={inputSt}/>
+                    </div>
+                  </div>
+                  <div style={{marginBottom:8}}>
+                    <label style={labelSt}>Admin notes</label>
+                    <textarea value={editData.notes||''} onChange={e=>setEditData({...editData,notes:e.target.value})} rows={2}
+                      style={{width:'100%',padding:'7px 10px',fontFamily:"'Nunito Sans',sans-serif",
+                        fontSize:12,background:'rgba(255,255,255,0.8)',border:`1px solid ${BD}`,
+                        color:TXT,outline:'none',resize:'vertical',boxSizing:'border-box'}}/>
+                  </div>
+                  <div style={{display:'flex',gap:8}}>
+                    <button onClick={()=>update(r.id,{
+                        full_name:editData.full_name,phone:editData.phone,
+                        organisation:editData.organisation,county:editData.county,
+                        role:editData.role,notes:editData.notes,
+                        skills:editData.skills.split(',').map(s=>s.trim()).filter(Boolean)
+                      })}
+                      style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
+                        padding:'5px 12px',background:'#1A5A2A',color:'#fff',border:'none',cursor:'pointer'}}>
+                      Save
+                    </button>
+                    <button onClick={()=>setEditing(null)}
+                      style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,
+                        padding:'5px 12px',background:CRD,color:MUT,border:`1px solid ${BD}`,cursor:'pointer'}}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {activeTab==='alerts' && (
+        <div>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+            <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT}}>
+              {alerts.length} alerts total
+            </p>
+            <button onClick={load}
+              style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
+                padding:'5px 12px',background:CRD,color:MUT,border:`1px solid ${BD}`,cursor:'pointer'}}>
+              ↻ Refresh
+            </button>
+          </div>
+          {alerts.length===0?(
+            <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT,fontStyle:'italic'}}>No alerts yet.</p>
+          ):alerts.map(alert=>(
+            <div key={alert.id} style={{background:CRD,border:`1px solid ${BD}`,marginBottom:8,padding:14,
+              borderLeft:`3px solid ${alert.status==='active'?'#CC1010':alert.status==='resolved'?'#1A5A2A':'#CA8A04'}`}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12,marginBottom:6}}>
+                <div>
+                  <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,fontWeight:700,
+                    letterSpacing:'.08em',textTransform:'uppercase',padding:'2px 8px',marginRight:8,
+                    background:alert.status==='active'?'#CC1010':alert.status==='resolved'?'#1A5A2A':'#CA8A04',
+                    color:'#fff'}}>{alert.status}</span>
+                  <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:TXT,fontWeight:700}}>{alert.county}</span>
+                </div>
+                <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT,flexShrink:0}}>
+                  {alert.created_at&&new Date(alert.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}
+                </span>
+              </div>
+              <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,marginBottom:4}}>
+                Type: {alert.alert_type}
+                {alert.caller_phone?` · Caller: ${alert.caller_phone}`:''}
+              </div>
+              {alert.details&&<p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:TXT,lineHeight:1.5}}>{alert.details}</p>}
+              {alert.location_lat&&(
+                <a href={`https://maps.google.com/?q=${alert.location_lat},${alert.location_lng}`}
+                  target="_blank" rel="noopener noreferrer"
+                  style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:A,fontWeight:700,textDecoration:'none'}}>
+                  📍 View location →
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const TABS = [
   { id:'submissions', label:'Submissions',    icon:<Flag size={14}/> },
   { id:'profiles',    label:'Profiles',       icon:<Users size={14}/> },
@@ -1294,6 +1575,7 @@ const TABS = [
   { id:'analytics',   label:'Analytics',      icon:<BarChart2 size={14}/> },
   { id:'cases',       label:'Case tracker',   icon:<FileText size={14}/> },
   { id:'codes',       label:'Access codes',   icon:<Users size={14}/> },
+  { id:'responders',  label:'Itika Responders', icon:<Shield size={14}/> },
   { id:'highlights',  label:'Misogyny of Day', icon:<AlertTriangle size={14}/> },
 ]
 
@@ -1353,6 +1635,7 @@ export default function App() {
         {tab==='analytics'   && <AnalyticsTab/>}
         {tab==='cases'       && <CasesTab/>}
         {tab==='codes'       && <AccessCodesTab/>}
+        {tab==='responders'  && <RespondersTab/>}
         {tab==='highlights'  && <HighlightsTab/>}
       </main>
 

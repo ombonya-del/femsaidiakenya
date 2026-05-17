@@ -1,0 +1,10 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #071A0F; color: #E8F5EE; -webkit-font-smoothing: antialiased; }
+button { font-family: inherit; }
+textarea, input, select { font-family: inherit; }
+a { color: inherit; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
