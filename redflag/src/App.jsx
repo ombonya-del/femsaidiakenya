@@ -565,15 +565,61 @@ function JiJueScreen() {
 
         {/* Real talk */}
         {tab==='talk' && (
-          <div style={{background:a.light,border:`1px solid ${a.color}`,
-            borderLeft:`4px solid ${a.color}`,padding:'24px 20px'}}>
-            <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
-              letterSpacing:'.15em',textTransform:'uppercase',color:a.color,marginBottom:20}}>
-              From someone who has seen this
+          <div>
+            <div style={{background:'#fdf8fb',border:'1px solid #e8dde4',
+              borderLeft:`4px solid ${a.color}`,padding:'20px 16px',marginBottom:16}}>
+              <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
+                letterSpacing:'.15em',textTransform:'uppercase',color:a.color,marginBottom:12}}>
+                From someone who has seen this
+              </div>
+              <p style={{fontFamily:"'Lora',serif",fontSize:16,color:'#180410',
+                lineHeight:1.9,fontStyle:'italic',margin:0}}>
+                "{a.sisterSays}"
+              </p>
             </div>
-            <p style={{fontFamily:"'Lora',serif",fontSize:18,color:'#180410',lineHeight:1.9,fontStyle:'italic',margin:0}}>
-              "{a.sisterSays}"
-            </p>
+            <div style={{display:'flex',justifyContent:'space-between',
+              alignItems:'center',marginBottom:12}}>
+              <div>
+                <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
+                  letterSpacing:'.1em',textTransform:'uppercase',color:a.color,marginBottom:2}}>
+                  Community voices
+                </div>
+                <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:'#B89AAA'}}>
+                  Survivors · Those left behind · Witnesses
+                </div>
+              </div>
+              <button onClick={()=>setShowVoiceForm(true)}
+                style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
+                  padding:'8px 14px',background:a.color,color:'#fff',
+                  border:'none',cursor:'pointer',flexShrink:0}}>
+                + Share yours
+              </button>
+            </div>
+            {voices.length===0?(
+              <div style={{background:'#fff',border:'1px solid #e8dde4',
+                padding:'24px 16px',textAlign:'center'}}>
+                <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,
+                  color:'#B89AAA',marginBottom:10}}>
+                  No voices shared yet for this archetype.
+                </p>
+                <button onClick={()=>setShowVoiceForm(true)}
+                  style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,
+                    padding:'8px 16px',background:a.color,color:'#fff',
+                    border:'none',cursor:'pointer'}}>
+                  Be the first
+                </button>
+              </div>
+            ):voices.map((v,i)=>(
+              <VoiceCard key={v.id||i} voice={v} accentColor={a.color}/>
+            ))}
+            {showVoiceForm&&(
+              <VoiceForm
+                archetypeId={a.id}
+                accentColor={a.color}
+                onClose={()=>setShowVoiceForm(false)}
+                onSubmit={()=>loadVoices(a.id)}
+              />
+            )}
           </div>
         )}
 
