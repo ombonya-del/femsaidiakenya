@@ -25,9 +25,9 @@ body {
 /* Nav tabs */
 .nav-tab {
   font-family: 'Nunito Sans', sans-serif;
-  font-size: 12px;
-  letter-spacing: 0.05em;
-  padding: 12px 18px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  padding: 10px 10px;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
@@ -38,7 +38,7 @@ body {
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 .nav-tab:hover { color: #fff; }
 .nav-tab.active { color: #fff; border-bottom-color: #FFB0C0; font-weight: 700; }
