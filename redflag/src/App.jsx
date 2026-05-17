@@ -259,14 +259,179 @@ function VictimCard({ v, accentColor='#8A1030', mutedColor='#7A4A60' }) {
   )
 }
 
+
+// ── VOICE CARD ────────────────────────────────────────────────────────────────
+function VoiceCard({ voice, accentColor='#8A1030' }) {
+  const [exp, setExp] = useState(false)
+  const typeLabel = {
+    survivor:    '💪 Survivor',
+    left_behind: '🕯 Left behind',
+    witness:     '👁 Witness',
+  }[voice.voice_type] || voice.voice_type
+  const long = voice.story?.length > 160
+
+  return (
+    <div style={{background:'#fff',border:'1px solid #e8dde4',
+      borderLeft:`3px solid ${accentColor}`,padding:'14px 16px',marginBottom:8}}>
+      <div style={{display:'flex',justifyContent:'space-between',
+        alignItems:'flex-start',gap:8,marginBottom:8}}>
+        <div>
+          <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
+            letterSpacing:'.08em',textTransform:'uppercase',color:accentColor,marginBottom:3}}>
+            {typeLabel}
+          </div>
+          <div style={{fontFamily:"'Lora',serif",fontSize:13,fontWeight:700,color:'#180410'}}>
+            {voice.name||'Anonymous'}
+            {voice.relationship ? ` · ${voice.relationship}` : ''}
+          </div>
+        </div>
+        <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:'#B89AAA',
+          flexShrink:0}}>
+          {voice.created_at && new Date(voice.created_at).toLocaleDateString('en-KE',
+            {month:'short',year:'numeric'})}
+        </div>
+      </div>
+      <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'#180410',
+        lineHeight:1.7,margin:0,fontStyle:'italic'}}>
+        "{long&&!exp ? `${voice.story?.slice(0,160)}…` : voice.story}"
+      </p>
+      {long && (
+        <button onClick={()=>setExp(!exp)}
+          style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:accentColor,
+            background:'none',border:'none',cursor:'pointer',marginTop:6,padding:0}}>
+          {exp?'Show less':'Read full story'}
+        </button>
+      )}
+    </div>
+  )
+}
+
+// ── VOICE SUBMIT FORM ─────────────────────────────────────────────────────────
+function VoiceForm({ archetypeId, accentColor, onClose, onSubmit }) {
+  const [form, setForm] = useState({
+    voice_type:'survivor', name:'', relationship:'', story:''
+  })
+  const [sending, setSending] = useState(false)
+  const [done,    setDone]    = useState(false)
+
+  const submit = async () => {
+    if(!form.story.trim()) return
+    setSending(true)
+    await sb.from('archetype_voices').insert({
+      archetype_id: archetypeId,
+      voice_type:   form.voice_type,
+      name:         form.name.trim() || 'Anonymous',
+      relationship: form.relationship.trim(),
+      story:        form.story.trim(),
+      status:       'published',
+    })
+    setSending(false)
+    setDone(true)
+    setTimeout(() => { onSubmit(); onClose() }, 1500)
+  }
+
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(24,4,16,0.7)',zIndex:1000,
+      display:'flex',alignItems:'flex-end',justifyContent:'center'}}
+      onClick={onClose}>
+      <div style={{background:'#fff',width:'100%',maxWidth:480,
+        borderRadius:'12px 12px 0 0',padding:'20px 16px 32px',maxHeight:'85vh',
+        overflowY:'auto'}}
+        onClick={e=>e.stopPropagation()}>
+        <div style={{display:'flex',justifyContent:'space-between',
+          alignItems:'center',marginBottom:16}}>
+          <div style={{fontFamily:"'Lora',serif",fontSize:18,fontWeight:700,
+            color:'#180410'}}>Share your voice</div>
+          <button onClick={onClose} style={{background:'none',border:'none',
+            fontSize:20,cursor:'pointer',color:'#B89AAA'}}>✕</button>
+        </div>
+
+        {done ? (
+          <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:14,
+            color:'#166534',textAlign:'center',padding:'20px 0'}}>
+            ✓ Thank you for sharing. Your voice matters.
+          </p>
+        ) : (
+          <>
+            <div style={{marginBottom:12}}>
+              <label style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,fontWeight:700,
+                letterSpacing:'.1em',textTransform:'uppercase',color:'#7A4A60',
+                display:'block',marginBottom:6}}>I am sharing as *</label>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:4}}>
+                {[
+                  {id:'survivor',    label:'💪 Survivor'},
+                  {id:'left_behind', label:'🕯 Left behind'},
+                  {id:'witness',     label:'👁 Witness'},
+                ].map(t => (
+                  <button key={t.id} onClick={()=>setForm({...form,voice_type:t.id})}
+                    style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
+                      padding:'8px 4px',border:`1px solid ${form.voice_type===t.id?accentColor:'#e8dde4'}`,
+                      background:form.voice_type===t.id?accentColor:'#fff',
+                      color:form.voice_type===t.id?'#fff':'#7A4A60',cursor:'pointer'}}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {[
+              {k:'story',        label:'Your story *',           ph:'Tell it in your own words...',  multi:true},
+              {k:'relationship', label:'Your connection (optional)', ph:'e.g. Sister, friend, neighbour...', multi:false},
+              {k:'name',         label:'Your name (optional)',    ph:'Anonymous',                     multi:false},
+            ].map(f => (
+              <div key={f.k} style={{marginBottom:10}}>
+                <label style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,fontWeight:700,
+                  letterSpacing:'.1em',textTransform:'uppercase',color:'#7A4A60',
+                  display:'block',marginBottom:4}}>{f.label}</label>
+                {f.multi ? (
+                  <textarea value={form[f.k]}
+                    onChange={e=>setForm({...form,[f.k]:e.target.value})}
+                    placeholder={f.ph} rows={4}
+                    style={{width:'100%',padding:'8px 10px',fontFamily:"'Nunito Sans',sans-serif",
+                      fontSize:13,background:'#faf4f7',border:'1px solid #e8dde4',
+                      color:'#180410',outline:'none',resize:'none',boxSizing:'border-box'}}/>
+                ) : (
+                  <input value={form[f.k]}
+                    onChange={e=>setForm({...form,[f.k]:e.target.value})}
+                    placeholder={f.ph}
+                    style={{width:'100%',padding:'8px 10px',fontFamily:"'Nunito Sans',sans-serif",
+                      fontSize:13,background:'#faf4f7',border:'1px solid #e8dde4',
+                      color:'#180410',outline:'none',boxSizing:'border-box'}}/>
+                )}
+              </div>
+            ))}
+
+            <button onClick={submit} disabled={sending||!form.story}
+              style={{width:'100%',fontFamily:"'Nunito Sans',sans-serif",fontSize:13,
+                fontWeight:700,padding:'12px',background:form.story?accentColor:'#e8dde4',
+                color:form.story?'#fff':'#B89AAA',border:'none',
+                cursor:form.story?'pointer':'not-allowed',marginTop:4}}>
+              {sending ? 'Sharing…' : 'Share your story'}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── JIJUE SCREEN ──────────────────────────────────────────────────────────────
 function JiJueScreen() {
   const [active, setActive]   = useState(0)
   const [tab, setTab]         = useState('intro')
   const [dbContent, setDbContent] = useState({})
   const [victims,   setVictims]   = useState({})
+  const [voices,    setVoices]    = useState([])
+  const [showVoiceForm, setShowVoiceForm] = useState(false)
+
+  const loadVoices = (id) => {
+    sb.from('archetype_voices').select('*').eq('archetype_id', id)
+      .eq('status','published').order('created_at',{ascending:false})
+      .then(({data}) => setVoices(data||[]))
+  }
 
   useEffect(() => {
+    loadVoices(ARCHETYPES[0].id)
     sb.from('archetype_content').select('*').eq('active', true)
       .order('sort_order', { ascending: true })
       .then(({ data }) => {
@@ -304,7 +469,7 @@ function JiJueScreen() {
       {/* Archetype selector */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:2,marginBottom:0}}>
         {ARCHETYPES.map((arch, i) => (
-          <button key={arch.id} onClick={() => { setActive(i); setTab('intro') }}
+          <button key={arch.id} onClick={() => { setActive(i); setTab('intro'); loadVoices(arch.id) }}
             style={{fontFamily:"'Nunito Sans',sans-serif",border:'none',cursor:'pointer',
               padding:'14px 8px',
               background:active===i?'#fff':'#f8f0f4',
