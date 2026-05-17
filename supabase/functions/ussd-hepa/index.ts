@@ -31,6 +31,30 @@ Deno.serve(async (req: Request) => {
     }).catch(() => {}) // silent fail — never block the USSD response
   }
 
+  // ── ITIKA ALERT — fires when user selects "I am in danger RIGHT NOW" ──────
+  // nav[0]==='1' means first menu choice after language = danger option
+  const isDangerPress = inp.length >= 2 && inp[1] === '1'
+  if (isDangerPress && inp.length === 2) {
+    // Fire and forget — never block USSD response
+    const county = 'Unknown' // USSD has no GPS; county routing done by admin
+    fetch(`${Deno.env.get('SUPABASE_URL')}/rest/v1/responder_alerts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY') ?? ''}`,
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify({
+        alert_type:   'salmin_sos',
+        county,
+        caller_phone: phone.slice(-4) ? `***${phone.slice(-4)}` : null,
+        details:      'Salmin USSD SOS — caller selected danger option. No GPS available. County unknown — admin to verify and route.',
+        status:       'active',
+      }),
+    }).catch(() => {})
+  }
+
   // Language from first press: 2=English, else Swahili
   const e   = inp[0] === '2'
   const nav = inp.slice(1)

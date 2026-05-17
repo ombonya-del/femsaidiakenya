@@ -247,12 +247,33 @@ function PanicScreen({ contacts, onDismiss }) {
 
   const message = `🚨 EMERGENCY — I need help immediately!\n\nThis is an automated alert from hepa.\n${location ? `My location: ${locationUrl}` : 'Location unavailable — call me NOW'}\n\nCall police: 999\nDCI Gender Desk: 0800 722 203`
 
-  const sendAlert = () => {
+  const sendAlert = async () => {
+    // 1. Open WhatsApp to emergency contact as before
     if (contacts.length > 0) {
       const phone = contacts[0].phone.replace(/\s+/g, '')
       const wa = `https://wa.me/${phone.startsWith('0') ? '254' + phone.slice(1) : phone}?text=${encodeURIComponent(message)}`
       window.open(wa, '_blank')
     }
+    // 2. Insert Itika alert — county unknown from hepa, use 'Unknown' and let responders see GPS
+    try {
+      await fetch('https://uuluuhltphgwfblcghlp.supabase.co/rest/v1/responder_alerts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bHV1aGx0cGhnd2ZibGNnaGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MjI2NDAsImV4cCI6MjA5MzQ5ODY0MH0.KU_wtm0NVUz8vrMqgozPvTlmiCIf_yXP8Z3Gpmh599E',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bHV1aGx0cGhnd2ZibGNnaGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MjI2NDAsImV4cCI6MjA5MzQ5ODY0MH0.KU_wtm0NVUz8vrMqgozPvTlmiCIf_yXP8Z3Gpmh599E',
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({
+          alert_type:   'hepa_panic',
+          county:       'Unknown',
+          location_lat: location?.lat || null,
+          location_lng: location?.lng || null,
+          details:      'hepa panic button triggered. GPS attached if available.',
+          status:       'active',
+        }),
+      })
+    } catch(e) { /* silent fail — never block the alert */ }
     setSent(true)
   }
 

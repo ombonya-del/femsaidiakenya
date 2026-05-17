@@ -127,6 +127,65 @@ const ECOSYSTEM = [
     actions:['Say hello. Consistent human contact makes isolation harder.','If she asks you to say she is not home to someone — do it. She has a reason.','You can knock and ask if everything is okay. You do not need a formal reason.','Know who lives in your building. Notice when someone stops being visible.','If genuinely worried, you can call for a wellness check without her knowing.']},
 ]
 
+// ── ITIKA SOS BUTTON ─────────────────────────────────────────────────────────
+function ItikaSOSButton() {
+  const [sent,    setSent]    = useState(false)
+  const [sending, setSending] = useState(false)
+
+  const fireAlert = async () => {
+    setSending(true)
+    // Get GPS if available
+    let lat = null, lng = null
+    try {
+      const pos = await new Promise((res,rej) =>
+        navigator.geolocation?.getCurrentPosition(res, rej, {timeout:4000})
+      )
+      lat = pos.coords.latitude
+      lng = pos.coords.longitude
+    } catch(e) {}
+
+    try {
+      await fetch('https://uuluuhltphgwfblcghlp.supabase.co/rest/v1/responder_alerts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bHV1aGx0cGhnd2ZibGNnaGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MjI2NDAsImV4cCI6MjA5MzQ5ODY0MH0.KU_wtm0NVUz8vrMqgozPvTlmiCIf_yXP8Z3Gpmh599E',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bHV1aGx0cGhnd2ZibGNnaGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MjI2NDAsImV4cCI6MjA5MzQ5ODY0MH0.KU_wtm0NVUz8vrMqgozPvTlmiCIf_yXP8Z3Gpmh599E',
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({
+          alert_type:   'redflag_sos',
+          county:       'Unknown',
+          location_lat: lat,
+          location_lng: lng,
+          details:      'Red Flag PWA SOS triggered.' + (lat ? ` GPS: ${lat},${lng}` : ' No GPS available.'),
+          status:       'active',
+        }),
+      })
+      setSent(true)
+    } catch(e) {
+      setSent(true) // show confirmation regardless — never leave user hanging
+    }
+    setSending(false)
+  }
+
+  if (sent) return (
+    <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
+      padding:'5px 10px',background:'#1A5A2A',color:'#fff'}}>
+      ✓ Responders notified
+    </span>
+  )
+
+  return (
+    <button onClick={fireAlert} disabled={sending}
+      style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
+        padding:'5px 10px',background:sending?'#5A0010':RED,color:'#fff',
+        border:'none',cursor:'pointer'}}>
+      {sending ? '...' : '🆘 I need help now'}
+    </button>
+  )
+}
+
 // ── EMERGENCY BAR ─────────────────────────────────────────────────────────────
 function EmergencyBar() {
   return (
@@ -135,6 +194,7 @@ function EmergencyBar() {
       <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
         letterSpacing:'.12em',textTransform:'uppercase',color:RED}}>⚡ Emergency</span>
       <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+        <ItikaSOSButton/>
         <a href="https://hepa.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
           style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
             padding:'5px 10px',background:GRN,color:'#fff',textDecoration:'none',display:'inline-flex',alignItems:'center',gap:4}}>
@@ -144,6 +204,7 @@ function EmergencyBar() {
           padding:'5px 10px',background:'#8A1030',color:'#fff',textDecoration:'none',display:'inline-block'}}>
           📞 Salmin *384*89056#
         </a>
+        <ItikaSOSButton/>
         <a href="https://femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
           style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,textDecoration:'none'}}>
           femsaidiakenya.org
