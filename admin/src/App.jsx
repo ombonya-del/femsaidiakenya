@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import {
   LogOut, CheckCircle, XCircle, AlertTriangle, Edit2, Save, X,
   ChevronUp, Trash2, Eye, RefreshCw, Send, BarChart2, Flag,
-  FileText, Users, Mail, Shield, BookOpen
+  FileText, Users, Mail, Shield, BookOpen, MessageSquare, Heart
 } from 'lucide-react'
 
 // ── CONFIG ────────────────────────────────────────────────────────────────────
@@ -790,20 +790,20 @@ function AccessCodesTab() {
 // ── CASE FORM CONSTANTS (module level to prevent input focus loss) ────────────
 const STATUS_OPTIONS = [
   'reported','investigated','charged','trial','convicted','acquitted','dismissed','cold','no_action'
-]
+
 
 const COUNTIES = [
   'Nairobi','Kiambu','Mombasa','Nakuru','Kisumu','Kajiado','Kwale',
   'Machakos',"Murang'a",'Kilifi','Uasin Gishu','Trans Nzoia','Meru',
   'Kakamega','Nyeri','Nandi','Embu','Kirinyaga','Bungoma','Homa Bay',
   'Other',
-]
+
 
 const STATUS_COLORS = {
   reported:'#DDD0D0', investigated:'#E8D8C0', charged:'#D8E0C8',
   trial:'#C8D8E8', convicted:'#C8D8C0', acquitted:'#DCC8D8',
   dismissed:'#E0D0C0', cold:'#D0D4D8', no_action:'#E8D0C8',
-}
+
 
 const inputSt = { fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:TXT, background:'#EAD8D8', border:`1px solid ${BD}`, padding:'7px 10px', outline:'none', width:'100%' }
 const labelSt = { fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase', display:'block', marginBottom:3, marginTop:10 }
@@ -1327,12 +1327,271 @@ function ArchetypesTab() {
   )
 }
 
+// ── MEMORIAL TAB ─────────────────────────────────────────────────────────────
+function MemorialTab() {
+  const ARCHETYPES = [
+    {id:'naive',      label:'The Naive',      color:'#1A3F6F'},
+    {id:'precocious', label:'The Precocious',  color:'#C06020'},
+    {id:'allin',      label:'The All-In',      color:'#7A4ABA'},
+  ]
+  const [items,      setItems]   = useState([])
+  const [loading,    setLoading] = useState(true)
+  const [activeArch, setActive]  = useState('naive')
+  const [newForm,    setNewForm] = useState({victim_name:'',age:'',county:'',incident_date:'',note:''})
+  const [adding,     setAdding]  = useState(false)
+
+  const load = () => {
+    setLoading(true)
+    supabase.from('archetype_memorial').select('*').order('sort_order',{ascending:true})
+      .then(({data})=>{ setItems(data||[]); setLoading(false) })
+  }
+
+  useEffect(()=>{ load() },[])
+
+  const toggle = async (id, active) => {
+    await supabase.from('archetype_memorial').update({active:!active}).eq('id',id)
+    load()
+  }
+
+  const addNew = async () => {
+    if(!newForm.victim_name.trim()) return
+    const maxOrder = items.filter(i=>i.archetype_id===activeArch).reduce((m,i)=>Math.max(m,i.sort_order||0),0)
+    await supabase.from('archetype_memorial').insert({...newForm,archetype_id:activeArch,sort_order:maxOrder+1,active:true})
+    setNewForm({victim_name:'',age:'',county:'',incident_date:'',note:''})
+    setAdding(false); load()
+  }
+
+  const filtered = items.filter(i=>i.archetype_id===activeArch)
+  const arch = ARCHETYPES.find(a=>a.id===activeArch)
+
+  return (
+    <div>
+      <div style={{marginBottom:20}}>
+        <h2 style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,color:TXT,marginBottom:4}}>We Remember</h2>
+        <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT}}>Manage the memorial names shown in each archetype's We Remember section.</p>
+      </div>
+      <div style={{display:'flex',gap:2,marginBottom:16}}>
+        {ARCHETYPES.map(a=>(
+          <button key={a.id} onClick={()=>setActive(a.id)}
+            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,
+              padding:'8px 16px',border:'none',cursor:'pointer',
+              background:activeArch===a.id?a.color:CRD,color:activeArch===a.id?'#fff':MUT}}>
+            {a.label}
+          </button>
+        ))}
+      </div>
+      {loading?<p style={{color:MUT,fontFamily:"'Nunito Sans',sans-serif",fontSize:12}}>Loading…</p>:
+        <>
+          {filtered.map((item,i)=>(
+            <div key={item.id} style={{background:item.active?CRD:'rgba(180,150,160,0.3)',
+              border:`1px solid ${BD}`,marginBottom:8,padding:14,opacity:item.active?1:0.5,
+              display:'flex',justifyContent:'space-between',alignItems:'center',gap:12}}>
+              <div>
+                <div style={{fontFamily:"'Lora',serif",fontSize:14,fontWeight:700,color:TXT}}>{item.victim_name}</div>
+                <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT}}>
+                  {item.county}{item.age?` · ${item.age}`:''}{item.incident_date?` · ${new Date(item.incident_date).toLocaleDateString('en-KE',{month:'short',year:'numeric'})}`:''}</div>
+              </div>
+              <button onClick={()=>toggle(item.id,item.active)}
+                style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
+                  padding:'4px 10px',background:item.active?A:'#1A5A2A',color:'#fff',border:'none',cursor:'pointer',flexShrink:0}}>
+                {item.active?'Hide':'Show'}
+              </button>
+            </div>
+          ))}
+          {adding?(
+            <div style={{background:'rgba(255,255,255,0.5)',border:`1px solid ${BD}`,padding:14,marginTop:8}}>
+              {[{k:'victim_name',l:'Name *',ph:'Full name'},{k:'age',l:'Age/Range',ph:'e.g. 21'},{k:'county',l:'County',ph:'e.g. Nairobi'},{k:'incident_date',l:'Date',ph:'',type:'date'},{k:'note',l:'Note',ph:'Optional context'}].map(f=>(
+                <div key={f.k} style={{marginBottom:8}}>
+                  <label style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,fontWeight:700,
+                    letterSpacing:'.08em',textTransform:'uppercase',color:MUT,display:'block',marginBottom:3}}>{f.l}</label>
+                  <input type={f.type||'text'} value={newForm[f.k]} onChange={e=>setNewForm({...newForm,[f.k]:e.target.value})}
+                    placeholder={f.ph}
+                    style={{width:'100%',padding:'6px 10px',fontFamily:"'Nunito Sans',sans-serif",
+                      fontSize:12,background:'rgba(255,255,255,0.8)',border:`1px solid ${BD}`,
+                      color:TXT,outline:'none',boxSizing:'border-box'}}/>
+                </div>
+              ))}
+              <div style={{display:'flex',gap:8,marginTop:8}}>
+                <button onClick={addNew} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
+                  padding:'5px 12px',background:arch?.color||A,color:'#fff',border:'none',cursor:'pointer'}}>Add</button>
+                <button onClick={()=>setAdding(false)} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,
+                  padding:'5px 12px',background:CRD,color:MUT,border:`1px solid ${BD}`,cursor:'pointer'}}>Cancel</button>
+              </div>
+            </div>
+          ):(
+            <button onClick={()=>setAdding(true)} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,
+              fontWeight:700,padding:'8px 16px',background:arch?.color||A,color:'#fff',border:'none',cursor:'pointer',marginTop:8}}>
+              + Add name
+            </button>
+          )}
+        </>
+      }
+    </div>
+  )
+}
+
+// ── VOICES MODERATION TAB ────────────────────────────────────────────────────
+function VoicesTab() {
+  const ARCHETYPES = [
+    {id:'naive',      label:'The Naive',      color:'#1A3F6F'},
+    {id:'precocious', label:'The Precocious',  color:'#C06020'},
+    {id:'allin',      label:'The All-In',      color:'#7A4ABA'},
+  ]
+  const [voices,     setVoices]     = useState([])
+  const [loading,    setLoading]    = useState(true)
+  const [filter,     setFilter]     = useState('published')
+  const [archFilter, setArchFilter] = useState('all')
+  const [editing,    setEditing]    = useState(null)
+  const [editStory,  setEditStory]  = useState('')
+
+  const load = () => {
+    setLoading(true)
+    supabase.from('archetype_voices').select('*')
+      .order('created_at',{ascending:false})
+      .then(({data})=>{ setVoices(data||[]); setLoading(false) })
+  }
+
+  useEffect(()=>{ load() },[])
+
+  const update = async (id, updates) => {
+    await supabase.from('archetype_voices').update(updates).eq('id',id)
+    load(); setEditing(null)
+  }
+
+  const filtered = voices.filter(v =>
+    (filter==='all' ? true : v.status===filter) &&
+    (archFilter==='all' ? true : v.archetype_id===archFilter)
+  )
+
+  const typeLabel = {survivor:'💪 Survivor',left_behind:'🕯 Left behind',witness:'👁 Witness'}
+
+  return (
+    <div>
+      <div style={{marginBottom:20}}>
+        <h2 style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,color:TXT,marginBottom:4}}>
+          Community Voices
+        </h2>
+        <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT}}>
+          Moderate survivor stories, left-behind reflections and witness accounts from the Red Flag PWA.
+        </p>
+      </div>
+
+      <div style={{display:'flex',gap:8,marginBottom:12,flexWrap:'wrap'}}>
+        {['all','naive','precocious','allin'].map(a=>(
+          <button key={a} onClick={()=>setArchFilter(a)}
+            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
+              padding:'5px 12px',border:`1px solid ${BD}`,cursor:'pointer',
+              background:archFilter===a?A:CRD,color:archFilter===a?'#fff':MUT}}>
+            {a==='all'?'All archetypes':ARCHETYPES.find(x=>x.id===a)?.label||a}
+          </button>
+        ))}
+      </div>
+
+      <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
+        {[{id:'published',l:'Published'},{id:'flagged',l:'Flagged'},{id:'removed',l:'Removed'},{id:'all',l:'All'}].map(f=>(
+          <button key={f.id} onClick={()=>setFilter(f.id)}
+            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
+              padding:'5px 12px',border:`1px solid ${BD}`,cursor:'pointer',
+              background:filter===f.id?A:CRD,color:filter===f.id?'#fff':MUT}}>
+            {f.l} ({voices.filter(v=>f.id==='all'?true:v.status===f.id).length})
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <p style={{color:MUT,fontFamily:"'Nunito Sans',sans-serif",fontSize:12}}>Loading…</p>
+      ) : filtered.length===0 ? (
+        <p style={{color:MUT,fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontStyle:'italic'}}>No voices in this category.</p>
+      ) : filtered.map(voice=>(
+        <div key={voice.id} style={{background:CRD,border:`1px solid ${BD}`,marginBottom:10,padding:16}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12,marginBottom:8}}>
+            <div>
+              <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:4}}>
+                <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,fontWeight:700,
+                  letterSpacing:'.08em',textTransform:'uppercase',padding:'2px 8px',
+                  background:ARCHETYPES.find(a=>a.id===voice.archetype_id)?.color||A,color:'#fff'}}>
+                  {ARCHETYPES.find(a=>a.id===voice.archetype_id)?.label||voice.archetype_id}
+                </span>
+                <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT}}>
+                  {typeLabel[voice.voice_type]||voice.voice_type}
+                </span>
+              </div>
+              <div style={{fontFamily:"'Lora',serif",fontSize:14,fontWeight:700,color:TXT}}>
+                {voice.name||'Anonymous'}
+                {voice.relationship?` · ${voice.relationship}`:''}
+              </div>
+              <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT,marginTop:2}}>
+                {voice.created_at&&new Date(voice.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}
+              </div>
+            </div>
+            <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,fontWeight:700,
+              padding:'2px 8px',letterSpacing:'.08em',textTransform:'uppercase',
+              background:voice.status==='published'?'#1A5A2A':voice.status==='flagged'?'#CA8A04':'#8A1030',
+              color:'#fff',flexShrink:0}}>{voice.status}</span>
+          </div>
+
+          {editing===voice.id ? (
+            <div>
+              <textarea value={editStory} onChange={e=>setEditStory(e.target.value)} rows={4}
+                style={{width:'100%',padding:'8px 12px',fontFamily:"'Nunito Sans',sans-serif",
+                  fontSize:12,background:'rgba(255,255,255,0.8)',border:`1px solid ${BD}`,
+                  color:TXT,outline:'none',resize:'vertical',boxSizing:'border-box',marginBottom:8}}/>
+              <div style={{display:'flex',gap:8}}>
+                <button onClick={()=>update(voice.id,{story:editStory})}
+                  style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
+                    padding:'5px 12px',background:'#1A5A2A',color:'#fff',border:'none',cursor:'pointer'}}>
+                  Save
+                </button>
+                <button onClick={()=>setEditing(null)}
+                  style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,
+                    padding:'5px 12px',background:CRD,color:MUT,border:`1px solid ${BD}`,cursor:'pointer'}}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:TXT,
+              lineHeight:1.7,fontStyle:'italic',marginBottom:10}}>"{voice.story}"</p>
+          )}
+
+          {editing!==voice.id && (
+            <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+              <button onClick={()=>{setEditing(voice.id);setEditStory(voice.story)}}
+                style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
+                  padding:'4px 10px',background:CRD,color:MUT,border:`1px solid ${BD}`,cursor:'pointer'}}>
+                Edit
+              </button>
+              {voice.status!=='published'&&<button onClick={()=>update(voice.id,{status:'published'})}
+                style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
+                  padding:'4px 10px',background:'#1A5A2A',color:'#fff',border:'none',cursor:'pointer'}}>
+                Publish
+              </button>}
+              {voice.status!=='flagged'&&<button onClick={()=>update(voice.id,{status:'flagged'})}
+                style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
+                  padding:'4px 10px',background:'#CA8A04',color:'#fff',border:'none',cursor:'pointer'}}>
+                Flag
+              </button>}
+              {voice.status!=='removed'&&<button onClick={()=>update(voice.id,{status:'removed'})}
+                style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
+                  padding:'4px 10px',background:A,color:'#fff',border:'none',cursor:'pointer'}}>
+                Remove
+              </button>}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 const TABS = [
   { id:'submissions', label:'Submissions',    icon:<Flag size={14}/> },
   { id:'profiles',    label:'Profiles',       icon:<Users size={14}/> },
   { id:'lindalinda',  label:'LindaLinda',     icon:<Shield size={14}/> },
   { id:'archetypes',  label:'JiJue / JiTume', icon:<BookOpen size={14}/> },
-  { id:'analytics',   label:'Analytics',      icon:<BarChart2 size={14}/> },
+  { id:'voices',      label:'Voices',          icon:<MessageSquare size={14}/> },
+  { id:'memorial',    label:'We Remember',     icon:<Heart size={14}/> },
+  { id:'analytics',   label:'Analytics',       icon:<BarChart2 size={14}/> },
   { id:'cases',       label:'Case tracker',   icon:<FileText size={14}/> },
   { id:'codes',       label:'Access codes',   icon:<Users size={14}/> },
 ]
@@ -1406,6 +1665,8 @@ export default function App() {
         {tab==='profiles'    && <ProfilesTab/>}
         {tab==='lindalinda'  && <LindaLindaTab/>}
         {tab==='archetypes'  && <ArchetypesTab/>}
+        {tab==='voices'      && <VoicesTab/>}
+        {tab==='memorial'    && <MemorialTab/>}
         {tab==='analytics'   && <AnalyticsTab/>}
         {tab==='codes'       && <AccessCodesTab/>}
         {tab==='cases'       && <CasesTab/>}
