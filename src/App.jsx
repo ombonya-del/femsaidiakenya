@@ -224,7 +224,7 @@ function DashboardTab(){
           </div>
           <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.6)',lineHeight:1.7,maxWidth:560}}>
             A personal safety tool with offline survival guidance, emergency contacts and location sharing.
-            Also accessible via USSD — <strong style={{color:'rgba(255,255,255,0.9)'}}>*384*89056#</strong> — on any phone, any network, no internet needed.
+            Also accessible via Salmin — <a href="tel:*384*89056%23" style={{color:'rgba(255,255,255,0.9)',fontWeight:700,textDecoration:'none'}}>*384*89056#</a> — on any phone, any network, no internet needed.
           </p>
         </div>
         <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
@@ -243,7 +243,7 @@ function DashboardTab(){
           <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.5)',
             padding:'10px 0',display:'flex',alignItems:'center',gap:6}}>
             <span style={{fontSize:16}}>📞</span>
-            Dial <strong style={{color:'#FF5C28'}}>*384*89056#</strong>
+            Dial <a href="tel:*384*89056%23" style={{color:'#FF5C28',fontWeight:700,textDecoration:'none'}}>*384*89056#</a>
           </div>
         </div>
       </div>
