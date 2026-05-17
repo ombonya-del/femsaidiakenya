@@ -999,11 +999,12 @@ function CasesTab() {
     const year = newCase.incident_date ? new Date(newCase.incident_date).getFullYear() : new Date().getFullYear()
     const {count} = await supabase.from('femicide_cases').select('id',{count:'exact'})
     const caseRef = `FSK-${year}-${String((count||0)+1).padStart(3,'0')}`
+    const cleanCase = Object.fromEntries(Object.entries(newCase).map(([k,v])=>[k,v===''?null:v]))
     const {data, error} = await supabase.from('femicide_cases').insert([{
-      ...newCase,
-      case_ref: newCase.case_ref || caseRef,
+      ...cleanCase,
+      case_ref: cleanCase.case_ref || caseRef,
       published: true,
-      tech_platforms: newCase.tech_platforms.split(',').map(p=>p.trim()).filter(Boolean)
+      tech_platforms: (cleanCase.tech_platforms||'').split(',').map(p=>p.trim()).filter(Boolean)
     }]).select()
     if(error) { alert('Error: ' + error.message); return; }
     setShowAdd(false)
