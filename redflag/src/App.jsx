@@ -232,25 +232,25 @@ function VictimCard({ v, accentColor='#8A1030', mutedColor='#7A4A60' }) {
         </div>
       </div>
       {open && (
-        <div style={{marginTop:12,background:'#1A0008',padding:'14px',
-          borderLeft:'3px solid #8A1030'}}>
+        <div style={{marginTop:8,background:'#f8f4f6',padding:'12px',
+          borderLeft:`3px solid ${accentColor}`}}>
           {[
             ['County', v.county],
-            ['Age', v.victim_age ? `${v.victim_age} years old` : v.victim_age_range?.replace(/_/g,' ') || '—'],
+            ['Age', v.age || '—'],
             ['Date', v.incident_date ? new Date(v.incident_date).toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'}) : '—'],
-            ['Incident type', v.incident_type || 'Femicide'],
-          ].map(([label, val], j) => (
+            ['Note', v.note || 'Femicide'],
+          ].filter(([,val])=>val&&val!=='—').map(([label, val], j) => (
             <div key={j} style={{marginBottom:8}}>
               <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,fontWeight:700,
-                letterSpacing:'.1em',textTransform:'uppercase',color:accentColor,marginBottom:2}}>
+                letterSpacing:'.1em',textTransform:'uppercase',color:accentColor,marginBottom:2,opacity:0.8}}>
                 {label}
               </div>
               <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,
-                color:'#F5E8ED',textTransform:'capitalize'}}>{val}</div>
+                color:'#180410',textTransform:'capitalize'}}>{val}</div>
             </div>
           ))}
           <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,
-            color:'#5A2030',fontStyle:'italic',marginTop:8,lineHeight:1.6}}>
+            color:accentColor,fontStyle:'italic',marginTop:8,lineHeight:1.6,opacity:0.8}}>
             🕯 May she rest in power.
           </p>
         </div>
@@ -281,26 +281,17 @@ function JiJueScreen() {
       })
 
     // Load victims for all age ranges
-    sb.from('femicide_cases')
-      .select('victim_name, victim_age, incident_date, county, victim_age_range, incident_type')
-      .eq('published', true)
-      .not('victim_name', 'like', 'Name unknown%')
-      .not('victim_name', 'like', 'Unknown%')
-      .not('victim_name', 'like', "%niece%")
-      .not('victim_name', 'like', "%years old%")
-      .not('victim_name', 'like', "Amina%niece%")
-      .order('incident_date', { ascending: false })
+    sb.from('archetype_memorial')
+      .select('*')
+      .eq('active', true)
+      .order('sort_order', { ascending: true })
       .then(({ data }) => {
         if (!data) return
         const grouped = {}
         data.forEach(v => {
-          const r = v.victim_age_range
-          if (!grouped[r]) grouped[r] = []
-          grouped[r].push(v)
+          if (!grouped[v.archetype_id]) grouped[v.archetype_id] = []
+          grouped[v.archetype_id].push(v)
         })
-        // Naive shows only 18_25 - exclude children
-        grouped['naive_combined'] = (grouped['18_25']||[])
-          .filter(v => !v.victim_name?.includes('niece') && !v.victim_name?.includes('years old') && !v.victim_name?.includes('schoolgirl'))
         setVictims(grouped)
       })
   }, [])
@@ -424,25 +415,25 @@ function JiJueScreen() {
         {/* We Remember */}
         {tab==='remember' && (
           <div>
-            <div style={{background:a.surf||'#fdf8fb',border:'1px solid #e8dde4',
-              borderLeft:`4px solid ${a.color}`,padding:'20px 16px',marginBottom:16}}>
+            <div style={{background:a.surf||'#f8f4f6',border:'1px solid #e8dde4',
+              borderLeft:`4px solid ${a.color}`,padding:'14px 16px',marginBottom:12}}>
               <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:a.muted||MUT,lineHeight:1.8}}>
                 These are women and girls whose lives were taken. They are not cautionary tales.
                 They are not statistics. They were here. We say their names.
               </p>
             </div>
-            {(victims[Array.isArray(ARCH_AGE_RANGES[a.id]) ? a.id==='naive' ? 'naive_combined' : ARCH_AGE_RANGES[a.id][0] : ARCH_AGE_RANGES[a.id]] || []).length === 0 ? (
+            {(victims[a.id] || []).length === 0 ? (
               <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT,fontStyle:'italic'}}>
                 Loading…
               </p>
-            ) : (victims[Array.isArray(ARCH_AGE_RANGES[a.id]) ? a.id==='naive' ? 'naive_combined' : ARCH_AGE_RANGES[a.id][0] : ARCH_AGE_RANGES[a.id]] || []).map((v, i) => (
+            ) : (victims[a.id] || []).map((v, i) => (
               <VictimCard key={i} v={v} accentColor={a.color} mutedColor={a.muted}/>
             ))}
             <div style={{marginTop:20,paddingTop:16,borderTop:`1px solid #2A0818`}}>
               <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:'#5A2030',
                 lineHeight:1.7,fontStyle:'italic'}}>
-                🕯 Data from the FemSaidia Kenya femicide database. If you know of a case not recorded here,
-                report it at femsaidiakenya.org
+                🕯 Curated from the FemSaidia Kenya femicide database. To add a name,
+                contact us at femsaidiakenya.org
               </p>
             </div>
           </div>
