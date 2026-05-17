@@ -32,7 +32,7 @@ body {
   border: none;
   border-bottom: 2px solid transparent;
   cursor: pointer;
-  color: #8A1030;
+  color: rgba(255,255,255,0.7);
   font-weight: 600;
   transition: color 0.2s, border-color 0.2s;
   white-space: nowrap;
@@ -40,8 +40,8 @@ body {
   align-items: center;
   gap: 6px;
 }
-.nav-tab:hover { color: #5A0820; }
-.nav-tab.active { color: #5A0820; border-bottom-color: #5A0820; font-weight: 700; }
+.nav-tab:hover { color: #fff; }
+.nav-tab.active { color: #fff; border-bottom-color: #FFB0C0; font-weight: 700; }
 
 /* Cards */
 .card { background: #E0CCCC; border: 1px solid #C4AABB; }

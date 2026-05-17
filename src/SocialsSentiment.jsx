@@ -421,7 +421,7 @@ export default function SocialsSentimentTab() {
 
         {/* ── MISOGYNY OF THE DAY ── */}
         <div style={{ marginBottom:2 }}>
-          <div style={{ background:TXT, border:`2px solid ${A}`, padding:'20px 24px' }}>
+          <div style={{ background:'#3A0818', border:`2px solid ${A}`, padding:'20px 24px' }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16, flexWrap:'wrap', gap:8 }}>
               <div>
                 <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,

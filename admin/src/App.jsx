@@ -1337,7 +1337,7 @@ export default function App() {
         ))}
         <button onClick={() => supabase.auth.signOut()}
           style={{ marginLeft:'auto', display:'inline-flex', alignItems:'center', gap:6,
-            fontSize:11, color:'rgba(255,255,255,0.5)', fontFamily:"'Nunito Sans',sans-serif",
+            fontSize:11, color:'rgba(255,255,255,0.7)', fontFamily:"'Nunito Sans',sans-serif",
             padding:'12px 0', background:'none', border:'none', cursor:'pointer' }}>
           <LogOut size={13}/> Sign out
         </button>
