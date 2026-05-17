@@ -248,13 +248,8 @@ function PanicScreen({ contacts, onDismiss }) {
   const message = `🚨 EMERGENCY — I need help immediately!\n\nThis is an automated alert from hepa.\n${location ? `My location: ${locationUrl}` : 'Location unavailable — call me NOW'}\n\nCall police: 999\nDCI Gender Desk: 0800 722 203`
 
   const sendAlert = async () => {
-    // 1. Open WhatsApp to emergency contact as before
-    if (contacts.length > 0) {
-      const phone = contacts[0].phone.replace(/\s+/g, '')
-      const wa = `https://wa.me/${phone.startsWith('0') ? '254' + phone.slice(1) : phone}?text=${encodeURIComponent(message)}`
-      window.open(wa, '_blank')
-    }
-    // 2. Insert Itika alert — county unknown from hepa, use 'Unknown' and let responders see GPS
+    // 1. Insert Itika alert FIRST before any navigation
+    // Fire and forget but await to ensure it completes before WhatsApp opens
     try {
       await fetch('https://uuluuhltphgwfblcghlp.supabase.co/rest/v1/responder_alerts', {
         method: 'POST',
@@ -274,6 +269,12 @@ function PanicScreen({ contacts, onDismiss }) {
         }),
       })
     } catch(e) { /* silent fail — never block the alert */ }
+    // 2. Open WhatsApp AFTER Supabase insert completes
+    if (contacts.length > 0) {
+      const phone = contacts[0].phone.replace(/\s+/g, '')
+      const wa = `https://wa.me/${phone.startsWith('0') ? '254' + phone.slice(1) : phone}?text=${encodeURIComponent(message)}`
+      window.open(wa, '_blank')
+    }
     setSent(true)
   }
 
