@@ -946,7 +946,6 @@ return (
     </table>
   </div>
 )
-}
 
 // ── LINDALINDA (SAFETY NORMS) TAB ────────────────────────────────────────────
 function LindaLindaTab() {
