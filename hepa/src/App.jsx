@@ -234,9 +234,51 @@ function PanicScreen({ contacts, onDismiss }) {
   const [sent, setSent] = useState(false)
 
   useEffect(() => {
+    // Get GPS location
     navigator.geolocation?.getCurrentPosition(
-      pos => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => setLocation(null),
+      pos => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        setLocation(loc)
+        // Fire Itika alert immediately with GPS
+        fetch('https://uuluuhltphgwfblcghlp.supabase.co/rest/v1/responder_alerts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bHV1aGx0cGhnd2ZibGNnaGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MjI2NDAsImV4cCI6MjA5MzQ5ODY0MH0.KU_wtm0NVUz8vrMqgozPvTlmiCIf_yXP8Z3Gpmh599E',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bHV1aGx0cGhnd2ZibGNnaGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MjI2NDAsImV4cCI6MjA5MzQ5ODY0MH0.KU_wtm0NVUz8vrMqgozPvTlmiCIf_yXP8Z3Gpmh599E',
+            'Prefer': 'return=minimal',
+          },
+          body: JSON.stringify({
+            alert_type:   'hepa_panic',
+            county:       'Unknown',
+            location_lat: loc.lat,
+            location_lng: loc.lng,
+            details:      `hepa panic triggered. GPS: ${loc.lat},${loc.lng}`,
+            status:       'active',
+          }),
+        }).catch(() => {})
+      },
+      () => {
+        setLocation(null)
+        // Fire Itika alert without GPS
+        fetch('https://uuluuhltphgwfblcghlp.supabase.co/rest/v1/responder_alerts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bHV1aGx0cGhnd2ZibGNnaGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MjI2NDAsImV4cCI6MjA5MzQ5ODY0MH0.KU_wtm0NVUz8vrMqgozPvTlmiCIf_yXP8Z3Gpmh599E',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bHV1aGx0cGhnd2ZibGNnaGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MjI2NDAsImV4cCI6MjA5MzQ5ODY0MH0.KU_wtm0NVUz8vrMqgozPvTlmiCIf_yXP8Z3Gpmh599E',
+            'Prefer': 'return=minimal',
+          },
+          body: JSON.stringify({
+            alert_type:   'hepa_panic',
+            county:       'Unknown',
+            location_lat: null,
+            location_lng: null,
+            details:      'hepa panic triggered. GPS unavailable.',
+            status:       'active',
+          }),
+        }).catch(() => {})
+      },
       { timeout: 8000, enableHighAccuracy: true }
     )
   }, [])
