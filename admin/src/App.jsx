@@ -999,12 +999,13 @@ function CasesTab() {
     const year = newCase.incident_date ? new Date(newCase.incident_date).getFullYear() : new Date().getFullYear()
     const {count} = await supabase.from('femicide_cases').select('id',{count:'exact'})
     const caseRef = `FSK-${year}-${String((count||0)+1).padStart(3,'0')}`
-    await supabase.from('femicide_cases').insert([{
+    const {data, error} = await supabase.from('femicide_cases').insert([{
       ...newCase,
       case_ref: newCase.case_ref || caseRef,
       published: true,
       tech_platforms: newCase.tech_platforms.split(',').map(p=>p.trim()).filter(Boolean)
-    }])
+    }]).select()
+    if(error) { alert('Error: ' + error.message); return; }
     setShowAdd(false)
     setNewCase({case_ref:'',victim_name:'',victim_age_range:'unknown',incident_date:'',county:'',location:'',perpetrator_relationship:'unknown',tech_facilitated:false,tech_platforms:'',status:'reported',sentence:'',court_ref:'',next_hearing:'',source_url:'',source_type:'news',verified:false,published:true,admin_notes:''})
     load()
