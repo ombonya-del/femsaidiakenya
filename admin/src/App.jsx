@@ -729,12 +729,53 @@ function VoicesTab() {
 
           {editing===voice.id ? (
             <div>
-              <textarea value={editStory} onChange={e=>setEditStory(e.target.value)} rows={4}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8 }}>
+                <div>
+                  <label style={labelSt}>Archetype</label>
+                  <select value={editStory.archetype_id||voice.archetype_id}
+                    onChange={e=>setEditStory({...editStory,archetype_id:e.target.value})}
+                    style={inputSt}>
+                    <option value="naive">The Naive</option>
+                    <option value="precocious">The Precocious</option>
+                    <option value="allin">The All-In</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={labelSt}>Voice type</label>
+                  <select value={editStory.voice_type||voice.voice_type}
+                    onChange={e=>setEditStory({...editStory,voice_type:e.target.value})}
+                    style={inputSt}>
+                    <option value="survivor">💪 Survivor</option>
+                    <option value="left_behind">🕯 Left behind</option>
+                    <option value="witness">👁 Witness</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={labelSt}>Name</label>
+                  <input value={editStory.name||voice.name||''}
+                    onChange={e=>setEditStory({...editStory,name:e.target.value})}
+                    style={inputSt}/>
+                </div>
+                <div>
+                  <label style={labelSt}>Relationship</label>
+                  <input value={editStory.relationship||voice.relationship||''}
+                    onChange={e=>setEditStory({...editStory,relationship:e.target.value})}
+                    style={inputSt}/>
+                </div>
+              </div>
+              <label style={labelSt}>Story</label>
+              <textarea value={editStory.story||voice.story} onChange={e=>setEditStory({...editStory,story:e.target.value})} rows={4}
                 style={{ width:'100%', padding:'8px 12px', fontFamily:"'Nunito Sans',sans-serif",
                   fontSize:12, background:'rgba(255,255,255,0.8)', border:`1px solid ${BD}`,
                   color:TXT, outline:'none', resize:'vertical', boxSizing:'border-box', marginBottom:8 }}/>
               <div style={{ display:'flex', gap:8 }}>
-                <button onClick={()=>update(voice.id,{story:editStory})}
+                <button onClick={()=>update(voice.id,{
+                    story:editStory.story||voice.story,
+                    archetype_id:editStory.archetype_id||voice.archetype_id,
+                    voice_type:editStory.voice_type||voice.voice_type,
+                    name:editStory.name||voice.name,
+                    relationship:editStory.relationship||voice.relationship,
+                  })}
                   style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
                     padding:'5px 12px', background:'#1A5A2A', color:'#fff', border:'none', cursor:'pointer' }}>Save</button>
                 <button onClick={()=>setEditing(null)}
@@ -748,7 +789,7 @@ function VoicesTab() {
 
           {editing!==voice.id && (
             <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-              <button onClick={()=>{setEditing(voice.id);setEditStory(voice.story)}}
+              <button onClick={()=>{setEditing(voice.id);setEditStory({...voice})}}
                 style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
                   padding:'4px 10px', background:CRD, color:MUT, border:`1px solid ${BD}`, cursor:'pointer' }}>Edit</button>
               {voice.status!=='published'&&<button onClick={()=>update(voice.id,{status:'published'})}
@@ -757,9 +798,14 @@ function VoicesTab() {
               {voice.status!=='flagged'&&<button onClick={()=>update(voice.id,{status:'flagged'})}
                 style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
                   padding:'4px 10px', background:'#CA8A04', color:'#fff', border:'none', cursor:'pointer' }}>Flag</button>}
-              {voice.status!=='removed'&&<button onClick={()=>update(voice.id,{status:'removed'})}
+              <button onClick={async()=>{
+                  await supabase.from('archetype_voices').delete().eq('id',voice.id)
+                  load()
+                }}
                 style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-                  padding:'4px 10px', background:A, color:'#fff', border:'none', cursor:'pointer' }}>Remove</button>}
+                  padding:'4px 10px', background:'#5A0010', color:'#fff', border:'none', cursor:'pointer' }}>
+                Delete permanently
+              </button>
             </div>
           )}
         </div>
@@ -949,8 +995,13 @@ function CasesTab() {
   }
 
   const addCase = async () => {
+    // Auto-generate case ref: FSK-YYYY-NNN
+    const year = newCase.incident_date ? new Date(newCase.incident_date).getFullYear() : new Date().getFullYear()
+    const {count} = await supabase.from('femicide_cases').select('id',{count:'exact'})
+    const caseRef = `FSK-${year}-${String((count||0)+1).padStart(3,'0')}`
     await supabase.from('femicide_cases').insert([{
       ...newCase,
+      case_ref: newCase.case_ref || caseRef,
       published: true,
       tech_platforms: newCase.tech_platforms.split(',').map(p=>p.trim()).filter(Boolean)
     }])
