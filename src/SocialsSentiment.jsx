@@ -311,7 +311,7 @@ export default function SocialsSentimentTab() {
     const [idxRes, artRes, hlRes] = await Promise.all([
       supabase.from('misogyny_index').select('*').order('date', { ascending:true }).limit(30),
       supabase.from('sentiment_articles').select('*').order('scanned_at', { ascending:false }).limit(100),
-      supabase.from('misogyny_highlights').select('*').eq('active', true).order('highlight_date', { ascending:false }).limit(5),
+      supabase.from('misogyny_highlights').select('*').eq('active', true).order('highlight_date', { ascending:false }).limit(10),
     ])
     setIndex(idxRes.data || [])
     setArticles(artRes.data || [])
@@ -439,49 +439,71 @@ export default function SocialsSentimentTab() {
               </span>
             </div>
 
-            {/* Option A: Curated highlights */}
-            {highlights.length > 0 ? (
-              <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>
-                {highlights.map((h, i) => (
-                  <div key={h.id||i} style={{ background:'rgba(255,255,255,0.04)',
-                    border:'1px solid rgba(139,16,48,0.4)', padding:'14px 16px',
-                    borderLeft:'3px solid #CC1010' }}>
-                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8, marginBottom:8 }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                        <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-                          letterSpacing:'.08em', textTransform:'uppercase', padding:'2px 8px',
-                          background: h.platform==='TikTok'?'#010101':h.platform==='X'?'#1A1A1A':h.platform==='Facebook'?'#1877F2':h.platform==='Instagram'?'#C13584':h.platform==='Reddit'?'#FF4500':'#333',
-                          color:'#fff' }}>
-                          {h.platform}
-                        </span>
-                        {h.reach && <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'rgba(255,255,255,0.4)' }}>{h.reach}</span>}
-                      </div>
-                      {h.post_date && <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'rgba(255,255,255,0.3)' }}>
-                        {new Date(h.post_date).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}
-                      </span>}
+            {/* Today's highlight + rolling 7-day window */}
+            {(() => {
+              const todayStr = new Date().toISOString().slice(0,10)
+              const todayHL  = highlights.filter(h => h.highlight_date === todayStr)
+              const recentHL = highlights.filter(h => h.highlight_date !== todayStr).slice(0,5)
+
+              const HighlightCard = ({h, i, dimmed}) => (
+                <div key={h.id||i} style={{ background: dimmed?'rgba(255,255,255,0.02)':'rgba(255,255,255,0.05)',
+                  border:'1px solid rgba(139,16,48,0.4)', padding:'14px 16px',
+                  borderLeft:`3px solid ${dimmed?'rgba(204,16,16,0.3)':'#CC1010'}`,
+                  opacity: dimmed?0.7:1 }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8, marginBottom:8 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                        letterSpacing:'.08em', textTransform:'uppercase', padding:'2px 8px',
+                        background: h.platform==='TikTok'?'#010101':h.platform==='X'?'#1A1A1A':h.platform==='Facebook'?'#1877F2':h.platform==='Instagram'?'#C13584':h.platform==='Reddit'?'#FF4500':'#333',
+                        color:'#fff' }}>{h.platform}</span>
+                      {h.reach && <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'rgba(255,255,255,0.4)' }}>{h.reach}</span>}
                     </div>
-                    <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:13, color:'rgba(255,255,255,0.9)',
-                      lineHeight:1.7, margin:0, fontStyle:'italic' }}>
-                      "{h.content}"
-                    </p>
-                    {h.context && (
-                      <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
-                        color:'#FF8080', marginTop:8, fontStyle:'normal' }}>
-                        ↳ {h.context}
-                      </p>
-                    )}
+                    <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'rgba(255,255,255,0.3)' }}>
+                      {h.highlight_date && new Date(h.highlight_date).toLocaleDateString('en-KE',{day:'numeric',month:'short'})}
+                    </span>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(139,16,48,0.3)',
-                padding:16, marginBottom:20, textAlign:'center' }}>
-                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:'rgba(255,255,255,0.3)',
-                  fontStyle:'italic' }}>
-                  No curated highlights yet. Add them via the admin portal.
-                </p>
-              </div>
-            )}
+                  <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize: dimmed?12:13,
+                    color:'rgba(255,255,255,0.9)', lineHeight:1.7, margin:0, fontStyle:'italic' }}>
+                    "{h.content}"
+                  </p>
+                  {h.context && (
+                    <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                      color:'#FF8080', marginTop:8 }}>↳ {h.context}</p>
+                  )}
+                </div>
+              )
+
+              return (
+                <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>
+                  {/* TODAY — full prominence */}
+                  {todayHL.length > 0 ? (
+                    <>
+                      <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+                        letterSpacing:'.15em', textTransform:'uppercase',
+                        color:'rgba(255,255,255,0.4)', marginBottom:2 }}>TODAY</p>
+                      {todayHL.map((h,i) => <HighlightCard key={h.id||i} h={h} i={i} dimmed={false}/>)}
+                    </>
+                  ) : (
+                    <div style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(139,16,48,0.3)',
+                      padding:12, textAlign:'center' }}>
+                      <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12,
+                        color:'rgba(255,255,255,0.35)', fontStyle:'italic' }}>
+                        No highlight for today — add one via the admin portal.
+                      </p>
+                    </div>
+                  )}
+                  {/* RECENT — last 7 days, slightly dimmed */}
+                  {recentHL.length > 0 && (
+                    <>
+                      <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+                        letterSpacing:'.15em', textTransform:'uppercase',
+                        color:'rgba(255,255,255,0.25)', marginTop:8, marginBottom:2 }}>RECENT</p>
+                      {recentHL.map((h,i) => <HighlightCard key={h.id||i} h={h} i={i} dimmed={true}/>)}
+                    </>
+                  )}
+                </div>
+              )
+            })()}
 
             {/* Option B: What the scanner caught — auto-flagged high misogyny */}
             {(() => {
