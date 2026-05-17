@@ -420,19 +420,19 @@ export default function SocialsSentimentTab() {
 
         {/* ── MISOGYNY OF THE DAY ── */}
         <div style={{ marginBottom:2 }}>
-          <div style={{ background:BG, border:`2px solid ${A}`, padding:'20px 24px' }}>
+          <div style={{ background:TXT, border:`2px solid ${A}`, padding:'20px 24px' }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16, flexWrap:'wrap', gap:8 }}>
               <div>
                 <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
                   letterSpacing:'.2em', textTransform:'uppercase', color:'#CC1010', marginBottom:6 }}>
                   ⚡ Misogyny of the Day
                 </p>
-                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT, lineHeight:1.6, maxWidth:500 }}>
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:'rgba(255,255,255,0.6)', lineHeight:1.6, maxWidth:500 }}>
                   Curated posts circulating online that illustrate the pipeline from toxic rhetoric to violence.
                   This is what normalisation looks like.
                 </p>
               </div>
-              <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT,
+              <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'rgba(255,255,255,0.3)',
                 fontStyle:'italic', flexShrink:0 }}>
                 {new Date().toLocaleDateString('en-KE',{weekday:'long',day:'numeric',month:'long'})}
               </span>
@@ -459,13 +459,13 @@ export default function SocialsSentimentTab() {
                         {new Date(h.post_date).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}
                       </span>}
                     </div>
-                    <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:13, color:TXT,
+                    <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:13, color:'rgba(255,255,255,0.9)',
                       lineHeight:1.7, margin:0, fontStyle:'italic' }}>
                       "{h.content}"
                     </p>
                     {h.context && (
                       <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
-                        color:A, marginTop:8, fontStyle:'normal' }}>
+                        color:'#FF8080', marginTop:8, fontStyle:'normal' }}>
                         ↳ {h.context}
                       </p>
                     )}
@@ -491,9 +491,9 @@ export default function SocialsSentimentTab() {
               if (!autoFlagged.length) return null
               return (
                 <div>
-                  <div style={{ borderTop:`1px solid ${BD}`, paddingTop:14, marginBottom:12 }}>
+                  <div style={{ borderTop:'1px solid rgba(184,154,170,0.3)', paddingTop:14, marginBottom:12 }}>
                     <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-                      letterSpacing:'.15em', textTransform:'uppercase', color:MUT, marginBottom:8 }}>
+                      letterSpacing:'.15em', textTransform:'uppercase', color:'rgba(255,255,255,0.3)', marginBottom:8 }}>
                       📡 What the scanner caught — highest misogyny scores today
                     </p>
                   </div>
