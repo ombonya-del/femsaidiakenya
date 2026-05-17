@@ -250,7 +250,7 @@ function PanicScreen({ contacts, onDismiss }) {
           },
           body: JSON.stringify({
             alert_type:   'hepa_panic',
-            county:       'Unknown',
+            county:       JSON.parse(localStorage.getItem('hepa_data')||'{}').county||'Unknown',
             location_lat: loc.lat,
             location_lng: loc.lng,
             details:      `hepa panic triggered. GPS: ${loc.lat},${loc.lng}`,
@@ -271,7 +271,7 @@ function PanicScreen({ contacts, onDismiss }) {
           },
           body: JSON.stringify({
             alert_type:   'hepa_panic',
-            county:       'Unknown',
+            county:       JSON.parse(localStorage.getItem('hepa_data')||'{}').county||'Unknown',
             location_lat: null,
             location_lng: null,
             details:      'hepa panic triggered. GPS unavailable.',
@@ -303,7 +303,7 @@ function PanicScreen({ contacts, onDismiss }) {
         },
         body: JSON.stringify({
           alert_type:   'hepa_panic',
-          county:       'Unknown',
+          county:       JSON.parse(localStorage.getItem('hepa_data')||'{}').county||'Unknown',
           location_lat: location?.lat || null,
           location_lng: location?.lng || null,
           details:      'hepa panic button triggered. GPS attached if available.',
@@ -521,13 +521,24 @@ function GuideScreen({ onBack }) {
 
 // ── SETUP SCREEN ──────────────────────────────────────────────────────────────
 function SetupScreen({ onSave, initial }) {
-  const [name, setName] = useState(initial.name || '')
-  const [cname, setCname] = useState(initial.contacts[0]?.name || '')
+  const [name,   setName]   = useState(initial.name || '')
+  const [cname,  setCname]  = useState(initial.contacts[0]?.name || '')
   const [cphone, setCphone] = useState(initial.contacts[0]?.phone || '')
+  const [county, setCounty] = useState(initial.county || '')
+
+  const COUNTIES = [
+    'Nairobi','Kiambu','Mombasa','Nakuru','Kisumu','Kajiado','Kwale',
+    "Machakos","Murang'a",'Kilifi','Uasin Gishu','Trans Nzoia','Meru',
+    'Kakamega','Nyeri','Nandi','Embu','Kirinyaga','Bungoma','Homa Bay',
+    'Siaya','Migori','Kisii','Nyamira','Kericho','Bomet','Narok',
+    'Laikipia','Nyandarua','Tharaka Nithi','Isiolo','Marsabit','Samburu',
+    'Turkana','West Pokot','Baringo','Elgeyo Marakwet','Vihiga','Busia',
+    'Tana River','Lamu','Taita Taveta','Garissa','Wajir','Mandera','Other'
+  ]
 
   const save = () => {
     if (!name.trim() || !cphone.trim()) return
-    onSave({ name: name.trim(), contacts: [{ name: cname.trim() || 'My contact', phone: cphone.trim() }] })
+    onSave({ name: name.trim(), county: county||'Unknown', contacts: [{ name: cname.trim() || 'My contact', phone: cphone.trim() }] })
   }
 
   return (
@@ -551,6 +562,21 @@ function SetupScreen({ onSave, initial }) {
           <input className="setup-input" value={cname} onChange={e=>setCname(e.target.value)} placeholder="e.g. My sister Janet"/>
           <label className="setup-label">Their phone number</label>
           <input className="setup-input" type="tel" value={cphone} onChange={e=>setCphone(e.target.value)} placeholder="e.g. 0712 345 678"/>
+        </div>
+
+        <div style={{marginTop:24,paddingTop:20,borderTop:'1px solid rgba(255,255,255,0.06)'}}>
+          <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,fontWeight:700,color:'#fff',marginBottom:4}}>Your county</div>
+          <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.4)',lineHeight:1.6,marginBottom:12}}>
+            Used to route alerts to Itika community responders in your area. Stays on your phone only.
+          </p>
+          <select value={county} onChange={e=>setCounty(e.target.value)}
+            style={{width:'100%',padding:'14px 16px',fontFamily:"'Nunito Sans',sans-serif",
+              fontSize:15,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.12)',
+              color: county?'#fff':'rgba(255,255,255,0.4)',borderRadius:12,outline:'none',
+              WebkitAppearance:'none'}}>
+            <option value="">Select your county...</option>
+            {COUNTIES.map(c=><option key={c} value={c} style={{background:'#0A2D1A',color:'#fff'}}>{c}</option>)}
+          </select>
         </div>
 
         <div style={{marginTop:24,padding:16,background:'rgba(255,92,40,0.08)',borderRadius:12,border:'1px solid rgba(255,92,40,0.15)'}}>

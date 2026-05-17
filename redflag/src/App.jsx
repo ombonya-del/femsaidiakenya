@@ -155,7 +155,7 @@ function ItikaSOSButton() {
         },
         body: JSON.stringify({
           alert_type:   'redflag_sos',
-          county:       'Unknown',
+          county:       localStorage.getItem('redflag_county')||'Unknown',
           location_lat: lat,
           location_lng: lng,
           details:      'Red Flag PWA SOS triggered.' + (lat ? ` GPS: ${lat},${lng}` : ' No GPS available.'),
@@ -1018,13 +1018,52 @@ function BottomNav({ tab, setTab }) {
 
 // ── ROOT APP ──────────────────────────────────────────────────────────────────
 export default function App() {
-  const [tab, setTab] = useState('home')
+  const [tab,    setTab]    = useState('home')
+  const [county, setCounty] = useState(localStorage.getItem('redflag_county')||'')
+  const [showCountyPrompt, setShowCountyPrompt] = useState(!localStorage.getItem('redflag_county'))
+
+  const saveCounty = (c) => {
+    localStorage.setItem('redflag_county', c)
+    setCounty(c)
+    setShowCountyPrompt(false)
+  }
 
   return (
     <div style={{background:BG,minHeight:'100vh',color:TXT,
       fontFamily:"'Nunito Sans',sans-serif",
       paddingBottom:'calc(65px + env(safe-area-inset-bottom))'}}>
 
+      {showCountyPrompt && (
+        <div style={{position:'fixed',inset:0,background:'rgba(15,2,10,0.92)',zIndex:2000,
+          display:'flex',alignItems:'center',justifyContent:'center',padding:24}}>
+          <div style={{background:'#fff',width:'100%',maxWidth:340,padding:24}}>
+            <h2 style={{fontFamily:"'Lora',serif",fontSize:20,fontWeight:700,
+              color:'#180410',marginBottom:8}}>What county are you in?</h2>
+            <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'#7A4A60',
+              lineHeight:1.6,marginBottom:16}}>
+              Used to route emergency alerts to Itika community responders near you.
+              Stays on your phone only.
+            </p>
+            <select onChange={e=>e.target.value&&saveCounty(e.target.value)}
+              defaultValue=""
+              style={{width:'100%',padding:'12px 14px',fontFamily:"'Nunito Sans',sans-serif",
+                fontSize:14,background:'#f8f4f6',border:'1px solid #D4BEC4',
+                color:'#180410',outline:'none',marginBottom:12,boxSizing:'border-box'}}>
+              <option value="" disabled>Select your county...</option>
+              {['Nairobi','Kiambu','Mombasa','Nakuru','Kisumu','Kajiado','Kwale',
+                "Machakos","Murang'a",'Kilifi','Uasin Gishu','Trans Nzoia','Meru',
+                'Kakamega','Nyeri','Nandi','Embu','Kirinyaga','Bungoma','Homa Bay',
+                'Siaya','Migori','Kisii','Nyamira','Kericho','Bomet','Narok','Other'
+              ].map(c=><option key={c} value={c}>{c}</option>)}
+            </select>
+            <button onClick={()=>setShowCountyPrompt(false)}
+              style={{width:'100%',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,
+                color:'#B89AAA',background:'none',border:'none',cursor:'pointer',marginTop:4}}>
+              Skip for now
+            </button>
+          </div>
+        </div>
+      )}
       <EmergencyBar/>
 
       <div style={{overflowY:'auto'}}>
