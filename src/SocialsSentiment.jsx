@@ -380,6 +380,7 @@ export default function SocialsSentimentTab() {
       (a.article_title || '').toLowerCase().includes(q) ||
       (a.article_snippet || '').toLowerCase().includes(q) ||
       (a.summary || '').toLowerCase().includes(q) ||
+      (a.source_name || '').toLowerCase().includes(q) || (a.source_name || '').toLowerCase().replace('google news — ','').replace(' kenya','').includes(q) ||
       (a.tech_platforms || []).some(p => p.toLowerCase().includes(q))
     )
   }
@@ -419,7 +420,7 @@ export default function SocialsSentimentTab() {
 
         {/* ── MISOGYNY OF THE DAY ── */}
         <div style={{ marginBottom:2 }}>
-          <div style={{ background:'#1A0008', border:`2px solid #8A1030`, padding:'20px 24px' }}>
+          <div style={{ background:TXT, border:`2px solid ${A}`, padding:'20px 24px' }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16, flexWrap:'wrap', gap:8 }}>
               <div>
                 <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
@@ -664,7 +665,7 @@ export default function SocialsSentimentTab() {
                         color:MUT, letterSpacing:'.08em', textTransform:'uppercase',
                         fontWeight:700, margin:'10px 0 4px' }}>News sources</p>
                       {top.map(([p,c],i) => (
-                        <div key={i} onClick={()=>{ setSearch(p); setActiveBreak(null); setFilter('all') }}
+                        <div key={i} onClick={()=>{ setSearch(p.replace('Google News — ','').replace(' Kenya','')); setActiveBreak(null); setFilter('all') }}
                           style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
                             padding:'4px 0', borderBottom:`1px solid rgba(184,154,170,0.2)`, cursor:'pointer' }}
                           onMouseEnter={e=>e.currentTarget.style.opacity='0.7'}
