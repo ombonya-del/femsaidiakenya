@@ -162,11 +162,11 @@ function HomeScreen({ setTab }) {
           letterSpacing:'.2em',textTransform:'uppercase',color:RED,marginBottom:12}}>
           FemSaidia Kenya · Safety Intelligence
         </p>
-        <h1 style={{fontFamily:"'Lora',serif",fontSize:56,fontWeight:700,lineHeight:1,marginBottom:16}}>
+        <h1 style={{fontFamily:"'Lora',serif",fontSize:42,fontWeight:700,lineHeight:1.1,marginBottom:14}}>
           <span style={{color:RED}}>Red</span><br/>
           <span style={{color:TXT}}>Flag</span>
         </h1>
-        <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:15,color:MUT,lineHeight:1.7,maxWidth:340}}>
+        <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:14,color:MUT,lineHeight:1.7,maxWidth:340}}>
           Community intelligence. Safety education. Survivor knowledge. For young women in Kenya — and everyone around them.
         </p>
       </div>
@@ -183,8 +183,8 @@ function HomeScreen({ setTab }) {
               padding:16,cursor:'pointer',transition:'background .15s'}}
             onTouchStart={e => e.currentTarget.style.background='#3A0820'}
             onTouchEnd={e => e.currentTarget.style.background=CARD}>
-            <div style={{fontSize:28,marginBottom:8}}>{tile.emoji}</div>
-            <div style={{fontFamily:"'Lora',serif",fontSize:18,fontWeight:700,color:TXT,marginBottom:2}}>{tile.sw}</div>
+            <div style={{fontSize:22,marginBottom:6}}>{tile.emoji}</div>
+            <div style={{fontFamily:"'Lora',serif",fontSize:16,fontWeight:700,color:TXT,marginBottom:2}}>{tile.sw}</div>
             <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:tile.color,
               fontWeight:700,letterSpacing:'.06em',textTransform:'uppercase',marginBottom:6}}>{tile.en}</div>
             <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT,lineHeight:1.5}}>{tile.desc}</div>
@@ -208,22 +208,23 @@ function HomeScreen({ setTab }) {
 }
 
 // ── VICTIM CARD ──────────────────────────────────────────────────────────────
-function VictimCard({ v }) {
+function VictimCard({ v, accentColor='#8A1030', mutedColor='#7A4A60' }) {
   const [open, setOpen] = useState(false)
   return (
     <div onClick={() => setOpen(!open)}
       style={{borderBottom:`1px solid #2A0818`,padding:'16px 0',cursor:'pointer'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12}}>
         <div style={{flex:1}}>
-          <div style={{fontFamily:"'Lora',serif",fontSize:18,fontWeight:700,
-            color:'#180410',marginBottom:4,letterSpacing:'-.01em'}}>{v.victim_name}</div>
+          <div style={{fontFamily:"'Lora',serif",fontSize:15,fontWeight:700,
+            color:'#180410',marginBottom:3,letterSpacing:'-.01em',
+            borderLeft:`3px solid ${accentColor}`,paddingLeft:8}}>{v.victim_name}</div>
           <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'#B89AAA'}}>
             {v.county}{v.victim_age ? ` · ${v.victim_age} years old` : ''}
           </div>
         </div>
         <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4,flexShrink:0}}>
           <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,
-            color:'#8A1030',fontWeight:700}}>
+            color:accentColor,fontWeight:700}}>
             {v.incident_date ? new Date(v.incident_date).toLocaleDateString('en-KE',
               {day:'numeric',month:'short',year:'numeric'}) : ''}
           </div>
@@ -241,7 +242,7 @@ function VictimCard({ v }) {
           ].map(([label, val], j) => (
             <div key={j} style={{marginBottom:8}}>
               <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,fontWeight:700,
-                letterSpacing:'.1em',textTransform:'uppercase',color:'#5A2030',marginBottom:2}}>
+                letterSpacing:'.1em',textTransform:'uppercase',color:accentColor,marginBottom:2}}>
                 {label}
               </div>
               <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,
@@ -297,11 +298,9 @@ function JiJueScreen() {
           if (!grouped[r]) grouped[r] = []
           grouped[r].push(v)
         })
-        // Also create combined naive group (under_18 + 18_25)
-        grouped['naive_combined'] = [
-          ...(grouped['under_18']||[]),
-          ...(grouped['18_25']||[])
-        ].filter(v => !v.victim_name?.includes('niece') && !v.victim_name?.includes('years old'))
+        // Naive shows only 18_25 - exclude children
+        grouped['naive_combined'] = (grouped['18_25']||[])
+          .filter(v => !v.victim_name?.includes('niece') && !v.victim_name?.includes('years old') && !v.victim_name?.includes('schoolgirl'))
         setVictims(grouped)
       })
   }, [])
@@ -320,9 +319,10 @@ function JiJueScreen() {
               background:active===i?'#fff':'#f8f0f4',
               borderBottom:active===i?`3px solid ${arch.color}`:'3px solid transparent',
               display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
-            <span style={{fontSize:24}}>{arch.emoji}</span>
-            <span style={{fontSize:12,fontWeight:700,color:active===i?arch.color:'#7A4A60'}}>{arch.label}</span>
-            <span style={{fontSize:9,color:'#B89AAA',
+            <span style={{fontSize:20}}>{arch.emoji}</span>
+            <span style={{fontSize:12,fontWeight:700,color:active===i?arch.color:'#7A4A60',
+              letterSpacing:'-.01em'}}>{arch.label}</span>
+            <span style={{fontSize:9,color:active===i?arch.muted||'#B89AAA':'#B89AAA',
               textTransform:'uppercase',letterSpacing:'.06em'}}>
               {arch.age.split('·')[0].trim()}
             </span>
@@ -350,7 +350,7 @@ function JiJueScreen() {
           <div>
             <div style={{background:'#fff',border:'1px solid #e8dde4',
               borderLeft:`4px solid ${a.color}`,padding:'20px 16px',marginBottom:12}}>
-              <div style={{fontFamily:"'Lora',serif",fontSize:26,fontWeight:700,color:TXT,marginBottom:4}}>
+              <div style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,color:TXT,marginBottom:4}}>
                 {a.emoji} {a.label}
               </div>
               <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:a.color,
@@ -436,7 +436,7 @@ function JiJueScreen() {
                 Loading…
               </p>
             ) : (victims[Array.isArray(ARCH_AGE_RANGES[a.id]) ? a.id==='naive' ? 'naive_combined' : ARCH_AGE_RANGES[a.id][0] : ARCH_AGE_RANGES[a.id]] || []).map((v, i) => (
-              <VictimCard key={i} v={v}/>
+              <VictimCard key={i} v={v} accentColor={a.color} mutedColor={a.muted}/>
             ))}
             <div style={{marginTop:20,paddingTop:16,borderTop:`1px solid #2A0818`}}>
               <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:'#5A2030',
