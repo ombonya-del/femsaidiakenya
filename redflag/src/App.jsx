@@ -20,9 +20,9 @@ const GRN  = '#1A5A2A'
 // ── ARCHETYPE DATA ────────────────────────────────────────────────────────────
 // Age ranges map to femicide_cases.victim_age_range DB values
 const ARCH_AGE_RANGES = {
-  naive:      '18_25',
-  precocious: '18_25',
-  allin:      '26_35',
+  naive:      ['under_18','18_25'],
+  precocious: ['18_25'],
+  allin:      ['26_35'],
 }
 
 const ARCHETYPES = [
@@ -215,15 +215,15 @@ function VictimCard({ v }) {
       style={{borderBottom:`1px solid #2A0818`,padding:'16px 0',cursor:'pointer'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12}}>
         <div style={{flex:1}}>
-          <div style={{fontFamily:"'Lora',serif",fontSize:16,fontWeight:700,
-            color:'#F5E8ED',marginBottom:4}}>{v.victim_name}</div>
+          <div style={{fontFamily:"'Lora',serif",fontSize:18,fontWeight:700,
+            color:'#180410',marginBottom:4,letterSpacing:'-.01em'}}>{v.victim_name}</div>
           <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'#B89AAA'}}>
             {v.county}{v.victim_age ? ` · ${v.victim_age} years old` : ''}
           </div>
         </div>
         <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4,flexShrink:0}}>
           <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,
-            color:'#7A2030',fontWeight:600}}>
+            color:'#8A1030',fontWeight:700}}>
             {v.incident_date ? new Date(v.incident_date).toLocaleDateString('en-KE',
               {day:'numeric',month:'short',year:'numeric'}) : ''}
           </div>
@@ -297,6 +297,11 @@ function JiJueScreen() {
           if (!grouped[r]) grouped[r] = []
           grouped[r].push(v)
         })
+        // Also create combined naive group (under_18 + 18_25)
+        grouped['naive_combined'] = [
+          ...(grouped['under_18']||[]),
+          ...(grouped['18_25']||[])
+        ].filter(v => !v.victim_name?.includes('niece') && !v.victim_name?.includes('years old'))
         setVictims(grouped)
       })
   }, [])
@@ -354,7 +359,7 @@ function JiJueScreen() {
               </div>
               {a.intro.split('\n\n').map((p, i) => (
                 <p key={i} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:14,
-                  color:'#180410',lineHeight:1.8,marginBottom:i<a.intro.split('\n\n').length-1?12:0}}>{p}</p>
+                  color:a.text||'#180410',lineHeight:1.8,marginBottom:i<a.intro.split('\n\n').length-1?12:0}}>{p}</p>
               ))}
             </div>
           </div>
@@ -419,18 +424,18 @@ function JiJueScreen() {
         {/* We Remember */}
         {tab==='remember' && (
           <div>
-            <div style={{background:'#0A0008',border:`1px solid #3A0820`,
-              borderLeft:`4px solid #8A1030`,padding:'20px 16px',marginBottom:16}}>
-              <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT,lineHeight:1.8}}>
+            <div style={{background:a.surf||'#fdf8fb',border:'1px solid #e8dde4',
+              borderLeft:`4px solid ${a.color}`,padding:'20px 16px',marginBottom:16}}>
+              <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:a.muted||MUT,lineHeight:1.8}}>
                 These are women and girls whose lives were taken. They are not cautionary tales.
                 They are not statistics. They were here. We say their names.
               </p>
             </div>
-            {(victims[ARCH_AGE_RANGES[a.id]] || []).length === 0 ? (
+            {(victims[Array.isArray(ARCH_AGE_RANGES[a.id]) ? a.id==='naive' ? 'naive_combined' : ARCH_AGE_RANGES[a.id][0] : ARCH_AGE_RANGES[a.id]] || []).length === 0 ? (
               <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT,fontStyle:'italic'}}>
                 Loading…
               </p>
-            ) : (victims[ARCH_AGE_RANGES[a.id]] || []).map((v, i) => (
+            ) : (victims[Array.isArray(ARCH_AGE_RANGES[a.id]) ? a.id==='naive' ? 'naive_combined' : ARCH_AGE_RANGES[a.id][0] : ARCH_AGE_RANGES[a.id]] || []).map((v, i) => (
               <VictimCard key={i} v={v}/>
             ))}
             <div style={{marginTop:20,paddingTop:16,borderTop:`1px solid #2A0818`}}>
