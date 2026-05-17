@@ -650,9 +650,37 @@ export default function SocialsSentimentTab() {
                     </div>
                   ))}
                 </>)}
+                {/* News sources breakdown */}
+                {(() => {
+                  const newsSources = {}
+                  articles.forEach(a => {
+                    if(a.source_name) newsSources[a.source_name] = (newsSources[a.source_name]||0)+1
+                  })
+                  const top = Object.entries(newsSources).sort((a,b)=>b[1]-a[1]).slice(0,6)
+                  if(!top.length) return null
+                  return (
+                    <>
+                      <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
+                        color:MUT, letterSpacing:'.08em', textTransform:'uppercase',
+                        fontWeight:700, margin:'10px 0 4px' }}>News sources</p>
+                      {top.map(([p,c],i) => (
+                        <div key={i} onClick={()=>{ setSearch(p); setActiveBreak(null); setFilter('all') }}
+                          style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
+                            padding:'4px 0', borderBottom:`1px solid rgba(184,154,170,0.2)`, cursor:'pointer' }}
+                          onMouseEnter={e=>e.currentTarget.style.opacity='0.7'}
+                          onMouseLeave={e=>e.currentTarget.style.opacity='1'}>
+                          <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                            color:TXT, fontWeight:600 }}>{p.replace('Google News — ','').replace(' Kenya','')}</span>
+                          <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                            color:'#1A5A2A', fontWeight:700 }}>{c}</span>
+                        </div>
+                      ))}
+                    </>
+                  )
+                })()}
                 <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
                   color:MUT, marginTop:8, lineHeight:1.6 }}>
-                  Click any to filter
+                  Click any to filter the feed
                 </p>
               </div>
             </div>
