@@ -369,15 +369,15 @@ function JiJueScreen() {
                   const why = rest.join(' — ')
                   return (
                     <div key={i} style={{background:'#fff',padding:'16px',borderLeft:`3px solid ${a.color}`,border:'1px solid #e8dde4',borderLeft:`3px solid ${a.color}`}}>
-                      <div style={{fontFamily:"'Lora',serif",fontSize:15,fontWeight:700,color:#180410,marginBottom:6}}>🚩 {flag}</div>
-                      {why && <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:#7A4A60,lineHeight:1.6}}>{why}</div>}
+                      <div style={{fontFamily:"'Lora',serif",fontSize:15,fontWeight:700,color:'#180410',marginBottom:6}}>🚩 {flag}</div>
+                      {why && <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'#7A4A60',lineHeight:1.6}}>{why}</div>}
                     </div>
                   )
                 })
               : a.redFlags.map((rf,i) => (
                   <div key={i} style={{background:'#fff',padding:'16px',borderLeft:`3px solid ${a.color}`,border:'1px solid #e8dde4',borderLeft:`3px solid ${a.color}`}}>
-                    <div style={{fontFamily:"'Lora',serif",fontSize:15,fontWeight:700,color:#180410,marginBottom:6}}>🚩 {rf.flag}</div>
-                    <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:#7A4A60,lineHeight:1.6}}>{rf.why}</div>
+                    <div style={{fontFamily:"'Lora',serif",fontSize:15,fontWeight:700,color:'#180410',marginBottom:6}}>🚩 {rf.flag}</div>
+                    <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'#7A4A60',lineHeight:1.6}}>{rf.why}</div>
                   </div>
                 ))
             )}
