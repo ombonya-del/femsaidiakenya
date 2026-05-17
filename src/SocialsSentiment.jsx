@@ -293,6 +293,7 @@ export default function SocialsSentimentTab() {
   const [articles,   setArticles]   = useState([])
   const [loading,    setLoading]    = useState(true)
   const [filter,     setFilter]     = useState('all')
+  const [highlights,  setHighlights]  = useState([])
   const [search,     setSearch]     = useState('')
   const [modal,      setModal]      = useState(null)
   const [showAll,    setShowAll]    = useState(false)

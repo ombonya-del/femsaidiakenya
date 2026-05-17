@@ -1324,7 +1324,7 @@ export default function App() {
 
   return (
     <div style={{ fontFamily:"'Nunito Sans',sans-serif", color:TXT, minHeight:'100vh', background:BG, width:'100%' }}>
-      <header style={{ background:'#3A1828', padding:'0 24px', display:'flex', alignItems:'center', gap:2, flexWrap:'wrap' }}>
+      <header style={{ background:'#6B3A50', padding:'0 24px', display:'flex', alignItems:'center', gap:2, flexWrap:'wrap' }}>
         <div style={{ padding:'14px 0', marginRight:16, fontFamily:"'Lora',serif", fontSize:16, fontWeight:700, color:'#fff', whiteSpace:'nowrap' }}>
           FemSaidia Admin
         </div>
