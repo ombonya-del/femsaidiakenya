@@ -307,12 +307,14 @@ export default function SocialsSentimentTab() {
 
   const load = async () => {
     setLoading(true)
-    const [idxRes, artRes] = await Promise.all([
+    const [idxRes, artRes, hlRes] = await Promise.all([
       supabase.from('misogyny_index').select('*').order('date', { ascending:true }).limit(30),
       supabase.from('sentiment_articles').select('*').order('scanned_at', { ascending:false }).limit(100),
+      supabase.from('misogyny_highlights').select('*').eq('active', true).order('highlight_date', { ascending:false }).limit(5),
     ])
     setIndex(idxRes.data || [])
     setArticles(artRes.data || [])
+    setHighlights(hlRes.data || [])
     setLoading(false)
   }
 
@@ -413,6 +415,125 @@ export default function SocialsSentimentTab() {
             padding:'8px 14px', border:`1px solid ${BD}`, background:CRD, color:MUT, cursor:'pointer' }}>
             <RefreshCw size={12}/> Refresh
           </button>
+        </div>
+
+        {/* ── MISOGYNY OF THE DAY ── */}
+        <div style={{ marginBottom:2 }}>
+          <div style={{ background:'#1A0008', border:`2px solid #8A1030`, padding:'20px 24px' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16, flexWrap:'wrap', gap:8 }}>
+              <div>
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                  letterSpacing:'.2em', textTransform:'uppercase', color:'#CC1010', marginBottom:6 }}>
+                  ⚡ Misogyny of the Day
+                </p>
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:'rgba(255,255,255,0.5)', lineHeight:1.6, maxWidth:500 }}>
+                  Curated posts circulating online that illustrate the pipeline from toxic rhetoric to violence.
+                  This is what normalisation looks like.
+                </p>
+              </div>
+              <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'rgba(255,255,255,0.3)',
+                fontStyle:'italic', flexShrink:0 }}>
+                {new Date().toLocaleDateString('en-KE',{weekday:'long',day:'numeric',month:'long'})}
+              </span>
+            </div>
+
+            {/* Option A: Curated highlights */}
+            {highlights.length > 0 ? (
+              <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>
+                {highlights.map((h, i) => (
+                  <div key={h.id||i} style={{ background:'rgba(255,255,255,0.04)',
+                    border:'1px solid rgba(139,16,48,0.4)', padding:'14px 16px',
+                    borderLeft:'3px solid #CC1010' }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8, marginBottom:8 }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                        <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                          letterSpacing:'.08em', textTransform:'uppercase', padding:'2px 8px',
+                          background: h.platform==='TikTok'?'#010101':h.platform==='X'?'#1A1A1A':h.platform==='Facebook'?'#1877F2':h.platform==='Instagram'?'#C13584':h.platform==='Reddit'?'#FF4500':'#333',
+                          color:'#fff' }}>
+                          {h.platform}
+                        </span>
+                        {h.reach && <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'rgba(255,255,255,0.4)' }}>{h.reach}</span>}
+                      </div>
+                      {h.post_date && <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'rgba(255,255,255,0.3)' }}>
+                        {new Date(h.post_date).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}
+                      </span>}
+                    </div>
+                    <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:13, color:'rgba(255,255,255,0.85)',
+                      lineHeight:1.7, margin:0, fontStyle:'italic' }}>
+                      "{h.content}"
+                    </p>
+                    {h.context && (
+                      <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                        color:'rgba(204,16,16,0.8)', marginTop:8, fontStyle:'normal' }}>
+                        ↳ {h.context}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(139,16,48,0.3)',
+                padding:16, marginBottom:20, textAlign:'center' }}>
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:'rgba(255,255,255,0.3)',
+                  fontStyle:'italic' }}>
+                  No curated highlights yet. Add them via the admin portal.
+                </p>
+              </div>
+            )}
+
+            {/* Option B: What the scanner caught — auto-flagged high misogyny */}
+            {(() => {
+              const todayStr = new Date().toISOString().slice(0,10)
+              const autoFlagged = articles
+                .filter(a => a.misogyny_score >= 7)
+                .slice(0, 3)
+              if (!autoFlagged.length) return null
+              return (
+                <div>
+                  <div style={{ borderTop:'1px solid rgba(139,16,48,0.3)', paddingTop:14, marginBottom:12 }}>
+                    <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                      letterSpacing:'.15em', textTransform:'uppercase', color:'rgba(255,255,255,0.3)', marginBottom:8 }}>
+                      📡 What the scanner caught — highest misogyny scores today
+                    </p>
+                  </div>
+                  <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                    {autoFlagged.map((a, i) => (
+                      <div key={a.id||i} style={{ background:'rgba(255,255,255,0.03)',
+                        border:'1px solid rgba(255,255,255,0.08)', padding:'10px 14px',
+                        display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12 }}>
+                        <div style={{ flex:1 }}>
+                          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
+                            <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+                              letterSpacing:'.08em', textTransform:'uppercase', padding:'1px 6px',
+                              background:'rgba(204,16,16,0.3)', color:'#FF6060', border:'1px solid rgba(204,16,16,0.4)' }}>
+                              Misogyny {a.misogyny_score}/10
+                            </span>
+                            <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'rgba(255,255,255,0.3)' }}>
+                              {a.source_name}
+                            </span>
+                          </div>
+                          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12,
+                            color:'rgba(255,255,255,0.7)', lineHeight:1.5, margin:0 }}>
+                            {a.article_title}
+                          </p>
+                        </div>
+                        {a.article_url && (
+                          <a href={a.article_url} target="_blank" rel="noopener noreferrer"
+                            style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'#CC1010',
+                              textDecoration:'none', flexShrink:0, fontWeight:700 }}>
+                            Read →
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+        </div>
+
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center
         </div>
       </div>
 

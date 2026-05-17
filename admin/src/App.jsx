@@ -1175,6 +1175,115 @@ function AccessCodesTab() {
 }
 
 // ── TABS CONFIG ───────────────────────────────────────────────────────────────
+
+// ── HIGHLIGHTS TAB ────────────────────────────────────────────────────────────
+function HighlightsTab() {
+  const PLATFORMS = ['X','TikTok','Facebook','Instagram','Reddit','Telegram','YouTube','WhatsApp']
+  const [items,   setItems]   = useState([])
+  const [loading, setLoading] = useState(true)
+  const [adding,  setAdding]  = useState(false)
+  const [form,    setForm]    = useState({
+    platform:'X', content:'', context:'', reach:'', post_date:'',
+    highlight_date: new Date().toISOString().slice(0,10)
+  })
+
+  const load = () => {
+    setLoading(true)
+    supabase.from('misogyny_highlights').select('*').order('highlight_date',{ascending:false})
+      .then(({data})=>{ setItems(data||[]); setLoading(false) })
+  }
+  useEffect(()=>{ load() },[])
+
+  const add = async () => {
+    if(!form.content.trim()) return
+    await supabase.from('misogyny_highlights').insert([{...form,active:true}])
+    setAdding(false)
+    setForm({platform:'X',content:'',context:'',reach:'',post_date:'',highlight_date:new Date().toISOString().slice(0,10)})
+    load()
+  }
+  const toggle = async (id, active) => {
+    await supabase.from('misogyny_highlights').update({active:!active}).eq('id',id)
+    load()
+  }
+
+  return (
+    <div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20}}>
+        <div>
+          <h2 style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,color:TXT,marginBottom:4}}>Misogyny of the Day</h2>
+          <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT}}>Curate posts that illustrate the pipeline from toxic rhetoric to violence. Appears at the top of Socials and Sentiment.</p>
+        </div>
+        <button onClick={()=>setAdding(!adding)}
+          style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,padding:'8px 16px',background:A,color:'#fff',border:'none',cursor:'pointer',flexShrink:0}}>
+          {adding?'Cancel':'+ Add highlight'}
+        </button>
+      </div>
+
+      {adding && (
+        <div style={{background:CRD,border:`1px solid ${BD}`,padding:16,marginBottom:16}}>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
+            <div>
+              <label style={labelSt}>Platform *</label>
+              <select value={form.platform} onChange={e=>setForm({...form,platform:e.target.value})} style={inputSt}>
+                {PLATFORMS.map(p=><option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={labelSt}>Date posted (optional)</label>
+              <input type="date" value={form.post_date} onChange={e=>setForm({...form,post_date:e.target.value})} style={inputSt}/>
+            </div>
+            <div>
+              <label style={labelSt}>Highlight date</label>
+              <input type="date" value={form.highlight_date} onChange={e=>setForm({...form,highlight_date:e.target.value})} style={inputSt}/>
+            </div>
+            <div>
+              <label style={labelSt}>Reach / engagement (optional)</label>
+              <input value={form.reach} onChange={e=>setForm({...form,reach:e.target.value})} placeholder="e.g. 45,000 views" style={inputSt}/>
+            </div>
+          </div>
+          <div style={{marginBottom:8}}>
+            <label style={labelSt}>Post content *</label>
+            <textarea value={form.content} onChange={e=>setForm({...form,content:e.target.value})}
+              placeholder="Paste the post text here..." rows={4}
+              style={{width:'100%',padding:'8px 12px',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,background:'rgba(255,255,255,0.8)',border:`1px solid ${BD}`,color:TXT,outline:'none',resize:'vertical',boxSizing:'border-box'}}/>
+          </div>
+          <div style={{marginBottom:12}}>
+            <label style={labelSt}>Context / framing</label>
+            <input value={form.context} onChange={e=>setForm({...form,context:e.target.value})}
+              placeholder="e.g. This post has 45K likes. This is what normalisation looks like."
+              style={inputSt}/>
+          </div>
+          <button onClick={add}
+            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,padding:'8px 20px',background:A,color:'#fff',border:'none',cursor:'pointer'}}>
+            Publish highlight
+          </button>
+        </div>
+      )}
+
+      {loading ? <p style={{color:MUT,fontFamily:"'Nunito Sans',sans-serif",fontSize:12}}>Loading...</p>
+      : items.length===0 ? <p style={{color:MUT,fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontStyle:'italic'}}>No highlights yet.</p>
+      : items.map(item => (
+        <div key={item.id} style={{background:item.active?CRD:'rgba(180,150,160,0.3)',border:`1px solid ${BD}`,marginBottom:8,padding:14,opacity:item.active?1:0.5}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12,marginBottom:8}}>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',padding:'2px 8px',background:TXT,color:'#fff'}}>{item.platform}</span>
+              <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT}}>{item.highlight_date}</span>
+              {item.reach&&<span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT}}>{item.reach}</span>}
+            </div>
+            <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,fontWeight:700,padding:'2px 8px',background:item.active?'#1A5A2A':A,color:'#fff',flexShrink:0}}>{item.active?'Active':'Hidden'}</span>
+          </div>
+          <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:TXT,lineHeight:1.7,fontStyle:'italic',marginBottom:item.context?8:0}}>"{item.content}"</p>
+          {item.context&&<p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:A,marginBottom:10}}>↳ {item.context}</p>}
+          <button onClick={()=>toggle(item.id,item.active)}
+            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,padding:'4px 10px',background:item.active?A:'#1A5A2A',color:'#fff',border:'none',cursor:'pointer'}}>
+            {item.active?'Hide':'Show'}
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 const TABS = [
   { id:'submissions', label:'Submissions',    icon:<Flag size={14}/> },
   { id:'profiles',    label:'Profiles',       icon:<Users size={14}/> },
@@ -1185,6 +1294,7 @@ const TABS = [
   { id:'analytics',   label:'Analytics',      icon:<BarChart2 size={14}/> },
   { id:'cases',       label:'Case tracker',   icon:<FileText size={14}/> },
   { id:'codes',       label:'Access codes',   icon:<Users size={14}/> },
+  { id:'highlights',  label:'Misogyny of Day', icon:<AlertTriangle size={14}/> },
 ]
 
 // ── ROOT APP ──────────────────────────────────────────────────────────────────
@@ -1243,6 +1353,7 @@ export default function App() {
         {tab==='analytics'   && <AnalyticsTab/>}
         {tab==='cases'       && <CasesTab/>}
         {tab==='codes'       && <AccessCodesTab/>}
+        {tab==='highlights'  && <HighlightsTab/>}
       </main>
 
       <footer style={{ borderTop:`1px solid ${BD}`, padding:'16px 24px', marginTop:40 }}>
