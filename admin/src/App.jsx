@@ -55,6 +55,7 @@ const CaseForm = ({ data, setData, onSave, onCancel, saveLabel }) => (
         {l:'Age range',  k:'victim_age_range', type:'age_range'},
         {l:'Status',     k:'status', type:'status'},
         {l:'Perpetrator relationship to victim', k:'perpetrator_relationship', type:'relationship'},
+        {l:'Perpetrator age (if known)', k:'perpetrator_age', type:'number'},
         {l:'Source type', k:'source_type'},
         {l:'Source URL', k:'source_url'},
         {l:'Court reference', k:'court_ref'},
@@ -1020,8 +1021,12 @@ function CasesTab() {
   const addCase = async () => {
     // Auto-generate case ref: FSK-YYYY-NNN
     const year = newCase.incident_date ? new Date(newCase.incident_date).getFullYear() : new Date().getFullYear()
-    const {count} = await supabase.from('femicide_cases').select('id',{count:'exact'})
-    const caseRef = `FSK-${year}-${String((count||0)+1).padStart(3,'0')}`
+    const {data: yearCases} = await supabase.from('femicide_cases').select('case_ref').like('case_ref',`FSK-${year}-%`)
+    const maxNum = (yearCases||[]).reduce((max,c) => {
+      const num = parseInt(c.case_ref?.split('-')[2]||'0')
+      return num > max ? num : max
+    }, 0)
+    const caseRef = `FSK-${year}-${String(maxNum+1).padStart(3,'0')}`
     const cleanCase = Object.fromEntries(Object.entries(newCase).map(([k,v])=>[k,v===''?null:v]))
     const {data, error} = await supabase.from('femicide_cases').insert([{
       ...cleanCase,
