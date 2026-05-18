@@ -250,7 +250,7 @@ function PanicScreen({ contacts, onDismiss }) {
           },
           body: JSON.stringify({
             alert_type:   'hepa_panic',
-            county:       JSON.parse(localStorage.getItem('hepa_data')||'{}').county||'Unknown',
+            county:       JSON.parse(localStorage.getItem('hepa_user')||'{}').county||'Unknown',
             location_lat: loc.lat,
             location_lng: loc.lng,
             details:      `hepa panic triggered. GPS: ${loc.lat},${loc.lng}`,
@@ -271,7 +271,7 @@ function PanicScreen({ contacts, onDismiss }) {
           },
           body: JSON.stringify({
             alert_type:   'hepa_panic',
-            county:       JSON.parse(localStorage.getItem('hepa_data')||'{}').county||'Unknown',
+            county:       JSON.parse(localStorage.getItem('hepa_user')||'{}').county||'Unknown',
             location_lat: null,
             location_lng: null,
             details:      'hepa panic triggered. GPS unavailable.',
@@ -303,7 +303,7 @@ function PanicScreen({ contacts, onDismiss }) {
         },
         body: JSON.stringify({
           alert_type:   'hepa_panic',
-          county:       JSON.parse(localStorage.getItem('hepa_data')||'{}').county||'Unknown',
+          county:       JSON.parse(localStorage.getItem('hepa_user')||'{}').county||'Unknown',
           location_lat: location?.lat || null,
           location_lng: location?.lng || null,
           details:      'hepa panic button triggered. GPS attached if available.',
@@ -594,11 +594,19 @@ function SetupScreen({ onSave, initial }) {
 
 // ── CONTACTS SCREEN ───────────────────────────────────────────────────────────
 function ContactsScreen({ data, onBack, onUpdate }) {
-  const [cname, setCname] = useState(data.contacts[0]?.name || '')
+  const [cname,  setCname]  = useState(data.contacts[0]?.name || '')
   const [cphone, setCphone] = useState(data.contacts[0]?.phone || '')
+  const [county, setCounty] = useState(data.county || '')
+
+  const COUNTIES = [
+    'Nairobi','Kiambu','Mombasa','Nakuru','Kisumu','Kajiado','Kwale',
+    "Machakos","Murang'a",'Kilifi','Uasin Gishu','Trans Nzoia','Meru',
+    'Kakamega','Nyeri','Nandi','Embu','Kirinyaga','Bungoma','Homa Bay',
+    'Siaya','Migori','Kisii','Nyamira','Kericho','Bomet','Narok','Other'
+  ]
 
   const save = () => {
-    onUpdate({ ...data, contacts:[{name:cname,phone:cphone}] })
+    onUpdate({ ...data, county: county||'Unknown', contacts:[{name:cname,phone:cphone}] })
     onBack()
   }
 
@@ -616,7 +624,19 @@ function ContactsScreen({ data, onBack, onUpdate }) {
         <input className="setup-input" value={cname} onChange={e=>setCname(e.target.value)}/>
         <label className="setup-label">Their phone number</label>
         <input className="setup-input" type="tel" value={cphone} onChange={e=>setCphone(e.target.value)}/>
-        <button className="hepa-btn" onClick={save} style={{marginTop:24}}>Save contact</button>
+        <label className="setup-label" style={{marginTop:20}}>Your county</label>
+        <select value={county} onChange={e=>setCounty(e.target.value)}
+          style={{width:'100%',padding:'14px 16px',fontFamily:"'Nunito Sans',sans-serif",
+            fontSize:15,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.12)',
+            color:county?'#fff':'rgba(255,255,255,0.4)',borderRadius:12,outline:'none',
+            WebkitAppearance:'none',marginBottom:4}}>
+          <option value="">Select your county...</option>
+          {COUNTIES.map(c=><option key={c} value={c} style={{background:'#0A2D1A',color:'#fff'}}>{c}</option>)}
+        </select>
+        <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:'rgba(255,255,255,0.3)',marginBottom:16}}>
+          Routes emergency alerts to Itika responders in your area.
+        </p>
+        <button className="hepa-btn" onClick={save} style={{marginTop:8}}>Save</button>
         <div style={{height:40}}/>
       </div>
     </div>
