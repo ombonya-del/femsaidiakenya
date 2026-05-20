@@ -32,14 +32,14 @@ const MUT = '#7A4A60'
 const HDR = '#C8AFBA'
 
 const TREND = [
-  {m:"J'23",f:12,n:28},{m:"F'23",f:10,n:25},{m:"M'23",f:15,n:34},
-  {m:"A'23",f:13,n:30},{m:"M'23",f:17,n:40},{m:"J'23",f:15,n:38},
-  {m:"J'23",f:19,n:45},{m:"A'23",f:22,n:51},{m:"S'23",f:20,n:48},
-  {m:"O'23",f:24,n:57},{m:"N'23",f:28,n:63},{m:"D'23",f:31,n:70},
   {m:"J'24",f:97,n:88},{m:"F'24",f:42,n:94},{m:"M'24",f:37,n:88},
   {m:"A'24",f:33,n:82},{m:"M'24",f:29,n:76},{m:"J'24",f:32,n:79},
   {m:"J'24",f:27,n:73},{m:"A'24",f:31,n:78},{m:"S'24",f:34,n:82},
   {m:"O'24",f:38,n:87},{m:"N'24",f:41,n:91},{m:"D'24",f:44,n:95},
+  {m:"J'25",f:38,n:89},{m:"F'25",f:35,n:85},{m:"M'25",f:40,n:91},
+  {m:"A'25",f:36,n:87},{m:"M'25",f:33,n:83},{m:"J'25",f:37,n:88},
+  {m:"J'25",f:41,n:93},{m:"A'25",f:39,n:90},{m:"S'25",f:43,n:96},
+  {m:"O'25",f:46,n:99},{m:"N'25",f:44,n:97},{m:"D'25",f:48,n:102},
 ]
 
 const COUNTIES = [
@@ -341,7 +341,7 @@ function DashboardTab({ isMobile = false }){
         </div>
         <div className="card" style={{padding:24}}>
           <div className="section-head">
-            <span>Incident trend vs online misogyny index · 2023–2024</span>
+            <span>Incident trend vs online misogyny index · 2024–2025</span>
           </div>
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={TREND} margin={{left:0,right:12,top:10,bottom:0}}>
