@@ -39,6 +39,8 @@ function ChartTip({ active, payload, label }) {
 }
 
 export default function TechTrackerTab() {
+  const mobile = window.innerWidth < 768
+
   const [articles, setArticles] = useState([])
   const [loading, setLoading]   = useState(true)
   const [platform, setPlatform] = useState('all')
@@ -57,7 +59,6 @@ export default function TechTrackerTab() {
     setLoading(false)
   }
 
-  // Platform frequency count
   const platformCounts = {}
   articles.forEach(a => {
     (a.tech_platforms || []).forEach(p => {
@@ -88,8 +89,8 @@ export default function TechTrackerTab() {
       <div style={{ borderBottom:`1px solid ${BD}`, paddingBottom:20, marginBottom:24 }}>
         <p className="label" style={{ marginBottom:8, color:A }}>● Technology-facilitated GBV tracker</p>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
-          <h1 className="serif" style={{ fontSize:36, fontWeight:700, color:TXT }}>Tech Tracker</h1>
-          <button onClick={load} style={{ display:'inline-flex', alignItems:'center', gap:6, fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:600, padding:'8px 14px', border:`1px solid ${BD}`, background:CRD, color:MUT, cursor:'pointer' }}>
+          <h1 className="serif" style={{ fontSize: mobile ? 28 : 36, fontWeight:700, color:TXT }}>Tech Tracker</h1>
+          <button onClick={load} style={{ display:'inline-flex', alignItems:'center', gap:6, fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:600, padding:'8px 14px', border:`1px solid ${BD}`, background:CRD, color:MUT, cursor:'pointer', flexShrink:0 }}>
             <RefreshCw size={12}/> Refresh
           </button>
         </div>
@@ -100,38 +101,38 @@ export default function TechTrackerTab() {
         </p>
       </div>
 
-      {/* Stats */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:2, marginBottom:2 }}>
+      {/* Stats — 2×2 on mobile */}
+      <div style={{ display:'grid', gridTemplateColumns: mobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap:2, marginBottom:2 }}>
         {[
-          { v:articles.length,                                           l:'Tech-facilitated incidents',   s:'Detected in scanned content',          c:A  },
-          { v:platformData.length,                                       l:'Platforms implicated',         s:'Across all scanned articles',           c:A2 },
-          { v:platformData[0]?.name || '—',                             l:'Most common platform',         s:`${platformData[0]?.count || 0} mentions`, c:A  },
-          { v:articles.filter(a=>a.misogyny_score>=7).length,           l:'High misogyny tech incidents', s:'Misogyny score ≥ 7/10',                 c:A  },
+          { v:articles.length,                                 l:'Tech-facilitated incidents',   s:'Detected in scanned content',            c:A  },
+          { v:platformData.length,                             l:'Platforms implicated',         s:'Across all scanned articles',             c:A2 },
+          { v:platformData[0]?.name || '—',                   l:'Most common platform',         s:`${platformData[0]?.count || 0} mentions`, c:A  },
+          { v:articles.filter(a=>a.misogyny_score>=7).length, l:'High misogyny tech incidents', s:'Misogyny score ≥ 7/10',                   c:A  },
         ].map((s,i) => (
-          <div key={i} style={{ background:CRD, border:`1px solid ${BD}`, padding:'20px 22px', borderLeft:`4px solid ${s.c}` }}>
-            <div className="serif" style={{ fontSize: typeof s.v === 'number' ? 40 : 22, fontWeight:700, color:s.c, lineHeight:1 }}>{s.v}</div>
-            <p style={{ fontSize:13, color:TXT, fontWeight:600, marginTop:8, fontFamily:"'Nunito Sans',sans-serif" }}>{s.l}</p>
+          <div key={i} style={{ background:CRD, border:`1px solid ${BD}`, padding:'18px 16px', borderLeft:`4px solid ${s.c}` }}>
+            <div className="serif" style={{ fontSize: typeof s.v === 'number' ? (mobile ? 32 : 40) : (mobile ? 18 : 22), fontWeight:700, color:s.c, lineHeight:1 }}>{s.v}</div>
+            <p style={{ fontSize: mobile ? 12 : 13, color:TXT, fontWeight:600, marginTop:8, fontFamily:"'Nunito Sans',sans-serif" }}>{s.l}</p>
             <p style={{ fontSize:11, color:MUT, marginTop:4, fontFamily:"'Nunito Sans',sans-serif" }}>{s.s}</p>
           </div>
         ))}
       </div>
 
-      {/* Charts */}
-      <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:2, marginBottom:2 }}>
+      {/* Charts — stacked on mobile */}
+      <div style={{ display:'grid', gridTemplateColumns: mobile ? '1fr' : '2fr 1fr', gap:2, marginBottom:2 }}>
 
         {/* Platform bar chart */}
         <div className="card" style={{ padding:24 }}>
           <div className="section-head">
             <span>Platform frequency · most implicated</span>
-            <span style={{ color:A }}>Mentions in scanned content</span>
+            <span style={{ color:A }}>Mentions</span>
           </div>
           {platformData.length === 0 ? (
             <p style={{ color:MUT, fontSize:12, fontFamily:"'Nunito Sans',sans-serif" }}>No data yet — scanner will populate this.</p>
           ) : (
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={platformData} margin={{ left:0, right:20, top:0, bottom:0 }}>
+            <ResponsiveContainer width="100%" height={mobile ? 180 : 250}>
+              <BarChart data={platformData} margin={{ left:0, right:16, top:0, bottom:0 }}>
                 <XAxis dataKey="name"
-                  tick={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fill:MUT }}
+                  tick={{ fontFamily:"'Nunito Sans',sans-serif", fontSize: mobile ? 9 : 11, fill:MUT }}
                   tickLine={false} axisLine={{ stroke:BD }}/>
                 <YAxis
                   tick={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fill:MUT }}
@@ -169,12 +170,12 @@ export default function TechTrackerTab() {
         </div>
       </div>
 
-      {/* How tech is being used */}
+      {/* How tech is being used — 2×2 on mobile */}
       <div className="card" style={{ padding:24, marginBottom:2 }}>
         <div className="section-head">
           <span>How technology is being weaponised — pattern summary</span>
         </div>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:2 }}>
+        <div style={{ display:'grid', gridTemplateColumns: mobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap:2 }}>
           {[
             { icon:'💬', t:'Dating apps',    b:'Perpetrators create fake profiles on Tinder, Bumble and Badoo to identify and groom victims, establishing trust before arranging in-person meetings.' },
             { icon:'🏠', t:'Airbnb',         b:'Private rental properties used as isolated locations where victims are lured under the pretence of legitimate meetings or dates.' },
@@ -192,7 +193,7 @@ export default function TechTrackerTab() {
 
       {/* Article feed */}
       <div className="card" style={{ padding:24, marginTop:2 }}>
-        <div className="section-head">
+        <div className="section-head" style={{ flexWrap:'wrap', gap:8 }}>
           <span>Tech-facilitated incidents · article feed</span>
           <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
             <button onClick={()=>setPlatform('all')}
@@ -222,8 +223,8 @@ export default function TechTrackerTab() {
             const sc = SentimentColors[a.sentiment] || SentimentColors.neutral
             return (
               <div key={a.id} style={{ padding:'14px 0', borderBottom: i < filtered.length-1 ? `1px solid ${BD}` : 'none' }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12 }}>
-                  {a.thumbnail_url && (
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:10 }}>
+                  {a.thumbnail_url && !mobile && (
                     <a href={a.article_url} target="_blank" rel="noopener noreferrer" style={{ flexShrink:0, display:'block', position:'relative' }}>
                       <img src={a.thumbnail_url} alt={a.article_title} style={{ width:110, height:62, objectFit:'cover', display:'block' }}/>
                       {a.content_type==='video' && (
@@ -233,32 +234,30 @@ export default function TechTrackerTab() {
                       )}
                     </a>
                   )}
-                  <div style={{ flex:1 }}>
+                  <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:6, flexWrap:'wrap' }}>
-                      {a.content_type==='video' && <span style={{ fontSize:10, background:'#DC2626', color:'#fff', padding:'1px 6px', fontFamily:"'Nunito Sans',sans-serif", fontWeight:700 }}>▶ VIDEO</span>}
-                      {a.content_type==='podcast' && <span style={{ fontSize:10, background:'#7C3AED', color:'#fff', padding:'1px 6px', fontFamily:"'Nunito Sans',sans-serif", fontWeight:700 }}>🎧 PODCAST</span>}
+                      {a.content_type==='video' && <span style={{ fontSize:10, background:'#DC2626', color:'#fff', padding:'1px 6px', fontFamily:"'Nunito Sans',sans-serif", fontWeight:700, flexShrink:0 }}>▶ VIDEO</span>}
                       {(a.tech_platforms || []).map((p,pi) => (
-                        <span key={pi} style={{ display:'inline-flex', alignItems:'center', gap:4, fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700, padding:'2px 8px', background:PLATFORM_COLORS[p] || A, color:'#fff' }}>
+                        <span key={pi} style={{ display:'inline-flex', alignItems:'center', gap:4, fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700, padding:'2px 8px', background:PLATFORM_COLORS[p] || A, color:'#fff', flexShrink:0 }}>
                           {p}
                         </span>
                       ))}
-                      <span className="badge" style={{ background:sc.bg, borderColor:sc.bc, color:sc.tc }}>
+                      <span className="badge" style={{ background:sc.bg, borderColor:sc.bc, color:sc.tc, flexShrink:0 }}>
                         {a.sentiment}
                       </span>
-                      <span style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>{a.source_name}</span>
                     </div>
-                    <div style={{ fontWeight:700, fontSize:14, color:TXT, marginBottom:5, fontFamily:"'Nunito Sans',sans-serif" }}>{a.article_title}</div>
+                    <div style={{ fontWeight:700, fontSize: mobile ? 13 : 14, color:TXT, marginBottom:5, fontFamily:"'Nunito Sans',sans-serif", wordBreak:'break-word' }}>{a.article_title}</div>
                     {a.tech_details && (
-                      <div style={{ background:'#DCC8B8', border:`1px solid #A07040`, padding:'6px 10px', marginBottom:6, fontSize:11, color:'#5A2808', fontFamily:"'Nunito Sans',sans-serif", lineHeight:1.6 }}>
+                      <div style={{ background:'#DCC8B8', border:`1px solid #A07040`, padding:'6px 10px', marginBottom:6, fontSize:11, color:'#5A2808', fontFamily:"'Nunito Sans',sans-serif", lineHeight:1.6, wordBreak:'break-word' }}>
                         <strong>Tech involvement:</strong> {a.tech_details}
                       </div>
                     )}
                     <p style={{ fontSize:12, color:MUT, lineHeight:1.7, fontFamily:"'Nunito Sans',sans-serif" }}>{a.article_snippet}</p>
+                    <a href={a.article_url} target="_blank" rel="noopener noreferrer"
+                      style={{ color:A, display:'inline-flex', alignItems:'center', gap:3, fontSize:11, fontFamily:"'Nunito Sans',sans-serif", fontWeight:600, textDecoration:'none', marginTop:6 }}>
+                      Read <ExternalLink size={10}/>
+                    </a>
                   </div>
-                  <a href={a.article_url} target="_blank" rel="noopener noreferrer"
-                    style={{ color:A, display:'inline-flex', alignItems:'center', gap:3, fontSize:11, fontFamily:"'Nunito Sans',sans-serif", fontWeight:600, textDecoration:'none', flexShrink:0 }}>
-                    Read <ExternalLink size={10}/>
-                  </a>
                 </div>
               </div>
             )

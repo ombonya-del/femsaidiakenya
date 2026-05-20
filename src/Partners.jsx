@@ -13,15 +13,15 @@ const TXT = '#180410'
 const MUT = '#7A4A60'
 
 const CURRENT_PARTNERS = [
-  { n:'NGEC Kenya',          t:'Government agency',    url:'https://ngeckenya.org',        desc:'National Gender & Equality Commission — primary government partner for data sharing and policy advocacy.' },
-  { n:'FIDA Kenya',          t:'Legal aid / advocacy', url:'https://fidakenya.org',        desc:'Federation of Women Lawyers — provides legal aid referrals and strategic litigation support.' },
-  { n:'Usikimye',            t:'CSO / helpline',       url:'https://usikimye.org',         desc:'Community-based helpline and advocacy organisation — frontline survivor support.' },
-  { n:'Kituo Cha Sheria',    t:'Legal aid',            url:'https://kituochasheria.or.ke', desc:'Legal aid and human rights centre — provides free legal services to survivors.' },
-  { n:'COVAW',               t:'Access to justice',    url:'https://covaw.or.ke',          desc:'Coalition on Violence Against Women — strategic litigation and survivor advocacy.' },
-  { n:'GVRC',                t:'Medical & counselling',url:'https://gvrc.or.ke',           desc:'Gender Violence Recovery Centre — medical care, psychosocial support and legal aid.' },
-  { n:'Africa Data Hub',     t:'Data / research',      url:'https://africadatahub.org',    desc:'Primary data partner — producers of the Silencing Women femicide dataset.' },
+  { n:'NGEC Kenya',          t:'Government agency',    url:'https://ngeckenya.org',         desc:'National Gender & Equality Commission — primary government partner for data sharing and policy advocacy.' },
+  { n:'FIDA Kenya',          t:'Legal aid / advocacy', url:'https://fidakenya.org',         desc:'Federation of Women Lawyers — provides legal aid referrals and strategic litigation support.' },
+  { n:'Usikimye',            t:'CSO / helpline',       url:'https://usikimye.org',          desc:'Community-based helpline and advocacy organisation — frontline survivor support.' },
+  { n:'Kituo Cha Sheria',    t:'Legal aid',            url:'https://kituochasheria.or.ke',  desc:'Legal aid and human rights centre — provides free legal services to survivors.' },
+  { n:'COVAW',               t:'Access to justice',    url:'https://covaw.or.ke',           desc:'Coalition on Violence Against Women — strategic litigation and survivor advocacy.' },
+  { n:'GVRC',                t:'Medical & counselling',url:'https://gvrc.or.ke',            desc:'Gender Violence Recovery Centre — medical care, psychosocial support and legal aid.' },
+  { n:'Africa Data Hub',     t:'Data / research',      url:'https://africadatahub.org',     desc:'Primary data partner — producers of the Silencing Women femicide dataset.' },
   { n:'Defenders Coalition', t:'HRD network',          url:'https://defenderscoalition.org',desc:'Human rights defenders network — NiMama programme for women HRDs.' },
-  { n:'LVCT Health',         t:'Health services',      url:'https://lvcthealth.org',       desc:'Health and GBV support services — post-rape care and psychosocial support.' },
+  { n:'LVCT Health',         t:'Health services',      url:'https://lvcthealth.org',        desc:'Health and GBV support services — post-rape care and psychosocial support.' },
 ]
 
 const ORG_TYPES = [
@@ -36,14 +36,16 @@ const ORG_TYPES = [
 ]
 
 const PARTNERSHIP_BENEFITS = [
-  { t:'Data access',         b:'Access to FemSaidia Kenya\'s verified incident database and Red Flag data for research and programming.' },
-  { t:'Referral pipeline',   b:'Receive direct survivor referrals from our platform to your services.' },
-  { t:'Joint advocacy',      b:'Co-author policy briefs, position papers and advocacy campaigns using shared data.' },
-  { t:'Platform visibility', b:'Listed as a verified partner on the FemSaidia Kenya platform, accessible to thousands of users.' },
-  { t:'API access',          b:'Technical partners can access our data API for integration into their own platforms and dashboards.' },
+  { t:'Data access',        b:"Access to FemSaidia Kenya's verified incident database and Red Flag data for research and programming." },
+  { t:'Referral pipeline',  b:'Receive direct survivor referrals from our platform to your services.' },
+  { t:'Joint advocacy',     b:'Co-author policy briefs, position papers and advocacy campaigns using shared data.' },
+  { t:'Platform visibility',b:'Listed as a verified partner on the FemSaidia Kenya platform, accessible to thousands of users.' },
+  { t:'API access',         b:'Technical partners can access our data API for integration into their own platforms and dashboards.' },
 ]
 
 export default function PartnersTab() {
+  const mobile = window.innerWidth < 768
+
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const [errors, setErrors]   = useState({})
@@ -95,7 +97,7 @@ export default function PartnersTab() {
     <div className="fade-up" style={{ width:'100%' }}>
       <div style={{ borderBottom:`1px solid ${BD}`, paddingBottom:20, marginBottom:24 }}>
         <p className="label" style={{ marginBottom:8 }}>Phase C · CSO & organisational partnerships</p>
-        <h1 className="serif" style={{ fontSize:36, fontWeight:700, color:TXT }}>Partners</h1>
+        <h1 className="serif" style={{ fontSize: mobile ? 28 : 36, fontWeight:700, color:TXT }}>Partners</h1>
         <p style={{ fontSize:13, color:MUT, marginTop:8, fontFamily:"'Nunito Sans',sans-serif", fontWeight:300, lineHeight:1.8, maxWidth:680 }}>
           FemSaidia Kenya is a coalition platform. We work with CSOs, legal aid organisations, government
           agencies, researchers and media to build a coordinated response to femicide in Kenya.
@@ -103,12 +105,12 @@ export default function PartnersTab() {
         </p>
       </div>
 
-      {/* Partnership benefits */}
+      {/* Partnership benefits — 2×2 on mobile, 5-col on desktop */}
       <div style={{ marginBottom:2 }}>
         <p className="label" style={{ marginBottom:12 }}>What partnership offers</p>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:2, marginBottom:16 }}>
+        <div style={{ display:'grid', gridTemplateColumns: mobile ? 'repeat(2,1fr)' : 'repeat(5,1fr)', gap:2, marginBottom:16 }}>
           {PARTNERSHIP_BENEFITS.map((b,i)=>(
-            <div key={i} style={{ background:CRD, border:`1px solid ${BD}`, padding:'16px 18px', borderTop:`3px solid ${A}` }}>
+            <div key={i} style={{ background:CRD, border:`1px solid ${BD}`, padding:'16px 14px', borderTop:`3px solid ${A}` }}>
               <div style={{ fontSize:13, fontWeight:700, color:TXT, fontFamily:"'Nunito Sans',sans-serif", marginBottom:6 }}>{b.t}</div>
               <p style={{ fontSize:11, color:MUT, lineHeight:1.7, fontFamily:"'Nunito Sans',sans-serif" }}>{b.b}</p>
             </div>
@@ -116,7 +118,8 @@ export default function PartnersTab() {
         </div>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:2 }}>
+      {/* Partners + form — stacked on mobile */}
+      <div style={{ display:'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr', gap:2 }}>
 
         {/* Current partners */}
         <div className="card" style={{ padding:24 }}>
@@ -126,17 +129,13 @@ export default function PartnersTab() {
           </div>
           {CURRENT_PARTNERS.map((p,i)=>(
             <div key={i} style={{ paddingBottom:14, marginBottom:14, borderBottom:i<CURRENT_PARTNERS.length-1?`1px solid ${BD}`:'none' }}>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8 }}>
-                <div>
-                  <a href={p.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration:'none' }}>
-                    <div style={{ fontSize:14, fontWeight:700, color:A, fontFamily:"'Nunito Sans',sans-serif", display:'inline-flex', alignItems:'center', gap:5, marginBottom:3 }}>
-                      {p.n} <ExternalLink size={11}/>
-                    </div>
-                  </a>
-                  <p className="label" style={{ marginBottom:4 }}>{p.t}</p>
-                  <p style={{ fontSize:12, color:MUT, lineHeight:1.6, fontFamily:"'Nunito Sans',sans-serif" }}>{p.desc}</p>
+              <a href={p.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration:'none' }}>
+                <div style={{ fontSize:14, fontWeight:700, color:A, fontFamily:"'Nunito Sans',sans-serif", display:'inline-flex', alignItems:'center', gap:5, marginBottom:3 }}>
+                  {p.n} <ExternalLink size={11}/>
                 </div>
-              </div>
+              </a>
+              <p className="label" style={{ marginBottom:4 }}>{p.t}</p>
+              <p style={{ fontSize:12, color:MUT, lineHeight:1.6, fontFamily:"'Nunito Sans',sans-serif" }}>{p.desc}</p>
             </div>
           ))}
         </div>

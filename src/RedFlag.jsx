@@ -166,20 +166,20 @@ function ArchetypeCard({a, getContent}) {
   const redFlags   = getContent ? getContent(a.id,'redflags',null)   : null
   const protective = getContent ? getContent(a.id,'protective',null) : null
   return (
-    <div style={{border:`2px solid ${a.color}`,marginBottom:16,background:'#fff'}}>
-      <div onClick={()=>setOpen(!open)} style={{background:a.color,padding:'24px 28px',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+    <div style={{border:`2px solid ${a.color}`,marginBottom:16,background:CRD}}>
+      <div onClick={()=>setOpen(!open)} style={{background:a.color,padding:'16px 20px',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div style={{display:'flex',alignItems:'center',gap:16}}>
           <span style={{fontSize:40,lineHeight:1}}>{a.emoji}</span>
           <div>
-            <div style={{fontFamily:"'Lora',serif",fontSize:30,fontWeight:700,color:'#fff',lineHeight:1.1,marginBottom:4}}>{a.label}</div>
-            <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'rgba(255,255,255,0.75)',letterSpacing:'.02em'}}>{a.age}</div>
+            <div style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,color:'#fff',lineHeight:1.1,marginBottom:4}}>{a.label}</div>
+            <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.9)',letterSpacing:'.02em'}}>{a.age}</div>
           </div>
         </div>
         {open?<ChevronUp color="#fff" size={22}/>:<ChevronDown color="#fff" size={22}/>}
       </div>
       {open&&(
         <div style={{padding:20}}>
-          <div style={{background:a.light,padding:'24px 28px',marginBottom:20,borderLeft:`4px solid ${a.color}`}}>
+          <div style={{background:CRD,padding:'24px 28px',marginBottom:20,borderLeft:`4px solid ${a.color}`}}>
             {a.intro.split('\n\n').map((p,i)=>(
               <p key={i} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:15,color:TXT,lineHeight:1.9,marginBottom:i<a.intro.split('\n\n').length-1?16:0}}>{p}</p>
             ))}
@@ -221,7 +221,7 @@ function ArchetypeCard({a, getContent}) {
             })}
           </div>}
           {tab==='sister'&&(
-            <div style={{background:a.light,padding:'32px 28px',borderLeft:`4px solid ${a.color}`}}>
+            <div style={{background:CRD,padding:'32px 28px',borderLeft:`4px solid ${a.color}`}}>
               <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,letterSpacing:'.15em',textTransform:'uppercase',color:a.color,marginBottom:20}}>From someone who has seen this</div>
               <p style={{fontFamily:"'Lora',serif",fontSize:20,color:TXT,lineHeight:1.85,fontStyle:'italic',margin:0}}>"{a.sisterSays}"</p>
             </div>
@@ -237,10 +237,10 @@ function EcosystemCard({role}) {
   const [tab, setTab]   = useState('signs')
   return (
     <div style={{border:`1px solid ${BD}`,marginBottom:10}}>
-      <div onClick={()=>setOpen(!open)} style={{background:role.color,padding:'18px 22px',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+      <div onClick={()=>setOpen(!open)} style={{background:role.color,padding:'12px 16px',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div style={{display:'flex',alignItems:'center',gap:14}}>
-          <span style={{fontSize:28}}>{role.icon}</span>
-          <div style={{fontFamily:"'Lora',serif",fontSize:18,fontWeight:700,color:'#fff'}}>{role.role}</div>
+          <span style={{fontSize:22}}>{role.icon}</span>
+          <div style={{fontFamily:"'Lora',serif",fontSize:15,fontWeight:700,color:'#fff'}}>{role.role}</div>
         </div>
         {open?<ChevronUp color="#fff" size={20}/>:<ChevronDown color="#fff" size={20}/>}
       </div>
@@ -444,17 +444,17 @@ export default function RedFlagTab() {
         <p style={{fontSize:16,color:MUT,fontFamily:"'Nunito Sans',sans-serif",lineHeight:1.7,maxWidth:600}}>Perpetrator profiles · Victim archetypes · Ecosystem guidance · Community safety norms</p>
       </div>
 
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:2,marginBottom:20}}>
+      <div style={{display:'grid',gridTemplateColumns:typeof window!=='undefined'&&window.innerWidth<768?'repeat(2,1fr)':'repeat(4,1fr)',gap:2,marginBottom:20}}>
         {SECTIONS.map(s=>(
           <button key={s.id} onClick={()=>setSection(s.id)}
             style={{fontFamily:"'Nunito Sans',sans-serif",border:'none',cursor:'pointer',
               display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
-              gap:4,padding:'18px 8px',
+              gap:3,padding:'12px 8px',
               background:section===s.id?A:CRD,
-              color:section===s.id?'#fff':MUT,
+              color:section===s.id?'#fff':TXT,
               borderBottom:section===s.id?`3px solid rgba(255,255,255,0.4)`:'3px solid transparent'}}>
-            <span style={{fontSize:22}}>{s.icon}</span>
-            <span style={{fontSize:16,fontWeight:700,letterSpacing:'-.01em'}}>{s.sw}</span>
+            <span style={{fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>{s.icon}</span>
+            <span style={{fontSize:13,fontWeight:700,letterSpacing:'-.01em'}}>{s.sw}</span>
             <span style={{fontSize:10,fontWeight:400,opacity:0.7,letterSpacing:'.04em',textTransform:'uppercase'}}>{s.en}</span>
           </button>
         ))}
@@ -480,7 +480,7 @@ export default function RedFlagTab() {
               <button onClick={()=>setShowPerp(true)} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,padding:'10px 20px',background:A,color:'#fff',border:'none',cursor:'pointer'}}>Submit a report</button>
             </div>
           ):(
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+            <div style={{display:'grid',gridTemplateColumns:typeof window!=='undefined'&&window.innerWidth<768?'1fr':'1fr 1fr',gap:8}}>
               {filtered.map((p,i)=><ProfileCard key={p.id||i} p={p} onClick={setSelected}/>)}
             </div>
           )}

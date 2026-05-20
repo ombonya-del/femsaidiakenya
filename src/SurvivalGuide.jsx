@@ -9,6 +9,7 @@ const TXT = '#180410'
 const MUT = '#7A4A60'
 
 export default function SurvivalGuideTab() {
+  const mobile = window.innerWidth < 768
   return (
     <div className="fade-up" style={{width:'100%'}}>
 
@@ -70,7 +71,7 @@ export default function SurvivalGuideTab() {
             <div style={{background:A,color:'#F0D0D8',fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,padding:'3px 10px',letterSpacing:'.1em',textTransform:'uppercase'}}>Right now</div>
             <div style={{fontFamily:"'Lora',serif",fontSize:20,fontWeight:700,color:TXT}}>Someone is threatening your life this moment</div>
           </div>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:2}}>
+          <div style={{display:'grid',gridTemplateColumns:mobile?'1fr':'1fr 1fr 1fr',gap:2}}>
             {[
               {n:'01', t:'Call 999 or 112', b:'Kenya\'s emergency number. You do not need to speak — leave the line open. Dispatchers are trained to listen for background sounds and locate you via cell tower.'},
               {n:'02', t:'Send your location', b:'Open WhatsApp → share Live Location with a trusted contact. It updates every few minutes. Say the code word you\'ve agreed on in advance, or simply: "I need help now."'},
@@ -100,7 +101,7 @@ export default function SurvivalGuideTab() {
               <strong>The Consolata Githinji case (April 2026) and Starlet Wahu (2024) both involve a first meeting with someone met online.</strong> These protocols are drawn directly from what could have changed the outcome.
             </p>
           </div>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:2}}>
+          <div style={{display:'grid',gridTemplateColumns:mobile?'1fr':'1fr 1fr',gap:2}}>
             {[
               {t:'Before you go — tell someone', b:'Tell a trusted friend or family member: who you are meeting, where, and when you expect to be home. Share the person\'s name, phone number, and social media profile. If you don\'t return or check in, they call police. This is non-negotiable.'},
               {t:'Share your live location', b:'Before entering any vehicle or building with this person, share your WhatsApp Live Location with your trusted contact. Update them when you arrive and when you leave. This creates a real-time trail.'},
@@ -126,7 +127,7 @@ export default function SurvivalGuideTab() {
           <p style={{fontSize:12,color:MUT,fontFamily:"'Nunito Sans',sans-serif",lineHeight:1.8,marginBottom:14}}>
             70% of femicide in Kenya is committed by intimate partners or family members. The violence almost always escalates over time — from control, to threats, to physical harm, to lethal violence. Recognising the pattern early is survival.
           </p>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:2,marginBottom:14}}>
+          <div style={{display:'grid',gridTemplateColumns:mobile?'1fr':'1fr 1fr 1fr',gap:2,marginBottom:14}}>
             <div style={{background:'#D4BEC4',border:`1px solid ${BD}`,padding:16,borderLeft:'4px solid #8A1030'}}>
               <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,color:TXT,marginBottom:8}}>Warning signs of escalation</div>
               {['Controlling who you talk to or where you go','Monitoring your phone, location or finances','Threatening you, your children or your family','Physical violence — even "minor" incidents','Strangulation — the most lethal warning sign. If a partner has strangled you even once, the risk of lethal violence increases 700%.','Threats with weapons or access to weapons','Isolating you from family and friends'].map((s,i)=>(
@@ -180,7 +181,7 @@ export default function SurvivalGuideTab() {
             Most femicide victims had prior police contact. The system failed them — not because laws don\'t exist, but because enforcement is inconsistent.
             If police dismiss you, escalate immediately. You have the right to.
           </p>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:2}}>
+          <div style={{display:'grid',gridTemplateColumns:mobile?'1fr':'repeat(4,1fr)',gap:2}}>
             {[
               {n:'Step 1',t:'Record the OB number',b:'When you report to a police station, insist on an Occurrence Book (OB) number. This creates a legal record. Write it down. If they refuse to give you one, go to a senior officer or to a different station.'},
               {n:'Step 2',t:'Escalate to DCI directly',b:'Call the DCI Gender Desk: 0800 722 203. The DCI operates independently of local police. Reporting to DCI creates a parallel investigation trail that local officers cannot easily suppress.'},
@@ -235,7 +236,7 @@ export default function SurvivalGuideTab() {
             <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,color:'#180410',marginBottom:10}}>
               Recognise the pattern that follows leaving:
             </p>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:2}}>
+            <div style={{display:'grid',gridTemplateColumns:mobile?'1fr':'repeat(4,1fr)',gap:2}}>
               {[
                 {n:'Phase 1',t:'The hoover',     c:'#CA8A04',b:'"I\'ve changed." "I miss you." "The children need you home." Abusers often become loving, apologetic and attentive immediately after you leave. This is not change. This is manipulation designed to bring you back within reach.'},
                 {n:'Phase 2',t:'The escalation', c:'#C05000',b:'When the manipulation fails, abusers escalate. Threats. Showing up at your workplace, your mother\'s home, your church. Sending family members to pressure you. Monitoring your social media. Tracking your phone.'},
@@ -252,7 +253,7 @@ export default function SurvivalGuideTab() {
           </div>
 
           {/* Before you leave */}
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:2,marginBottom:2}}>
+          <div style={{display:'grid',gridTemplateColumns:mobile?'1fr':'1fr 1fr',gap:2,marginBottom:2}}>
             <div style={{background:'#D4BEC4',border:'1px solid #B89AAA',padding:18}}>
               <div style={{fontFamily:"'Lora',serif",fontSize:16,fontWeight:700,color:'#180410',marginBottom:4,borderBottom:'2px solid #8A4010',paddingBottom:8}}>
                 Before you leave — prepare
@@ -318,7 +319,7 @@ export default function SurvivalGuideTab() {
           </div>
 
           {/* Shelters and legal */}
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:2,marginTop:2}}>
+          <div style={{display:'grid',gridTemplateColumns:mobile?'1fr':'1fr 1fr',gap:2,marginTop:2}}>
             <div style={{background:'#D4BEC4',border:'1px solid #B89AAA',padding:18}}>
               <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,color:'#180410',marginBottom:10,letterSpacing:'.06em',textTransform:'uppercase'}}>Immediate shelter & refuge</div>
               {[
@@ -364,7 +365,7 @@ export default function SurvivalGuideTab() {
             There is no perfect panic button system in Kenya yet — this is a gap the government and CSOs are working to fill.
             These are the most practical tools available right now, in order of reliability:
           </p>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:2}}>
+          <div style={{display:'grid',gridTemplateColumns:mobile?'1fr':'repeat(3,1fr)',gap:2}}>
             {[
               {t:'WhatsApp Live Location',r:'★★★★★',c:'Free · Everyone has it',b:'The most widely used de facto safety tool in Kenya. Share your location before any meeting. If you stop moving and don\'t respond to messages, your contact can see exactly where you are and call police. Simple. Effective. Free.'},
               {t:'Usikimye helpline',r:'★★★★★',c:'0800 723 253 · Toll-free',b:'Kenya\'s most active GBV helpline. 150+ calls daily. Staffed by trained counsellors who can help you build a safety plan, connect to shelter, and navigate the police reporting process. Call any time.'},
