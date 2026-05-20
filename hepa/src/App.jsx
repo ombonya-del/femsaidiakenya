@@ -224,6 +224,17 @@ function Calculator({ onReveal }) {
           <span style={{position:'relative',zIndex:1}}>=</span>
         </button>
       </div>
+      {/* Hint below calculator */}
+      <div style={{
+        display:'flex', alignItems:'center', justifyContent:'center',
+        gap:6, marginTop:10,
+        fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+        color:'rgba(255,255,255,0.45)',
+        animation:'hintBlink 2.5s ease-in-out infinite',
+      }}>
+        <span style={{fontSize:14}}>👆</span>
+        <span>Hold <strong style={{color:'rgba(255,149,0,0.8)',fontWeight:700}}>=</strong> for 3 seconds to access safety tools</span>
+      </div>
     </div>
   )
 }

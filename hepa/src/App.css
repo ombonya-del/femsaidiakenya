@@ -99,8 +99,8 @@ body {
   transition: background 0.1s;
 }
 
-.calc-btn.equals { background: #FF9500; }
-.calc-btn.equals.pressing { background: #e07800; }
+
+
 
 /* Progress ring on equals */
 .equals-ring {
@@ -512,4 +512,23 @@ body {
   padding: 8px 16px;
   border-radius: 8px;
   cursor: pointer;
+}
+/* ── Equals button — pulsing glow hint ── */
+.calc-btn.equals {
+  background: #FF9500;
+  box-shadow: 0 0 0 0 rgba(255,149,0,0.7);
+  animation: equalsGlow 2.5s ease-in-out infinite;
+}
+.calc-btn.equals.pressing {
+  background: #e07800;
+  animation: none;
+}
+@keyframes equalsGlow {
+  0%   { box-shadow: 0 0 0 0 rgba(255,149,0,0.7); }
+  50%  { box-shadow: 0 0 0 8px rgba(255,149,0,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,149,0,0); }
+}
+@keyframes hintBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
 }

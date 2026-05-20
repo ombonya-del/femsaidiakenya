@@ -278,6 +278,54 @@ function DashboardTab({ isMobile = false }){
 
       <ADHCard/>
 
+      {/* ── EMERGENCY FLASH STRIP ── */}
+      <div style={{
+        background:'#8A1030',
+        padding: isMobile ? '14px 16px' : '16px 28px',
+        marginBottom:2,
+        marginTop:2,
+        display:'flex',
+        alignItems:'center',
+        justifyContent:'space-between',
+        flexWrap:'wrap',
+        gap:12,
+        borderLeft:'6px solid #FF4040',
+      }}>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <span style={{fontSize: isMobile ? 20 : 24,animation:'emergencyPulse 1s ease-in-out infinite'}}>🚨</span>
+          <div>
+            <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize: isMobile ? 13 : 15,fontWeight:700,color:'#FFD0D8',letterSpacing:'.02em'}}>
+              Are you in danger right now?
+            </div>
+            <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:'rgba(255,200,210,0.8)',marginTop:2}}>
+              Access safety tools immediately — no internet needed for Salmin
+            </div>
+          </div>
+        </div>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+          <a href="https://hepa.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
+            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,
+              padding:'9px 16px',background:'#FF5C28',color:'#fff',textDecoration:'none',
+              letterSpacing:'.04em',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:6}}>
+            🛡 hepa
+          </a>
+          <a href="tel:*384*89056%23"
+            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,
+              padding:'9px 16px',background:'rgba(255,255,255,0.15)',color:'#fff',textDecoration:'none',
+              letterSpacing:'.04em',whiteSpace:'nowrap',border:'1px solid rgba(255,255,255,0.3)',
+              display:'inline-flex',alignItems:'center',gap:6}}>
+            📞 *384*89056#
+          </a>
+          <a href="https://redflag.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
+            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,
+              padding:'9px 16px',background:'rgba(255,64,64,0.25)',color:'#FFD0D8',textDecoration:'none',
+              letterSpacing:'.04em',whiteSpace:'nowrap',border:'1px solid rgba(255,64,64,0.5)',
+              display:'inline-flex',alignItems:'center',gap:6}}>
+            🚩 Red Flag
+          </a>
+        </div>
+      </div>
+
       <div style={{
         background:'#0A2D1A', padding:'20px 24px', marginBottom:2, marginTop:2,
         display:'flex', justifyContent:'space-between', alignItems:'center',
@@ -1026,15 +1074,39 @@ export default function App() {
 
   return (
     <InviteGate>
+      <style>{`
+        @keyframes marquee {
+          0%   { transform: translateX(100%); }
+          100% { transform: translateX(-100%); }
+        }
+        @keyframes emergencyPulse {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0.75; }
+        }
+      `}</style>
       <div style={{fontFamily:"'Nunito Sans',sans-serif",color:TXT,minHeight:'100vh',background:BG,width:'100%'}}>
 
         {/* ── ALERT BANNER ── */}
-        <div style={{background:A,color:'#F0D0D8',padding:'7px 32px',display:'flex',alignItems:'center',gap:12,fontSize:11,fontFamily:"'Nunito Sans',sans-serif",width:'100%'}}>
-          <span className="pulse" style={{display:'inline-block'}}>●</span>
-          <span style={{flex:1,minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-            FemSaidia Kenya — femicide is a national emergency. Share this platform. Submit verified incidents.
-          </span>
-          <span style={{marginLeft:'auto',opacity:.7,flexShrink:0}}>femsaidiakenya.org</span>
+        <div style={{background:A,color:'#F0D0D8',padding: isMobile ? '7px 12px' : '7px 32px',display:'flex',alignItems:'center',gap:8,fontSize:11,fontFamily:"'Nunito Sans',sans-serif",width:'100%',overflow:'hidden'}}>
+          <span className="pulse" style={{display:'inline-block',flexShrink:0}}>●</span>
+          {isMobile ? (
+            <div style={{flex:1,overflow:'hidden',minWidth:0}}>
+              <div style={{
+                display:'inline-block',
+                whiteSpace:'nowrap',
+                animation:'marquee 18s linear infinite',
+              }}>
+                FemSaidia Kenya — femicide is a national emergency. Share this platform. Submit verified incidents.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+              </div>
+            </div>
+          ) : (
+            <>
+              <span style={{flex:1,minWidth:0}}>
+                FemSaidia Kenya — femicide is a national emergency. Share this platform. Submit verified incidents.
+              </span>
+              <span style={{marginLeft:'auto',opacity:.7,flexShrink:0}}>femsaidiakenya.org</span>
+            </>
+          )}
         </div>
 
         {/* ── DESKTOP HEADER + NAV (≥768 px) — 100% unchanged ── */}
