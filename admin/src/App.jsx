@@ -154,6 +154,7 @@ const TABS = [
   {id:'sentiment',       label:'Socials & Sentiment'},
   {id:'tech-tracker',    label:'Tech Tracker'},
   {id:'cases',           label:'Case Tracker',    red:true},
+  {id:'access-codes',    label:'Access Codes',    admin:true},
 ]
 
 // ── CHART TOOLTIP ─────────────────────────────────────────────────────────────
@@ -842,6 +843,175 @@ function ResourcesTab(){
   )
 }
 
+
+// ── ACCESS CODES ADMIN TAB ────────────────────────────────────────────────────
+function AccessCodesTab() {
+  const [codes,    setCodes]    = useState([])
+  const [loading,  setLoading]  = useState(true)
+  const [creating, setCreating] = useState(false)
+  const [error,    setError]    = useState('')
+  const [copied,   setCopied]   = useState(null)
+  const [form,     setForm]     = useState({ label:'', code:'', uses_limit:'' })
+
+  useEffect(() => { loadCodes() }, [])
+
+  const loadCodes = async () => {
+    setLoading(true)
+    const { data } = await _sb.from('invite_codes').select('*').order('created_at', { ascending:false })
+    setCodes(data || [])
+    setLoading(false)
+  }
+
+  const generateSlug = () => {
+    const words = ['safe','help','access','kenya','women','shield','hope','care']
+    const w = words[Math.floor(Math.random() * words.length)]
+    const n = Math.floor(Math.random() * 9000) + 1000
+    setForm(f => ({ ...f, code: `${w}-${n}` }))
+  }
+
+  const createCode = async () => {
+    if (!form.label.trim() || !form.code.trim()) { setError('Label and code are required'); return }
+    const slug = form.code.trim().toLowerCase().replace(/\s+/g, '-')
+    const { error:err } = await _sb.from('invite_codes').insert({
+      label: form.label.trim(), code: slug, active: true,
+      uses_limit: form.uses_limit ? parseInt(form.uses_limit) : null,
+      uses_count: 0, expires_at: null,
+    })
+    if (err) { setError(err.message); return }
+    setForm({ label:'', code:'', uses_limit:'' })
+    setCreating(false); setError(''); loadCodes()
+  }
+
+  const toggleActive = async (id, current) => {
+    await _sb.from('invite_codes').update({ active: !current }).eq('id', id)
+    loadCodes()
+  }
+
+  const deleteCode = async (id) => {
+    if (!window.confirm('Delete this code permanently?')) return
+    await _sb.from('invite_codes').delete().eq('id', id)
+    loadCodes()
+  }
+
+  const copyCode = (code) => {
+    navigator.clipboard?.writeText(code)
+    setCopied(code); setTimeout(() => setCopied(null), 2000)
+  }
+
+  const inputStyle = { fontFamily:"'Nunito Sans',sans-serif", fontSize:13, color:TXT, background:'#DDD0D0', border:`1px solid ${BD}`, padding:'9px 12px', outline:'none', width:'100%' }
+  const labelStyle = { fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase', fontWeight:600, display:'block', marginBottom:4 }
+
+  return (
+    <div className="fade-up" style={{ width:'100%' }}>
+      <div style={{ borderBottom:`1px solid ${BD}`, paddingBottom:20, marginBottom:24 }}>
+        <p className="label" style={{ marginBottom:8, color:A }}>Admin · Access control</p>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+          <h1 className="serif" style={{ fontSize:36, fontWeight:700, color:TXT }}>Invite Codes</h1>
+          <button onClick={() => { setCreating(true); setError('') }}
+            style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'9px 18px', background:A, color:'#F0D0D8', border:'none', cursor:'pointer' }}>
+            + New code
+          </button>
+        </div>
+        <p style={{ fontSize:13, color:MUT, marginTop:8, fontFamily:"'Nunito Sans',sans-serif", fontWeight:300 }}>
+          {codes.length} codes · Create and manage access codes for the FemSaidia Kenya platform.
+        </p>
+      </div>
+
+      {creating && (
+        <div style={{ background:CRD, border:`1px solid ${BD}`, padding:24, marginBottom:16 }}>
+          <div style={{ fontFamily:"'Lora',serif", fontSize:18, fontWeight:700, color:TXT, marginBottom:16 }}>New access code</div>
+          {error && <p style={{ fontSize:12, color:A, marginBottom:10, fontFamily:"'Nunito Sans',sans-serif" }}>{error}</p>}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:12 }}>
+            <div>
+              <label style={labelStyle}>Label *</label>
+              <input value={form.label} onChange={e=>setForm(f=>({...f,label:e.target.value}))} placeholder="e.g. NGEC Kenya" style={inputStyle}/>
+            </div>
+            <div>
+              <label style={labelStyle}>Code *</label>
+              <div style={{ display:'flex', gap:6 }}>
+                <input value={form.code} onChange={e=>setForm(f=>({...f,code:e.target.value}))} placeholder="e.g. ngec-2026"
+                  style={{ ...inputStyle, fontFamily:'monospace', flex:1, width:'auto' }}/>
+                <button onClick={generateSlug}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, padding:'9px 12px', background:CRD, border:`1px solid ${BD}`, color:MUT, cursor:'pointer', whiteSpace:'nowrap' }}>
+                  Auto
+                </button>
+              </div>
+            </div>
+          </div>
+          <div style={{ marginBottom:16 }}>
+            <label style={labelStyle}>Max uses (blank = unlimited)</label>
+            <input value={form.uses_limit} onChange={e=>setForm(f=>({...f,uses_limit:e.target.value}))}
+              placeholder="e.g. 10" type="number" min="1"
+              style={{ ...inputStyle, width:120 }}/>
+          </div>
+          <div style={{ display:'flex', gap:8 }}>
+            <button onClick={createCode}
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'10px 20px', background:A, color:'#F0D0D8', border:'none', cursor:'pointer' }}>
+              Create code
+            </button>
+            <button onClick={() => { setCreating(false); setError('') }}
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, padding:'10px 16px', background:'none', border:`1px solid ${BD}`, color:MUT, cursor:'pointer' }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <p style={{ fontSize:13, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>Loading codes...</p>
+      ) : (
+        <div className="card" style={{ padding:0, overflow:'hidden' }}>
+          {codes.length === 0 ? (
+            <div style={{ padding:32, textAlign:'center' }}>
+              <p style={{ fontSize:13, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>No codes yet. Create one above.</p>
+            </div>
+          ) : codes.map((c,i) => (
+            <div key={c.id} style={{
+              display:'flex', justifyContent:'space-between', alignItems:'center',
+              padding:'16px 24px', gap:16,
+              borderBottom: i < codes.length-1 ? `1px solid ${BD}` : 'none',
+              background: c.active ? 'transparent' : '#E0D4D8',
+              opacity: c.active ? 1 : 0.65,
+            }}>
+              <div style={{ flex:1 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
+                  <span style={{ fontWeight:700, fontSize:14, color:TXT, fontFamily:"'Nunito Sans',sans-serif" }}>{c.label}</span>
+                  <span style={{ fontSize:10, padding:'2px 8px', background:c.active?'#C8D8C0':'#E0D0D0', color:c.active?'#1A4810':'#5A3050', fontFamily:"'Nunito Sans',sans-serif", fontWeight:700 }}>
+                    {c.active ? 'ACTIVE' : 'INACTIVE'}
+                  </span>
+                </div>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
+                  <span style={{ fontFamily:'monospace', fontSize:13, color:A, background:'#DDD0D0', padding:'2px 8px' }}>{c.code}</span>
+                  <button onClick={() => copyCode(c.code)}
+                    style={{ fontSize:11, color:copied===c.code?'#1A4810':MUT, background:'none', border:'none', cursor:'pointer', fontFamily:"'Nunito Sans',sans-serif", fontWeight:copied===c.code?700:400 }}>
+                    {copied === c.code ? '✓ Copied' : 'Copy'}
+                  </button>
+                </div>
+                <div style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>
+                  Used {c.uses_count} time{c.uses_count!==1?'s':''}
+                  {c.uses_limit ? ` · max ${c.uses_limit}` : ' · unlimited'}
+                  {c.expires_at ? ` · expires ${new Date(c.expires_at).toLocaleDateString('en-KE')}` : ''}
+                  {' · '}{new Date(c.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}
+                </div>
+              </div>
+              <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+                <button onClick={() => toggleActive(c.id, c.active)}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:600, padding:'6px 12px', border:`1px solid ${BD}`, background:CRD, color:MUT, cursor:'pointer' }}>
+                  {c.active ? 'Deactivate' : 'Activate'}
+                </button>
+                <button onClick={() => deleteCode(c.id)}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:600, padding:'6px 12px', border:`1px solid ${A}`, background:'none', color:A, cursor:'pointer' }}>
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── INVITE GATE ───────────────────────────────────────────────────────────────
 function InviteGate({ children }) {
   const stored = sessionStorage.getItem('femsaidia_access')
@@ -1160,6 +1330,7 @@ export default function App() {
           {activeTab==='sentiment'       && <SocialsSentimentTab/>}
           {activeTab==='tech-tracker'    && <TechTrackerTab/>}
           {activeTab==='cases'           && <CaseTrackerTab/>}
+          {activeTab==='access-codes'    && <AccessCodesTab/>}
         </main>
 
         {/* ── FOOTER ── */}
