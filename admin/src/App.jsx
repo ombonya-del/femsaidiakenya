@@ -1571,14 +1571,31 @@ function KaaRadaAdminTab() {
                 {e.notes && <div style={{ fontSize:11, color:'#7A6070', fontFamily:"'Nunito Sans',sans-serif", marginTop:2, fontStyle:'italic' }}>{e.notes}</div>}
               </div>
               <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+                <label style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:600, padding:'5px 8px', border:`1px solid ${BD}`, background:CRD, color:MUT, cursor:'pointer', display:'inline-block' }}>
+                  {e.photo_url ? '📷 Photo ✓' : '📷 Add photo'}
+                  <input type="file" accept="image/*" style={{ display:'none' }}
+                    onChange={async(ev)=>{
+                      const file = ev.target.files[0]
+                      if (!file) return
+                      const ext = file.name.split('.').pop()
+                      const filename = `${e.id}.${ext}`
+                      const { error } = await supabase.storage.from('kaarada-photos').upload(filename, file, { upsert:true })
+                      if (!error) {
+                        const { data: urlData } = supabase.storage.from('kaarada-photos').getPublicUrl(filename)
+                        await supabase.from('kaarada').update({ photo_url: urlData.publicUrl }).eq('id', e.id)
+                        loadEntries()
+                      } else { alert('Upload failed: ' + error.message) }
+                    }}
+                  />
+                </label>
                 <button onClick={()=>{
-                    const url = window.prompt('Enter photo URL:', e.photo_url||'')
+                    const url = window.prompt('Or paste photo URL:', e.photo_url||'')
                     if (url !== null) {
                       supabase.from('kaarada').update({ photo_url: url||null }).eq('id', e.id).then(loadEntries)
                     }
                   }}
                   style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:600, padding:'5px 8px', border:`1px solid ${BD}`, background:CRD, color:MUT, cursor:'pointer' }}>
-                  {e.photo_url ? '📷 Photo ✓' : '📷 Add photo'}
+                  🔗 URL
                 </button>
                 {e.court_record_url && (
                   <a href={e.court_record_url} target="_blank" rel="noopener noreferrer"

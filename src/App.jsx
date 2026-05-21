@@ -953,46 +953,41 @@ function KaaRadaTab({ isMobile }) {
             const crimeStyle  = CRIME_COLORS[p.crime_type]  || { bg:MUT,    tc:'#F0D0D8' }
             const statusStyle = STATUS_STYLES[p.status]     || { bg:'#E0D4D8', tc:'#5A3050' }
             return (
-              <div key={p.id||i} style={{ background:CRD, border:`1px solid ${BD}`, padding:20, display:'flex', flexDirection:'column', gap:12 }}>
-                {/* Photo + Name + badges */}
-                <div style={{ display:'flex', gap:14, alignItems:'flex-start' }}>
-                  {/* Photo */}
-                  <div style={{ flexShrink:0, width:96, height:116 }}>
-                    {p.photo_url ? (
-                      <img src={p.photo_url} alt={p.name}
-                        style={{ width:96, height:116, objectFit:'cover', objectPosition:'top', border:`2px solid ${A}` }}
-                        onError={e=>{ e.target.style.display='none'; e.target.nextSibling.style.display='flex' }}
-                      />
-                    ) : null}
-                    <div style={{ width:96, height:116, background:'#B89AAA', border:`2px solid ${BD}`,
-                      display: p.photo_url ? 'none' : 'flex', alignItems:'center', justifyContent:'center',
-                      flexDirection:'column', gap:2 }}>
-                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={MUT} strokeWidth="1.5">
-                        <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-                      </svg>
-                      <span style={{ fontSize:8, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.06em', textTransform:'uppercase' }}>No photo</span>
-                    </div>
+              <div key={p.id||i} style={{ background:CRD, border:`1px solid ${BD}`, display:'flex', overflow:'hidden', minHeight:180 }}>
+                {/* Photo — 1/3 */}
+                <div style={{ width:'33%', flexShrink:0, position:'relative', minHeight:180 }}>
+                  {p.photo_url ? (
+                    <img src={p.photo_url} alt={p.name}
+                      style={{ width:'100%', height:'100%', objectFit:'cover', objectPosition:'top center', display:'block' }}
+                      onError={e=>{ e.target.style.display='none'; e.target.nextSibling.style.display='flex' }}
+                    />
+                  ) : null}
+                  <div style={{ width:'100%', height:'100%', background:'#B89AAA',
+                    display: p.photo_url ? 'none' : 'flex', alignItems:'center', justifyContent:'center',
+                    flexDirection:'column', gap:4, position:'absolute', top:0, left:0 }}>
+                    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke={MUT} strokeWidth="1.2">
+                      <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                    </svg>
+                    <span style={{ fontSize:8, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase' }}>No photo</span>
                   </div>
-                  {/* Name + badges */}
-                  <div style={{ flex:1 }}>
-                    <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:8, marginBottom:6 }}>
-                      <div>
-                        <div style={{ fontFamily:"'Lora',serif", fontSize:18, fontWeight:700, color:TXT }}>{p.name}</div>
-                        {p.alias && <div style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif", marginTop:2 }}>aka {p.alias}</div>}
-                      </div>
-                      <div style={{ display:'flex', flexDirection:'column', gap:4, alignItems:'flex-end', flexShrink:0 }}>
-                        <span style={{ fontSize:10, padding:'3px 8px', background:crimeStyle.bg, color:crimeStyle.tc,
-                          fontFamily:"'Nunito Sans',sans-serif", fontWeight:700, whiteSpace:'nowrap' }}>
-                          {p.crime_type}
-                        </span>
-                        <span style={{ fontSize:10, padding:'3px 8px', background:statusStyle.bg, color:statusStyle.tc,
-                          fontFamily:"'Nunito Sans',sans-serif", fontWeight:700 }}>
-                          {p.status}
-                        </span>
-                      </div>
-                    </div>
+                  {/* Crime badge overlay */}
+                  <div style={{ position:'absolute', bottom:0, left:0, right:0, background:crimeStyle.bg, padding:'4px 8px' }}>
+                    <span style={{ fontSize:9, color:crimeStyle.tc, fontFamily:"'Nunito Sans',sans-serif", fontWeight:700 }}>{p.crime_type}</span>
                   </div>
                 </div>
+                {/* Details — 2/3 */}
+                <div style={{ flex:1, padding:'16px 18px', display:'flex', flexDirection:'column', gap:10 }}>
+                  {/* Name + status */}
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8 }}>
+                    <div>
+                      <div style={{ fontFamily:"'Lora',serif", fontSize:17, fontWeight:700, color:TXT, lineHeight:1.2 }}>{p.name}</div>
+                      {p.alias && <div style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif", marginTop:2 }}>aka {p.alias}</div>}
+                    </div>
+                    <span style={{ fontSize:10, padding:'3px 8px', background:statusStyle.bg, color:statusStyle.tc,
+                      fontFamily:"'Nunito Sans',sans-serif", fontWeight:700, flexShrink:0 }}>
+                      {p.status}
+                    </span>
+                  </div>
 
                 {/* Details grid */}
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
