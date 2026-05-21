@@ -957,17 +957,17 @@ function KaaRadaTab({ isMobile }) {
                 {/* Photo + Name + badges */}
                 <div style={{ display:'flex', gap:14, alignItems:'flex-start' }}>
                   {/* Photo */}
-                  <div style={{ flexShrink:0, width:72, height:88 }}>
+                  <div style={{ flexShrink:0, width:96, height:116 }}>
                     {p.photo_url ? (
                       <img src={p.photo_url} alt={p.name}
-                        style={{ width:72, height:88, objectFit:'cover', objectPosition:'top', border:`2px solid ${A}` }}
+                        style={{ width:96, height:116, objectFit:'cover', objectPosition:'top', border:`2px solid ${A}` }}
                         onError={e=>{ e.target.style.display='none'; e.target.nextSibling.style.display='flex' }}
                       />
                     ) : null}
-                    <div style={{ width:72, height:88, background:'#B89AAA', border:`2px solid ${BD}`,
+                    <div style={{ width:96, height:116, background:'#B89AAA', border:`2px solid ${BD}`,
                       display: p.photo_url ? 'none' : 'flex', alignItems:'center', justifyContent:'center',
                       flexDirection:'column', gap:2 }}>
-                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={MUT} strokeWidth="1.5">
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={MUT} strokeWidth="1.5">
                         <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
                       </svg>
                       <span style={{ fontSize:8, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.06em', textTransform:'uppercase' }}>No photo</span>

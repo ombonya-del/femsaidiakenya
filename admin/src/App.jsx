@@ -1571,6 +1571,15 @@ function KaaRadaAdminTab() {
                 {e.notes && <div style={{ fontSize:11, color:'#7A6070', fontFamily:"'Nunito Sans',sans-serif", marginTop:2, fontStyle:'italic' }}>{e.notes}</div>}
               </div>
               <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+                <button onClick={()=>{
+                    const url = window.prompt('Enter photo URL:', e.photo_url||'')
+                    if (url !== null) {
+                      supabase.from('kaarada').update({ photo_url: url||null }).eq('id', e.id).then(loadEntries)
+                    }
+                  }}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:600, padding:'5px 8px', border:`1px solid ${BD}`, background:CRD, color:MUT, cursor:'pointer' }}>
+                  {e.photo_url ? '📷 Photo ✓' : '📷 Add photo'}
+                </button>
                 {e.court_record_url && (
                   <a href={e.court_record_url} target="_blank" rel="noopener noreferrer"
                     style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:600, padding:'5px 8px', border:`1px solid ${BD}`, background:CRD, color:MUT, textDecoration:'none', cursor:'pointer' }}>
