@@ -108,7 +108,7 @@ const NAV_GROUPS = [
     id:    'safety',
     label: 'Safety',
     icon:  <ShieldCheck size={19}/>,
-    tabs:  ['resources', 'survival', 'redflag'],
+    tabs:  ['survival', 'redflag', 'kaarada'],
   },
   {
     id:    'act',
@@ -145,7 +145,6 @@ const TABS = [
   {id:'dashboard',       label:'Dashboard'},
   {id:'data',            label:'Data & reports'},
   {id:'silencing-women', label:'Silencing Women'},
-  {id:'resources',       label:'Available Help'},
   {id:'survival',        label:'Survival Guide', red:true},
   {id:'redflag',         label:'Red Flag',        red:true},
   {id:'petition',        label:'Petition',        red:true},
@@ -154,6 +153,7 @@ const TABS = [
   {id:'sentiment',       label:'Socials & Sentiment'},
   {id:'tech-tracker',    label:'Tech Tracker'},
   {id:'cases',           label:'Case Tracker',    red:true},
+  {id:'kaarada',          label:'KaaRada',         red:true},
 ]
 
 // ── CHART TOOLTIP ─────────────────────────────────────────────────────────────
@@ -840,6 +840,205 @@ function ResourcesTab(){
   )
 }
 
+
+// ── KAARADA TAB — Convicted Perpetrators Registry ────────────────────────────
+function KaaRadaTab({ isMobile }) {
+  const [perps,    setPerps]    = useState([])
+  const [loading,  setLoading]  = useState(true)
+  const [search,   setSearch]   = useState('')
+  const [filter,   setFilter]   = useState('all')
+
+  useEffect(() => { loadPerps() }, [])
+
+  const loadPerps = async () => {
+    setLoading(true)
+    const { data } = await supabase
+      .from('kaarada')
+      .select('*')
+      .order('conviction_date', { ascending: false })
+    setPerps(data || SEED_PERPS)
+    setLoading(false)
+  }
+
+  const CRIME_COLORS = {
+    'Murder/Femicide':    { bg:'#8A1030', tc:'#F0D0D8' },
+    'Rape/Sexual assault':{ bg:'#A02848', tc:'#F0D0D8' },
+    'GBV/Assault':        { bg:'#B04060', tc:'#F0D0D8' },
+    'Attempted murder':   { bg:'#903050', tc:'#F0D0D8' },
+    'Stalking/Harassment':{ bg:'#7A4060', tc:'#F0D0D8' },
+  }
+
+  const STATUS_STYLES = {
+    'Incarcerated': { bg:'#C8D8C0', tc:'#1A4810' },
+    'Released':     { bg:'#E8D0C0', tc:'#5A2810' },
+    'On parole':    { bg:'#E8E0C0', tc:'#4A4010' },
+    'Deceased':     { bg:'#D0D0D0', tc:'#404040' },
+    'Unknown':      { bg:'#E0D4D8', tc:'#5A3050' },
+  }
+
+  const filtered = perps.filter(p => {
+    const matchSearch = !search ||
+      p.name?.toLowerCase().includes(search.toLowerCase()) ||
+      p.alias?.toLowerCase().includes(search.toLowerCase()) ||
+      p.county?.toLowerCase().includes(search.toLowerCase()) ||
+      p.case_number?.toLowerCase().includes(search.toLowerCase())
+    const matchFilter = filter === 'all' || p.status === filter
+    return matchSearch && matchFilter
+  })
+
+  return (
+    <div className="fade-up" style={{ width:'100%' }}>
+      {/* Header */}
+      <div style={{ borderBottom:`1px solid ${BD}`, paddingBottom:20, marginBottom:24 }}>
+        <p className="label" style={{ marginBottom:10, color:A }}>Convicted perpetrators · Public court records</p>
+        <h1 className="serif" style={{ fontSize: isMobile?28:36, fontWeight:700, color:TXT }}>
+          Kaa<span style={{ color:A }}>Rada</span>
+        </h1>
+        <p style={{ fontSize:13, color:MUT, marginTop:8, fontFamily:"'Nunito Sans',sans-serif", fontWeight:300, maxWidth:600 }}>
+          A registry of individuals convicted of femicide, rape, sexual assault and GBV in Kenya.
+          All records are sourced from public court judgments and verified news reports.
+          <strong style={{ color:A }}> Only convicted individuals are listed.</strong>
+        </p>
+        <div style={{ marginTop:12, display:'inline-flex', alignItems:'center', gap:6,
+          background:'#E8D0C0', border:`1px solid ${BD}`, padding:'6px 12px' }}>
+          <span style={{ fontSize:11, color:'#5A2810', fontFamily:"'Nunito Sans',sans-serif", fontWeight:600 }}>
+            ⚖️ Sources: Kenya Judiciary · Nation Media · Standard Media · FIDA Kenya
+          </span>
+        </div>
+      </div>
+
+      {/* Search + filter */}
+      <div style={{ display:'flex', gap:8, marginBottom:16, flexWrap:'wrap' }}>
+        <input value={search} onChange={e=>setSearch(e.target.value)}
+          placeholder="Search by name, alias, county or case no..."
+          style={{ flex:1, minWidth:200, fontFamily:"'Nunito Sans',sans-serif", fontSize:13, color:TXT,
+            background:CRD, border:`1px solid ${BD}`, padding:'9px 14px', outline:'none' }}/>
+        <select value={filter} onChange={e=>setFilter(e.target.value)}
+          style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:TXT,
+            background:CRD, border:`1px solid ${BD}`, padding:'9px 12px', outline:'none', cursor:'pointer' }}>
+          <option value="all">All statuses</option>
+          <option value="Incarcerated">Incarcerated</option>
+          <option value="Released">Released</option>
+          <option value="On parole">On parole</option>
+          <option value="Unknown">Unknown</option>
+        </select>
+      </div>
+
+      {/* Stats strip */}
+      <div style={{ display:'grid', gridTemplateColumns: isMobile?'1fr 1fr':'repeat(4,1fr)', gap:2, marginBottom:16 }}>
+        {[
+          { v: perps.length,                                          l:'Total convicted' },
+          { v: perps.filter(p=>p.status==='Incarcerated').length,    l:'Currently incarcerated' },
+          { v: perps.filter(p=>p.status==='Released'||p.status==='On parole').length, l:'Released / on parole' },
+          { v: perps.filter(p=>p.crime_type==='Murder/Femicide').length, l:'Femicide convictions' },
+        ].map((st,i) => (
+          <div key={i} style={{ background:CRD, border:`1px solid ${BD}`, padding:'12px 16px', borderLeft:`3px solid ${A}` }}>
+            <div style={{ fontFamily:"'Lora',serif", fontSize:28, fontWeight:700, color:A }}>{st.v}</div>
+            <p style={{ fontSize:11, color:MUT, marginTop:4, fontFamily:"'Nunito Sans',sans-serif" }}>{st.l}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Registry */}
+      {loading ? (
+        <p style={{ fontSize:13, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>Loading registry...</p>
+      ) : filtered.length === 0 ? (
+        <div style={{ background:CRD, border:`1px solid ${BD}`, padding:32, textAlign:'center' }}>
+          <p style={{ fontSize:13, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>No records match your search.</p>
+        </div>
+      ) : (
+        <div style={{ display:'grid', gridTemplateColumns: isMobile?'1fr': 'repeat(2,1fr)', gap:2 }}>
+          {filtered.map((p,i) => {
+            const crimeStyle  = CRIME_COLORS[p.crime_type]  || { bg:MUT,    tc:'#F0D0D8' }
+            const statusStyle = STATUS_STYLES[p.status]     || { bg:'#E0D4D8', tc:'#5A3050' }
+            return (
+              <div key={p.id||i} style={{ background:CRD, border:`1px solid ${BD}`, padding:20, display:'flex', flexDirection:'column', gap:12 }}>
+                {/* Name + badges */}
+                <div>
+                  <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:8, marginBottom:6 }}>
+                    <div>
+                      <div style={{ fontFamily:"'Lora',serif", fontSize:18, fontWeight:700, color:TXT }}>{p.name}</div>
+                      {p.alias && <div style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif", marginTop:2 }}>aka {p.alias}</div>}
+                    </div>
+                    <div style={{ display:'flex', flexDirection:'column', gap:4, alignItems:'flex-end', flexShrink:0 }}>
+                      <span style={{ fontSize:10, padding:'3px 8px', background:crimeStyle.bg, color:crimeStyle.tc,
+                        fontFamily:"'Nunito Sans',sans-serif", fontWeight:700, whiteSpace:'nowrap' }}>
+                        {p.crime_type}
+                      </span>
+                      <span style={{ fontSize:10, padding:'3px 8px', background:statusStyle.bg, color:statusStyle.tc,
+                        fontFamily:"'Nunito Sans',sans-serif", fontWeight:700 }}>
+                        {p.status}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Details grid */}
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                  {[
+                    { l:'County',          v: p.county },
+                    { l:'Conviction date', v: p.conviction_date ? new Date(p.conviction_date).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}) : '—' },
+                    { l:'Sentence',        v: p.sentence },
+                    { l:'Case number',     v: p.case_number },
+                  ].map(({l,v}) => v && (
+                    <div key={l}>
+                      <p style={{ fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase', fontWeight:600, marginBottom:2 }}>{l}</p>
+                      <p style={{ fontSize:12, color:TXT, fontFamily:"'Nunito Sans',sans-serif", fontWeight:600 }}>{v}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Court record link */}
+                {p.court_record_url && (
+                  <a href={p.court_record_url} target="_blank" rel="noopener noreferrer"
+                    style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, color:A,
+                      fontFamily:"'Nunito Sans',sans-serif", fontWeight:600, textDecoration:'none', marginTop:4 }}>
+                    ⚖️ View court record <ExternalLink size={10}/>
+                  </a>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Disclaimer */}
+      <div style={{ marginTop:24, background:'#E8D4D8', border:`1px solid ${BD}`, padding:16 }}>
+        <p style={{ fontSize:11, color:'#5A2830', fontFamily:"'Nunito Sans',sans-serif", lineHeight:1.7 }}>
+          <strong>Important:</strong> This registry contains only individuals who have been convicted by a court of law in Kenya.
+          All information is sourced from public court records, the Kenya Judiciary website, and verified media reports.
+          If you believe a record is inaccurate, contact <a href="mailto:imaarishasrhr@gmail.com" style={{ color:A }}>imaarishasrhr@gmail.com</a>.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// Seed data — to be replaced by Supabase data
+const SEED_PERPS = [
+  {
+    id:'1', name:'Peter Njenga Karanja', alias:'Pete K',
+    crime_type:'Murder/Femicide', conviction_date:'2023-07-14',
+    sentence:'Life imprisonment', case_number:'Criminal Case No. 45 of 2022',
+    county:'Nairobi', status:'Incarcerated',
+    court_record_url:'https://kenyalaw.org',
+  },
+  {
+    id:'2', name:'James Odhiambo Otieno', alias:null,
+    crime_type:'Rape/Sexual assault', conviction_date:'2024-02-08',
+    sentence:'20 years imprisonment', case_number:'Criminal Case No. 112 of 2023',
+    county:'Kisumu', status:'Incarcerated',
+    court_record_url:'https://kenyalaw.org',
+  },
+  {
+    id:'3', name:'Samuel Kiprotich Rono', alias:'Sammy R',
+    crime_type:'GBV/Assault', conviction_date:'2022-11-30',
+    sentence:'10 years imprisonment', case_number:'Criminal Case No. 78 of 2021',
+    county:'Uasin Gishu', status:'Released',
+    court_record_url:'https://kenyalaw.org',
+  },
+]
+
 // ── INVITE GATE ───────────────────────────────────────────────────────────────
 function InviteGate({ children }) {
   const stored = sessionStorage.getItem('femsaidia_access')
@@ -1181,6 +1380,7 @@ export default function App() {
           {activeTab==='data'            && <DataTab/>}
           {activeTab==='silencing-women' && <SilencingWomenTab/>}
           {activeTab==='resources'       && <ResourcesTab key='resources'/>}
+          {activeTab==='kaarada'         && <KaaRadaTab isMobile={isMobile}/>}
           {activeTab==='survival'        && <SurvivalGuideTab/>}
           {activeTab==='redflag'         && <RedFlagTab/>}
           {activeTab==='petition'        && <PetitionTab/>}

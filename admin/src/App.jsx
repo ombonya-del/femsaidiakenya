@@ -1118,10 +1118,12 @@ function CasesTab() {
 
 // ── ACCESS CODES TAB ──────────────────────────────────────────────────────────
 function AccessCodesTab() {
-  const [codes,   setCodes]   = useState([])
-  const [loading, setLoading] = useState(true)
-  const [newCode, setNewCode] = useState('')
-  const [newOrg,  setNewOrg]  = useState('')
+  const [codes,    setCodes]    = useState([])
+  const [loading,  setLoading]  = useState(true)
+  const [creating, setCreating] = useState(false)
+  const [copied,   setCopied]   = useState(null)
+  const [error,    setError]    = useState('')
+  const [form,     setForm]     = useState({ label:'', code:'', uses_limit:'' })
 
   const load = () => {
     setLoading(true)
@@ -1130,44 +1132,138 @@ function AccessCodesTab() {
   }
   useEffect(() => { load() }, [])
 
-  const generate = async () => {
-    const code = Math.random().toString(36).substring(2,10).toUpperCase()
-    await supabase.from('invite_codes').insert([{code, org_name:newOrg, active:true}])
-    setNewCode(code); load()
+  const generateSlug = () => {
+    const words = ['safe','help','access','kenya','women','shield','hope','care','fems','partner']
+    const w = words[Math.floor(Math.random()*words.length)]
+    const n = Math.floor(Math.random()*9000)+1000
+    setForm(f=>({...f, code:`${w}-${n}`}))
   }
+
+  const create = async () => {
+    if (!form.label.trim()||!form.code.trim()) { setError('Label and code are required'); return }
+    const slug = form.code.trim().toLowerCase().replace(/\s+/g,'-')
+    const { error:err } = await supabase.from('invite_codes').insert([{
+      label: form.label.trim(), code: slug, active: true,
+      uses_limit: form.uses_limit ? parseInt(form.uses_limit) : null,
+      uses_count: 0, expires_at: null,
+    }])
+    if (err) { setError(err.message); return }
+    setForm({ label:'', code:'', uses_limit:'' })
+    setCreating(false); setError(''); load()
+  }
+
   const toggle = async (id, active) => {
     await supabase.from('invite_codes').update({active:!active}).eq('id',id)
     load()
   }
 
+  const deleteCode = async (id) => {
+    if (!window.confirm('Delete this code permanently?')) return
+    await supabase.from('invite_codes').delete().eq('id',id)
+    load()
+  }
+
+  const copy = (code) => {
+    navigator.clipboard?.writeText(code)
+    setCopied(code); setTimeout(()=>setCopied(null),2000)
+  }
+
   return (
     <div>
-      <h2 style={{ fontFamily:"'Lora',serif", fontSize:22, fontWeight:700, color:TXT, marginBottom:20 }}>Access Codes</h2>
-      <div style={{ background:CRD, border:`1px solid ${BD}`, padding:16, marginBottom:20 }}>
-        <label style={labelSt}>Organisation name</label>
-        <input value={newOrg} onChange={e=>setNewOrg(e.target.value)} placeholder="e.g. FIDA Kenya"
-          style={{ ...inputSt, marginBottom:8 }}/>
-        <button onClick={generate}
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+        <h2 style={{ fontFamily:"'Lora',serif", fontSize:22, fontWeight:700, color:TXT }}>Access Codes</h2>
+        <button onClick={()=>{setCreating(true);setError('')}}
           style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700,
             padding:'8px 16px', background:A, color:'#fff', border:'none', cursor:'pointer' }}>
-          Generate code
+          + New code
         </button>
-        {newCode && <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:14, color:'#1A5A2A', marginTop:10, fontWeight:700 }}>New code: {newCode}</p>}
       </div>
 
-      {loading ? <p style={{ color:MUT }}>Loading…</p>
-      : codes.map(c => (
-        <div key={c.id} style={{ background:c.active?CRD:'rgba(180,150,160,0.3)', border:`1px solid ${BD}`,
-          marginBottom:8, padding:12, display:'flex', justifyContent:'space-between', alignItems:'center', opacity:c.active?1:0.6 }}>
-          <div>
-            <div style={{ fontFamily:'monospace', fontSize:16, fontWeight:700, color:TXT, letterSpacing:'.1em' }}>{c.code}</div>
-            <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT, marginTop:2 }}>{c.org_name}</div>
+      {creating && (
+        <div style={{ background:CRD, border:`1px solid ${BD}`, padding:20, marginBottom:20 }}>
+          <div style={{ fontFamily:"'Lora',serif", fontSize:16, fontWeight:700, color:TXT, marginBottom:14 }}>New access code</div>
+          {error && <p style={{ fontSize:12, color:A, marginBottom:8, fontFamily:"'Nunito Sans',sans-serif" }}>{error}</p>}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:10 }}>
+            <div>
+              <label style={labelSt}>Label *</label>
+              <input value={form.label} onChange={e=>setForm(f=>({...f,label:e.target.value}))}
+                placeholder="e.g. NGEC Kenya" style={inputSt}/>
+            </div>
+            <div>
+              <label style={labelSt}>Code *</label>
+              <div style={{ display:'flex', gap:6 }}>
+                <input value={form.code} onChange={e=>setForm(f=>({...f,code:e.target.value}))}
+                  placeholder="e.g. ngec-2026"
+                  style={{ ...inputSt, fontFamily:'monospace', flex:1 }}/>
+                <button onClick={generateSlug}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, padding:'8px 10px',
+                    background:'rgba(180,150,160,0.4)', border:`1px solid ${BD}`, color:MUT, cursor:'pointer', whiteSpace:'nowrap' }}>
+                  Auto
+                </button>
+              </div>
+            </div>
           </div>
-          <button onClick={()=>toggle(c.id,c.active)}
-            style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-              padding:'4px 10px', background:c.active?A:'#1A5A2A', color:'#fff', border:'none', cursor:'pointer' }}>
-            {c.active?'Deactivate':'Activate'}
-          </button>
+          <div style={{ marginBottom:14 }}>
+            <label style={labelSt}>Max uses (blank = unlimited)</label>
+            <input value={form.uses_limit} onChange={e=>setForm(f=>({...f,uses_limit:e.target.value}))}
+              placeholder="e.g. 10" type="number" min="1"
+              style={{ ...inputSt, width:120 }}/>
+          </div>
+          <div style={{ display:'flex', gap:8 }}>
+            <button onClick={create}
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700,
+                padding:'8px 18px', background:A, color:'#fff', border:'none', cursor:'pointer' }}>
+              Create
+            </button>
+            <button onClick={()=>{setCreating(false);setError('')}}
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, padding:'8px 14px',
+                background:'none', border:`1px solid ${BD}`, color:MUT, cursor:'pointer' }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {loading ? <p style={{ color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>Loading…</p>
+      : codes.length === 0 ? <p style={{ color:MUT, fontFamily:"'Nunito Sans',sans-serif", fontSize:13 }}>No codes yet.</p>
+      : codes.map((c,i) => (
+        <div key={c.id} style={{ background:c.active?CRD:'rgba(180,150,160,0.3)', border:`1px solid ${BD}`,
+          marginBottom:8, padding:'12px 16px', display:'flex', justifyContent:'space-between',
+          alignItems:'center', gap:12, opacity:c.active?1:0.65 }}>
+          <div style={{ flex:1 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
+              <span style={{ fontWeight:700, fontSize:13, color:TXT, fontFamily:"'Nunito Sans',sans-serif" }}>{c.label||'—'}</span>
+              <span style={{ fontSize:10, padding:'2px 6px', background:c.active?'#C8D8C0':'#E0D0D0',
+                color:c.active?'#1A4810':'#5A3050', fontFamily:"'Nunito Sans',sans-serif", fontWeight:700 }}>
+                {c.active?'ACTIVE':'INACTIVE'}
+              </span>
+            </div>
+            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:3 }}>
+              <span style={{ fontFamily:'monospace', fontSize:13, color:A, background:'rgba(180,150,160,0.3)', padding:'1px 7px' }}>{c.code}</span>
+              <button onClick={()=>copy(c.code)}
+                style={{ fontSize:11, color:copied===c.code?'#1A5A2A':MUT, background:'none',
+                  border:'none', cursor:'pointer', fontFamily:"'Nunito Sans',sans-serif",
+                  fontWeight:copied===c.code?700:400, padding:0 }}>
+                {copied===c.code?'✓ Copied':'Copy'}
+              </button>
+            </div>
+            <div style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>
+              Used {c.uses_count||0}×{c.uses_limit?` · max ${c.uses_limit}`:''}
+              {' · '}{new Date(c.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}
+            </div>
+          </div>
+          <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+            <button onClick={()=>toggle(c.id,c.active)}
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                padding:'5px 10px', background:'rgba(180,150,160,0.4)', border:`1px solid ${BD}`, color:MUT, cursor:'pointer' }}>
+              {c.active?'Deactivate':'Activate'}
+            </button>
+            <button onClick={()=>deleteCode(c.id)}
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                padding:'5px 10px', background:'none', border:`1px solid ${A}`, color:A, cursor:'pointer' }}>
+              Delete
+            </button>
+          </div>
         </div>
       ))}
     </div>
