@@ -960,110 +960,53 @@ function KaaRadaTab({ isMobile }) {
             const crimeStyle  = CRIME_COLORS[p.crime_type]  || { bg:MUT,    tc:'#F0D0D8' }
             const statusStyle = STATUS_STYLES[p.status]     || { bg:'#E0D4D8', tc:'#5A3050' }
             return (
-              <div key={p.id||i} style={{ background:CRD, border:`1px solid ${BD}`, display:'flex', overflow:'hidden', minHeight:180, position:'relative' }}>
-                {/* Photo — 1/3 */}
-                <div style={{ width:'33%', flexShrink:0, position:'relative', minHeight:180 }}>
-                  {p.photo_url ? (
-                    <img src={p.photo_url} alt={p.name}
-                      style={{ width:'100%', height:'100%', objectFit:'cover', objectPosition:'top center', display:'block' }}
-                      onError={e=>{ e.target.style.display='none'; e.target.nextSibling.style.display='flex' }}
-                    />
-                  ) : null}
-                  <div style={{ width:'100%', height:'100%', background:'#B89AAA',
-                    display: p.photo_url ? 'none' : 'flex', alignItems:'center', justifyContent:'center',
-                    flexDirection:'column', gap:4, position:'absolute', top:0, left:0 }}>
-                    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke={MUT} strokeWidth="1.2">
-                      <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-                    </svg>
-                    <span style={{ fontSize:8, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase' }}>No photo</span>
+              <div key={p.id||i} style={{ background:CRD, border:`1px solid ${BD}`, overflow:'hidden' }}>
+                <div style={{ display:'flex', height:170 }}>
+                  {/* Photo */}
+                  <div style={{ width:'36%', flexShrink:0, overflow:'hidden', background:'#B89AAA', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    {p.photo_url
+                      ? <img src={p.photo_url} alt={p.name} style={{ width:'100%', height:'100%', objectFit:'cover', objectPosition:'top', display:'block' }}/>
+                      : <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+                          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={MUT} strokeWidth="1.2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                          <span style={{ fontSize:8, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.06em', textTransform:'uppercase' }}>No photo</span>
+                        </div>
+                    }
                   </div>
-                </div>
-                {/* Crime badge — absolute to card bottom */}
-                <div style={{ position:'absolute', bottom:0, left:0, width:'33%', background:crimeStyle.bg, padding:'4px 8px', zIndex:2 }}>
-                  <span style={{ fontSize:9, color:crimeStyle.tc, fontFamily:"'Nunito Sans',sans-serif", fontWeight:700 }}>{p.crime_type}</span>
-                </div>
-                {/* Details — 2/3 */}
-                <div style={{ flex:1, padding:'16px 18px', display:'flex', flexDirection:'column', gap:10 }}>
-                  {/* Name + status */}
-                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8 }}>
+                  {/* Details */}
+                  <div style={{ flex:1, padding:'12px 14px', display:'flex', flexDirection:'column', justifyContent:'space-between', overflow:'hidden' }}>
                     <div>
-                      <div style={{ fontFamily:"'Lora',serif", fontSize:17, fontWeight:700, color:TXT, lineHeight:1.2 }}>{p.name}</div>
-                      {p.alias && <div style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif", marginTop:2 }}>aka {p.alias}</div>}
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:6, marginBottom:4 }}>
+                        <div style={{ overflow:'hidden' }}>
+                          <div style={{ fontFamily:"'Lora',serif", fontSize:15, fontWeight:700, color:TXT, lineHeight:1.2 }}>{p.name}</div>
+                          {p.alias && <div style={{ fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>aka {p.alias}</div>}
+                        </div>
+                        <span style={{ fontSize:9, padding:'2px 6px', background:statusStyle.bg, color:statusStyle.tc, fontFamily:"'Nunito Sans',sans-serif", fontWeight:700, flexShrink:0, whiteSpace:'nowrap' }}>{p.status}</span>
+                      </div>
+                      <div style={{ fontSize:9, padding:'2px 7px', background:crimeStyle.bg, color:crimeStyle.tc, fontFamily:"'Nunito Sans',sans-serif", fontWeight:700, display:'inline-block', marginBottom:6 }}>{p.crime_type}</div>
+                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:4 }}>
+                        {[
+                          { l:'County',   v:p.county },
+                          { l:'Sentence', v:p.sentence },
+                          { l:'Date',     v:p.conviction_date ? new Date(p.conviction_date).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}) : null },
+                          { l:'Case',     v:p.case_number },
+                        ].map(({l,v}) => v && (
+                          <div key={l} style={{ overflow:'hidden' }}>
+                            <p style={{ fontSize:9, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.06em', textTransform:'uppercase', fontWeight:600, marginBottom:1 }}>{l}</p>
+                            <p style={{ fontSize:11, color:TXT, fontFamily:"'Nunito Sans',sans-serif", fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{v}</p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <span style={{ fontSize:10, padding:'3px 8px', background:statusStyle.bg, color:statusStyle.tc,
-                      fontFamily:"'Nunito Sans',sans-serif", fontWeight:700, flexShrink:0 }}>
-                      {p.status}
-                    </span>
+                    {p.court_record_url && (
+                      <a href={p.court_record_url} target="_blank" rel="noopener noreferrer"
+                        style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:10, color:A, fontFamily:"'Nunito Sans',sans-serif", fontWeight:600, textDecoration:'none', marginTop:4 }}>
+                        ⚖️ Court record <ExternalLink size={9}/>
+                      </a>
+                    )}
                   </div>
-
-                  {/* Details grid */}
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-                  {[
-                    { l:'County',          v: p.county },
-                    { l:'Conviction date', v: p.conviction_date ? new Date(p.conviction_date).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}) : '—' },
-                    { l:'Sentence',        v: p.sentence },
-                    { l:'Case number',     v: p.case_number },
-                  ].map(({l,v}) => v && (
-                    <div key={l}>
-                      <p style={{ fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase', fontWeight:600, marginBottom:2 }}>{l}</p>
-                      <p style={{ fontSize:12, color:TXT, fontFamily:"'Nunito Sans',sans-serif", fontWeight:600 }}>{v}</p>
-                    </div>
-                  ))}
-                </div>
-
-                  {/* Court record link */}
-                  {p.court_record_url && (
-                    <a href={p.court_record_url} target="_blank" rel="noopener noreferrer"
-                      style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, color:A,
-                        fontFamily:"'Nunito Sans',sans-serif", fontWeight:600, textDecoration:'none', marginTop:4 }}>
-                      ⚖️ View court record <ExternalLink size={10}/>
-                    </a>
-                  )}
                 </div>
               </div>
             )
-          })}
-        </div>
-      )}
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, marginTop:20, flexWrap:'wrap' }}>
-          <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1}
-            style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:600, padding:'7px 14px',
-              background:page===1?'#E0D4D8':CRD, border:`1px solid ${BD}`, color:page===1?BD:MUT, cursor:page===1?'default':'pointer' }}>
-            ← Prev
-          </button>
-          {Array.from({length:totalPages},(_,i)=>i+1).map(n=>(
-            <button key={n} onClick={()=>setPage(n)}
-              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'7px 12px',
-                background:page===n?A:CRD, border:`1px solid ${page===n?A:BD}`,
-                color:page===n?'#F0D0D8':MUT, cursor:'pointer', minWidth:36 }}>
-              {n}
-            </button>
-          ))}
-          <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages}
-            style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:600, padding:'7px 14px',
-              background:page===totalPages?'#E0D4D8':CRD, border:`1px solid ${BD}`, color:page===totalPages?BD:MUT, cursor:page===totalPages?'default':'pointer' }}>
-            Next →
-          </button>
-          <span style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif", marginLeft:8 }}>
-            {filtered.length} entries · Page {page} of {totalPages}
-          </span>
-        </div>
-      )}
-
-      {/* Disclaimer */}
-      <div style={{ marginTop:24, background:'#E8D4D8', border:`1px solid ${BD}`, padding:16 }}>
-        <p style={{ fontSize:11, color:'#5A2830', fontFamily:"'Nunito Sans',sans-serif", lineHeight:1.7 }}>
-          <strong>Important:</strong> This registry contains only individuals who have been convicted by a court of law in Kenya.
-          All information is sourced from public court records, the Kenya Judiciary website, and verified media reports.
-          If you believe a record is inaccurate, contact <a href="mailto:admin@femsaidiakenya.org" style={{ color:A }}>admin@femsaidiakenya.org</a>.
-        </p>
-      </div>
-    </div>
-  )
-}
 
 // Seed data — verified from Kenya Judiciary public records & verified media
 const SEED_PERPS = [
