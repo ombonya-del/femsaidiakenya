@@ -955,7 +955,7 @@ function KaaRadaTab({ isMobile }) {
           <p style={{ fontSize:13, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>No records match your search.</p>
         </div>
       ) : (
-        <div style={{ display:'grid', gridTemplateColumns: isMobile?'1fr': 'repeat(2,1fr)', gap:2 }}>
+        <div style={{ display:'grid', gridTemplateColumns: isMobile?'1fr': 'repeat(2,1fr)', gap:2, overflow:'hidden' }}>
           {paginated.map((p,i) => {
             const crimeStyle  = CRIME_COLORS[p.crime_type]  || { bg:MUT,    tc:'#F0D0D8' }
             const statusStyle = STATUS_STYLES[p.status]     || { bg:'#E0D4D8', tc:'#5A3050' }
