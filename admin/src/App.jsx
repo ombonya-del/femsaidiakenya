@@ -1270,6 +1270,348 @@ function AccessCodesTab() {
   )
 }
 
+
+// ── KAARADA ADMIN TAB ─────────────────────────────────────────────────────────
+function KaaRadaAdminTab() {
+  const [entries,   setEntries]   = useState([])
+  const [loading,   setLoading]   = useState(true)
+  const [importing, setImporting] = useState(false)
+  const [url,       setUrl]       = useState('')
+  const [extracted, setExtracted] = useState(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError,   setAiError]   = useState('')
+  const [saving,    setSaving]    = useState(false)
+  const [showManual, setShowManual] = useState(false)
+  const [form, setForm] = useState({
+    name:'', alias:'', crime_type:'Murder/Femicide',
+    conviction_date:'', sentence:'', case_number:'',
+    county:'', status:'Incarcerated', court_record_url:'', notes:''
+  })
+
+  const CRIME_TYPES = ['Murder/Femicide','Rape/Sexual assault','GBV/Assault','Attempted murder','Stalking/Harassment','Defilement','Other']
+  const STATUSES    = ['Incarcerated','Released','On parole','Deceased','Unknown']
+  const COUNTIES    = ['Baringo','Bomet','Bungoma','Busia','Elegeyo-Marakwet','Embu','Garissa','Homa Bay','Isiolo','Kajiado','Kakamega','Kericho','Kiambu','Kilifi','Kirinyaga','Kisii','Kisumu','Kitui','Kwale','Laikipia','Lamu','Machakos','Makueni','Mandera','Marsabit','Meru','Migori','Mombasa','Muranga','Nairobi','Nakuru','Nandi','Narok','Nyamira','Nyandarua','Nyeri','Samburu','Siaya','Taita Taveta','Tana River','Tharaka Nithi','Trans Nzoia','Turkana','Uasin Gishu','Vihiga','Wajir','West Pokot']
+
+  useEffect(() => { loadEntries() }, [])
+
+  const loadEntries = async () => {
+    setLoading(true)
+    const { data } = await supabase.from('kaarada').select('*').order('conviction_date',{ascending:false})
+    setEntries(data||[])
+    setLoading(false)
+  }
+
+  const extractFromUrl = async () => {
+    if (!url.trim()) return
+    setAiLoading(true); setAiError(''); setExtracted(null)
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+          messages: [{
+            role: 'user',
+            content: `Fetch this Kenya Law judgment URL and extract the following fields as JSON only (no preamble, no markdown):
+URL: ${url}
+
+Extract these fields:
+- name: full name or initials of the accused/convicted person (e.g. "J.K.M." or "John Kamau Mwangi")
+- alias: any alias or nickname (null if none)
+- crime_type: one of: "Murder/Femicide", "Rape/Sexual assault", "GBV/Assault", "Attempted murder", "Defilement", "Other"
+- conviction_date: date of conviction or sentence in YYYY-MM-DD format (null if not found)
+- sentence: the sentence imposed (e.g. "35 years imprisonment", "Death sentence", "Life imprisonment")
+- case_number: the case number (e.g. "Criminal Case E002 of 2022")
+- county: the Kenyan county where the crime was committed or court is located
+- status: "Incarcerated", "Released", "On parole", "Deceased", or "Unknown"
+- court_record_url: the original URL provided
+- notes: one sentence summary of the case
+
+Return ONLY a JSON object with these exact fields. No other text.`
+          }]
+        })
+      })
+      const data = await response.json()
+      // Extract text from response
+      const text = data.content
+        ?.filter(b => b.type === 'text')
+        ?.map(b => b.text)
+        ?.join('') || ''
+      const clean = text.replace(/```json|```/g,'').trim()
+      const parsed = JSON.parse(clean)
+      setExtracted(parsed)
+      setForm({
+        name: parsed.name||'',
+        alias: parsed.alias||'',
+        crime_type: parsed.crime_type||'Murder/Femicide',
+        conviction_date: parsed.conviction_date||'',
+        sentence: parsed.sentence||'',
+        case_number: parsed.case_number||'',
+        county: parsed.county||'',
+        status: parsed.status||'Incarcerated',
+        court_record_url: parsed.court_record_url||url,
+        notes: parsed.notes||''
+      })
+    } catch(e) {
+      setAiError('Could not extract data. Try filling in manually. Error: '+e.message)
+    }
+    setAiLoading(false)
+  }
+
+  const saveEntry = async () => {
+    if (!form.name.trim()||!form.crime_type) return
+    setSaving(true)
+    const { error } = await supabase.from('kaarada').insert([{
+      name: form.name.trim(),
+      alias: form.alias||null,
+      crime_type: form.crime_type,
+      conviction_date: form.conviction_date||null,
+      sentence: form.sentence||null,
+      case_number: form.case_number||null,
+      county: form.county||null,
+      status: form.status||'Unknown',
+      court_record_url: form.court_record_url||null,
+      notes: form.notes||null,
+      verified: true,
+    }])
+    if (!error) {
+      setImporting(false); setShowManual(false)
+      setUrl(''); setExtracted(null)
+      setForm({ name:'', alias:'', crime_type:'Murder/Femicide', conviction_date:'', sentence:'', case_number:'', county:'', status:'Incarcerated', court_record_url:'', notes:'' })
+      loadEntries()
+    }
+    setSaving(false)
+  }
+
+  const deleteEntry = async (id) => {
+    if (!window.confirm('Delete this entry permanently?')) return
+    await supabase.from('kaarada').delete().eq('id',id)
+    loadEntries()
+  }
+
+  const iSt = { fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:TXT, background:'#2A1828', border:`1px solid ${BD}`, padding:'8px 10px', outline:'none', width:'100%', color:'#F0D0D8' }
+  const lSt = { fontSize:10, color:BD, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase', fontWeight:600, display:'block', marginBottom:3 }
+  const sSt = { ...iSt, cursor:'pointer' }
+
+  return (
+    <div>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:20 }}>
+        <div>
+          <h2 style={{ fontFamily:"'Lora',serif", fontSize:22, fontWeight:700, color:TXT }}>KaaRada Registry</h2>
+          <p style={{ fontSize:12, color:MUT, fontFamily:"'Nunito Sans',sans-serif", marginTop:4 }}>{entries.length} entries · Import from kenyalaw.org or add manually</p>
+        </div>
+        <div style={{ display:'flex', gap:6 }}>
+          <button onClick={()=>{setImporting(true);setShowManual(false);setAiError('');setExtracted(null)}}
+            style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, padding:'7px 14px', background:A, color:'#F0D0D8', border:'none', cursor:'pointer' }}>
+            + Import URL
+          </button>
+          <button onClick={()=>{setShowManual(true);setImporting(false)}}
+            style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:600, padding:'7px 14px', background:CRD, border:`1px solid ${BD}`, color:MUT, cursor:'pointer' }}>
+            + Add manually
+          </button>
+        </div>
+      </div>
+
+      {/* AI Import Panel */}
+      {importing && (
+        <div style={{ background:'#1A0818', border:`1px solid ${A}`, padding:20, marginBottom:16 }}>
+          <div style={{ fontFamily:"'Lora',serif", fontSize:16, fontWeight:700, color:'#F0D0D8', marginBottom:12 }}>
+            🤖 Import from Kenya Law URL
+          </div>
+          <p style={{ fontSize:11, color:BD, fontFamily:"'Nunito Sans',sans-serif", marginBottom:12 }}>
+            Paste a kenyalaw.org judgment URL — Claude will extract the perpetrator details automatically.
+          </p>
+          <div style={{ display:'flex', gap:8, marginBottom:12 }}>
+            <input value={url} onChange={e=>setUrl(e.target.value)}
+              placeholder="https://new.kenyalaw.org/akn/ke/judgment/kehc/..."
+              style={{ ...iSt, flex:1 }}/>
+            <button onClick={extractFromUrl} disabled={aiLoading||!url.trim()}
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, padding:'8px 16px', background:aiLoading?MUT:A, color:'#F0D0D8', border:'none', cursor:aiLoading?'wait':'pointer', whiteSpace:'nowrap' }}>
+              {aiLoading ? '⏳ Extracting...' : '🔍 Extract'}
+            </button>
+          </div>
+          {aiError && <p style={{ fontSize:11, color:'#FF8080', fontFamily:"'Nunito Sans',sans-serif", marginBottom:8 }}>{aiError}</p>}
+
+          {(extracted || showManual) && (
+            <div>
+              {extracted && <p style={{ fontSize:11, color:'#80FF80', fontFamily:"'Nunito Sans',sans-serif", marginBottom:12 }}>✓ Extracted — review and edit before saving</p>}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:10 }}>
+                <div>
+                  <label style={lSt}>Name / Initials *</label>
+                  <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} style={iSt}/>
+                </div>
+                <div>
+                  <label style={lSt}>Alias</label>
+                  <input value={form.alias} onChange={e=>setForm(f=>({...f,alias:e.target.value}))} style={iSt}/>
+                </div>
+                <div>
+                  <label style={lSt}>Crime type *</label>
+                  <select value={form.crime_type} onChange={e=>setForm(f=>({...f,crime_type:e.target.value}))} style={sSt}>
+                    {CRIME_TYPES.map(c=><option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={lSt}>County</label>
+                  <select value={form.county} onChange={e=>setForm(f=>({...f,county:e.target.value}))} style={sSt}>
+                    <option value="">Select county</option>
+                    {COUNTIES.map(c=><option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={lSt}>Conviction date</label>
+                  <input type="date" value={form.conviction_date} onChange={e=>setForm(f=>({...f,conviction_date:e.target.value}))} style={iSt}/>
+                </div>
+                <div>
+                  <label style={lSt}>Status</label>
+                  <select value={form.status} onChange={e=>setForm(f=>({...f,status:e.target.value}))} style={sSt}>
+                    {STATUSES.map(s=><option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={lSt}>Sentence</label>
+                  <input value={form.sentence} onChange={e=>setForm(f=>({...f,sentence:e.target.value}))} placeholder="e.g. 35 years imprisonment" style={iSt}/>
+                </div>
+                <div>
+                  <label style={lSt}>Case number</label>
+                  <input value={form.case_number} onChange={e=>setForm(f=>({...f,case_number:e.target.value}))} placeholder="e.g. Criminal Case E002 of 2022" style={iSt}/>
+                </div>
+              </div>
+              <div style={{ marginBottom:10 }}>
+                <label style={lSt}>Court record URL</label>
+                <input value={form.court_record_url} onChange={e=>setForm(f=>({...f,court_record_url:e.target.value}))} style={iSt}/>
+              </div>
+              <div style={{ marginBottom:14 }}>
+                <label style={lSt}>Notes (one sentence summary)</label>
+                <input value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} style={iSt}/>
+              </div>
+              <div style={{ display:'flex', gap:8 }}>
+                <button onClick={saveEntry} disabled={saving}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'9px 20px', background:saving?MUT:A, color:'#F0D0D8', border:'none', cursor:saving?'wait':'pointer' }}>
+                  {saving?'Saving...':'✓ Save to registry'}
+                </button>
+                <button onClick={()=>{setImporting(false);setShowManual(false);setExtracted(null);setAiError('')}}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, padding:'9px 14px', background:'none', border:`1px solid ${BD}`, color:BD, cursor:'pointer' }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Manual Add Panel */}
+      {showManual && !importing && (
+        <div style={{ background:'#1A0818', border:`1px solid ${BD}`, padding:20, marginBottom:16 }}>
+          <div style={{ fontFamily:"'Lora',serif", fontSize:16, fontWeight:700, color:'#F0D0D8', marginBottom:12 }}>Add manually</div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:10 }}>
+            <div>
+              <label style={lSt}>Name / Initials *</label>
+              <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} style={iSt}/>
+            </div>
+            <div>
+              <label style={lSt}>Alias</label>
+              <input value={form.alias} onChange={e=>setForm(f=>({...f,alias:e.target.value}))} style={iSt}/>
+            </div>
+            <div>
+              <label style={lSt}>Crime type *</label>
+              <select value={form.crime_type} onChange={e=>setForm(f=>({...f,crime_type:e.target.value}))} style={sSt}>
+                {CRIME_TYPES.map(c=><option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={lSt}>County</label>
+              <select value={form.county} onChange={e=>setForm(f=>({...f,county:e.target.value}))} style={sSt}>
+                <option value="">Select county</option>
+                {COUNTIES.map(c=><option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={lSt}>Conviction date</label>
+              <input type="date" value={form.conviction_date} onChange={e=>setForm(f=>({...f,conviction_date:e.target.value}))} style={iSt}/>
+            </div>
+            <div>
+              <label style={lSt}>Status</label>
+              <select value={form.status} onChange={e=>setForm(f=>({...f,status:e.target.value}))} style={sSt}>
+                {STATUSES.map(s=><option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={lSt}>Sentence</label>
+              <input value={form.sentence} onChange={e=>setForm(f=>({...f,sentence:e.target.value}))} placeholder="e.g. 35 years imprisonment" style={iSt}/>
+            </div>
+            <div>
+              <label style={lSt}>Case number</label>
+              <input value={form.case_number} onChange={e=>setForm(f=>({...f,case_number:e.target.value}))} placeholder="e.g. Criminal Case E002 of 2022" style={iSt}/>
+            </div>
+          </div>
+          <div style={{ marginBottom:10 }}>
+            <label style={lSt}>Court record URL</label>
+            <input value={form.court_record_url} onChange={e=>setForm(f=>({...f,court_record_url:e.target.value}))} placeholder="https://new.kenyalaw.org/..." style={iSt}/>
+          </div>
+          <div style={{ marginBottom:14 }}>
+            <label style={lSt}>Notes</label>
+            <input value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} style={iSt}/>
+          </div>
+          <div style={{ display:'flex', gap:8 }}>
+            <button onClick={saveEntry} disabled={saving}
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'9px 20px', background:saving?MUT:A, color:'#F0D0D8', border:'none', cursor:saving?'wait':'pointer' }}>
+              {saving?'Saving...':'✓ Save to registry'}
+            </button>
+            <button onClick={()=>setShowManual(false)}
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, padding:'9px 14px', background:'none', border:`1px solid ${BD}`, color:MUT, cursor:'pointer' }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Entries list */}
+      {loading ? <p style={{ color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>Loading...</p>
+      : entries.length === 0 ? (
+        <div style={{ background:CRD, border:`1px solid ${BD}`, padding:24, textAlign:'center' }}>
+          <p style={{ color:MUT, fontSize:13, fontFamily:"'Nunito Sans',sans-serif" }}>
+            No entries yet. Import from kenyalaw.org using the button above.
+          </p>
+        </div>
+      ) : (
+        <div style={{ background:CRD, border:`1px solid ${BD}`, overflow:'hidden' }}>
+          {entries.map((e,i) => (
+            <div key={e.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', padding:'12px 18px', borderBottom:i<entries.length-1?`1px solid ${BD}`:'none', gap:12 }}>
+              <div style={{ flex:1 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:3 }}>
+                  <span style={{ fontWeight:700, fontSize:13, color:TXT, fontFamily:"'Nunito Sans',sans-serif" }}>{e.name}</span>
+                  {e.alias && <span style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>aka {e.alias}</span>}
+                  <span style={{ fontSize:10, padding:'2px 6px', background:A, color:'#F0D0D8', fontFamily:"'Nunito Sans',sans-serif", fontWeight:600 }}>{e.crime_type}</span>
+                  <span style={{ fontSize:10, padding:'2px 6px', background:e.status==='Incarcerated'?'#C8D8C0':'#E8D0C0', color:e.status==='Incarcerated'?'#1A4810':'#5A2810', fontFamily:"'Nunito Sans',sans-serif", fontWeight:600 }}>{e.status}</span>
+                </div>
+                <div style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>
+                  {e.county&&`${e.county} · `}{e.case_number&&`${e.case_number} · `}{e.sentence&&`${e.sentence}`}
+                  {e.conviction_date&&` · ${new Date(e.conviction_date).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}`}
+                </div>
+                {e.notes && <div style={{ fontSize:11, color:'#7A6070', fontFamily:"'Nunito Sans',sans-serif", marginTop:2, fontStyle:'italic' }}>{e.notes}</div>}
+              </div>
+              <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+                {e.court_record_url && (
+                  <a href={e.court_record_url} target="_blank" rel="noopener noreferrer"
+                    style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:600, padding:'5px 8px', border:`1px solid ${BD}`, background:CRD, color:MUT, textDecoration:'none', cursor:'pointer' }}>
+                    ⚖️ Court
+                  </a>
+                )}
+                <button onClick={()=>deleteEntry(e.id)}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:600, padding:'5px 8px', border:`1px solid ${A}`, background:'none', color:A, cursor:'pointer' }}>
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── TABS CONFIG ───────────────────────────────────────────────────────────────
 
 // ── HIGHLIGHTS TAB ────────────────────────────────────────────────────────────
@@ -1663,6 +2005,7 @@ function RespondersTab() {
 
 const TABS = [
   { id:'submissions', label:'Submissions',    icon:<Flag size={14}/> },
+  { id:'kaarada',     label:'KaaRada',       icon:<Shield size={14}/> },
   { id:'profiles',    label:'Profiles',       icon:<Users size={14}/> },
   { id:'lindalinda',  label:'LindaLinda',     icon:<Shield size={14}/> },
   { id:'archetypes',  label:'JiJue/JiTume',   icon:<BookOpen size={14}/> },
@@ -1722,6 +2065,7 @@ export default function App() {
       </header>
 
       <main style={{ padding:'24px', maxWidth:1100, margin:'0 auto' }}>
+        {tab==='kaarada'     && <KaaRadaAdminTab/>}
         {tab==='submissions' && <SubmissionsTab/>}
         {tab==='profiles'    && <ProfilesTab/>}
         {tab==='lindalinda'  && <LindaLindaTab/>}
