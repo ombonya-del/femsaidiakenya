@@ -517,16 +517,16 @@ body {
 .calc-btn.equals {
   background: #FF9500;
   box-shadow: 0 0 0 0 rgba(255,149,0,0.7);
-  animation: equalsGlow 2.5s ease-in-out infinite;
+  animation: equalsGlow 1.4s ease-in-out infinite;
 }
 .calc-btn.equals.pressing {
   background: #e07800;
   animation: none;
 }
 @keyframes equalsGlow {
-  0%   { box-shadow: 0 0 0 0 rgba(255,149,0,0.7); }
-  50%  { box-shadow: 0 0 0 8px rgba(255,149,0,0); }
-  100% { box-shadow: 0 0 0 0 rgba(255,149,0,0); }
+  0%   { box-shadow: 0 0 0 0 rgba(255,149,0,1), 0 0 20px 4px rgba(255,149,0,0.6); transform: scale(1); }
+  50%  { box-shadow: 0 0 0 18px rgba(255,149,0,0), 0 0 40px 10px rgba(255,149,0,0.3); transform: scale(1.1); }
+  100% { box-shadow: 0 0 0 0 rgba(255,149,0,0), 0 0 20px 4px rgba(255,149,0,0); transform: scale(1); }
 }
 @keyframes hintBlink {
   0%, 100% { opacity: 1; }

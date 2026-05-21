@@ -290,6 +290,7 @@ function DashboardTab({ isMobile = false }){
         flexWrap:'wrap',
         gap:12,
         borderLeft:'6px solid #FF4040',
+        animation:'emergencyPulse 1.5s ease-in-out infinite',
       }}>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
           <span style={{fontSize: isMobile ? 20 : 24,animation:'emergencyPulse 1s ease-in-out infinite'}}>🚨</span>
