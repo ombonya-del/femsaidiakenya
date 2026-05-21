@@ -992,7 +992,7 @@ function KaaRadaTab({ isMobile }) {
                         ].map(({l,v}) => v && (
                           <div key={l} style={{ overflow:'hidden' }}>
                             <p style={{ fontSize:9, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.06em', textTransform:'uppercase', fontWeight:600, marginBottom:1 }}>{l}</p>
-                            <p style={{ fontSize:11, color:TXT, fontFamily:"'Nunito Sans',sans-serif", fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{v}</p>
+                            <p style={{ fontSize:11, color:TXT, fontFamily:"'Nunito Sans',sans-serif", fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'normal' }}>{v}</p>
                           </div>
                         ))}
                       </div>
