@@ -848,6 +848,8 @@ function KaaRadaTab({ isMobile }) {
   const [loading,  setLoading]  = useState(true)
   const [search,   setSearch]   = useState('')
   const [filter,   setFilter]   = useState('all')
+  const [page,     setPage]     = useState(1)
+  const PER_PAGE = 12
 
   useEffect(() => { loadPerps() }, [])
 
@@ -877,6 +879,8 @@ function KaaRadaTab({ isMobile }) {
     'Unknown':      { bg:'#E0D4D8', tc:'#5A3050' },
   }
 
+  useEffect(() => { setPage(1) }, [search, filter])
+
   const filtered = perps.filter(p => {
     const matchSearch = !search ||
       p.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -886,6 +890,9 @@ function KaaRadaTab({ isMobile }) {
     const matchFilter = filter === 'all' || p.status === filter
     return matchSearch && matchFilter
   })
+
+  const totalPages = Math.ceil(filtered.length / PER_PAGE)
+  const paginated  = filtered.slice((page-1)*PER_PAGE, page*PER_PAGE)
 
   return (
     <div className="fade-up" style={{ width:'100%' }}>
@@ -949,7 +956,7 @@ function KaaRadaTab({ isMobile }) {
         </div>
       ) : (
         <div style={{ display:'grid', gridTemplateColumns: isMobile?'1fr': 'repeat(2,1fr)', gap:2 }}>
-          {filtered.map((p,i) => {
+          {paginated.map((p,i) => {
             const crimeStyle  = CRIME_COLORS[p.crime_type]  || { bg:MUT,    tc:'#F0D0D8' }
             const statusStyle = STATUS_STYLES[p.status]     || { bg:'#E0D4D8', tc:'#5A3050' }
             return (
@@ -1016,6 +1023,33 @@ function KaaRadaTab({ isMobile }) {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, marginTop:20, flexWrap:'wrap' }}>
+          <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1}
+            style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:600, padding:'7px 14px',
+              background:page===1?'#E0D4D8':CRD, border:`1px solid ${BD}`, color:page===1?BD:MUT, cursor:page===1?'default':'pointer' }}>
+            ← Prev
+          </button>
+          {Array.from({length:totalPages},(_,i)=>i+1).map(n=>(
+            <button key={n} onClick={()=>setPage(n)}
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'7px 12px',
+                background:page===n?A:CRD, border:`1px solid ${page===n?A:BD}`,
+                color:page===n?'#F0D0D8':MUT, cursor:'pointer', minWidth:36 }}>
+              {n}
+            </button>
+          ))}
+          <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages}
+            style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:600, padding:'7px 14px',
+              background:page===totalPages?'#E0D4D8':CRD, border:`1px solid ${BD}`, color:page===totalPages?BD:MUT, cursor:page===totalPages?'default':'pointer' }}>
+            Next →
+          </button>
+          <span style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif", marginLeft:8 }}>
+            {filtered.length} entries · Page {page} of {totalPages}
+          </span>
         </div>
       )}
 
