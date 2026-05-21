@@ -859,7 +859,7 @@ function KaaRadaTab({ isMobile }) {
       .from('kaarada')
       .select('*')
       .order('conviction_date', { ascending: false })
-    setPerps(data || SEED_PERPS)
+    setPerps(data || [])
     setLoading(false)
   }
 
