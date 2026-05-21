@@ -1028,7 +1028,7 @@ function KaaRadaTab({ isMobile }) {
         <p style={{ fontSize:11, color:'#5A2830', fontFamily:"'Nunito Sans',sans-serif", lineHeight:1.7 }}>
           <strong>Important:</strong> This registry contains only individuals who have been convicted by a court of law in Kenya.
           All information is sourced from public court records, the Kenya Judiciary website, and verified media reports.
-          If you believe a record is inaccurate, contact <a href="mailto:imaarishasrhr@gmail.com" style={{ color:A }}>imaarishasrhr@gmail.com</a>.
+          If you believe a record is inaccurate, contact <a href="mailto:admin@femsaidiakenya.org" style={{ color:A }}>admin@femsaidiakenya.org</a>.
         </p>
       </div>
     </div>
