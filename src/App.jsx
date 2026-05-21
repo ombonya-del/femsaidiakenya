@@ -852,7 +852,7 @@ function KaaRadaTab({ isMobile }) {
 
   const loadPerps = async () => {
     setLoading(true)
-    const { data } = await supabase
+    const { data } = await _sb
       .from('kaarada')
       .select('*')
       .order('conviction_date', { ascending: false })
