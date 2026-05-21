@@ -1305,42 +1305,19 @@ function KaaRadaAdminTab() {
     if (!url.trim()) return
     setAiLoading(true); setAiError(''); setExtracted(null)
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+      const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/kaarada-extract`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-          messages: [{
-            role: 'user',
-            content: `Fetch this Kenya Law judgment URL and extract the following fields as JSON only (no preamble, no markdown):
-URL: ${url}
-
-Extract these fields:
-- name: full name or initials of the accused/convicted person (e.g. "J.K.M." or "John Kamau Mwangi")
-- alias: any alias or nickname (null if none)
-- crime_type: one of: "Murder/Femicide", "Rape/Sexual assault", "GBV/Assault", "Attempted murder", "Defilement", "Other"
-- conviction_date: date of conviction or sentence in YYYY-MM-DD format (null if not found)
-- sentence: the sentence imposed (e.g. "35 years imprisonment", "Death sentence", "Life imprisonment")
-- case_number: the case number (e.g. "Criminal Case E002 of 2022")
-- county: the Kenyan county where the crime was committed or court is located
-- status: "Incarcerated", "Released", "On parole", "Deceased", or "Unknown"
-- court_record_url: the original URL provided
-- notes: one sentence summary of the case
-
-Return ONLY a JSON object with these exact fields. No other text.`
-          }]
-        })
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+        },
+        body: JSON.stringify({ url })
       })
-      const data = await response.json()
-      // Extract text from response
-      const text = data.content
-        ?.filter(b => b.type === 'text')
-        ?.map(b => b.text)
-        ?.join('') || ''
-      const clean = text.replace(/```json|```/g,'').trim()
-      const parsed = JSON.parse(clean)
+      const result = await response.json()
+      if (!result.success) throw new Error(result.error || 'Extraction failed')
+      const parsed = result.data
       setExtracted(parsed)
       setForm({
         name: parsed.name||'',
