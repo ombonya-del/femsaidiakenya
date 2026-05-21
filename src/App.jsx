@@ -960,7 +960,7 @@ function KaaRadaTab({ isMobile }) {
             const crimeStyle  = CRIME_COLORS[p.crime_type]  || { bg:MUT,    tc:'#F0D0D8' }
             const statusStyle = STATUS_STYLES[p.status]     || { bg:'#E0D4D8', tc:'#5A3050' }
             return (
-              <div key={p.id||i} style={{ background:CRD, border:`1px solid ${BD}`, display:'flex', overflow:'hidden', minHeight:180 }}>
+              <div key={p.id||i} style={{ background:CRD, border:`1px solid ${BD}`, display:'flex', overflow:'hidden', minHeight:180, position:'relative' }}>
                 {/* Photo — 1/3 */}
                 <div style={{ width:'33%', flexShrink:0, position:'relative', minHeight:180 }}>
                   {p.photo_url ? (
@@ -977,10 +977,10 @@ function KaaRadaTab({ isMobile }) {
                     </svg>
                     <span style={{ fontSize:8, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase' }}>No photo</span>
                   </div>
-                  {/* Crime badge overlay */}
-                  <div style={{ position:'absolute', bottom:0, left:0, right:0, background:crimeStyle.bg, padding:'4px 8px' }}>
-                    <span style={{ fontSize:9, color:crimeStyle.tc, fontFamily:"'Nunito Sans',sans-serif", fontWeight:700 }}>{p.crime_type}</span>
-                  </div>
+                </div>
+                {/* Crime badge — absolute to card bottom */}
+                <div style={{ position:'absolute', bottom:0, left:0, width:'33%', background:crimeStyle.bg, padding:'4px 8px', zIndex:2 }}>
+                  <span style={{ fontSize:9, color:crimeStyle.tc, fontFamily:"'Nunito Sans',sans-serif", fontWeight:700 }}>{p.crime_type}</span>
                 </div>
                 {/* Details — 2/3 */}
                 <div style={{ flex:1, padding:'16px 18px', display:'flex', flexDirection:'column', gap:10 }}>
@@ -1489,7 +1489,7 @@ export default function App() {
           flexWrap:'wrap',gap:8,
           background:HDR,width:'100%',
         }}>
-          <p style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>FemSaidia Kenya · femsaidiakenya.org · 2026</p>
+          <p style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif",paddingBottom: isMobile ? 70 : 0}}>FemSaidia Kenya · femsaidiakenya.org · 2026</p>
           <p className="serif" style={{fontSize:12,color:MUT,fontStyle:'italic'}}>Built for justice · in memory of those we lost</p>
         </footer>
 
