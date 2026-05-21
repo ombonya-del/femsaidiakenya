@@ -989,8 +989,8 @@ function KaaRadaTab({ isMobile }) {
                     </span>
                   </div>
 
-                {/* Details grid */}
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                  {/* Details grid */}
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
                   {[
                     { l:'County',          v: p.county },
                     { l:'Conviction date', v: p.conviction_date ? new Date(p.conviction_date).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}) : '—' },
@@ -1004,14 +1004,15 @@ function KaaRadaTab({ isMobile }) {
                   ))}
                 </div>
 
-                {/* Court record link */}
-                {p.court_record_url && (
-                  <a href={p.court_record_url} target="_blank" rel="noopener noreferrer"
-                    style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, color:A,
-                      fontFamily:"'Nunito Sans',sans-serif", fontWeight:600, textDecoration:'none', marginTop:4 }}>
-                    ⚖️ View court record <ExternalLink size={10}/>
-                  </a>
-                )}
+                  {/* Court record link */}
+                  {p.court_record_url && (
+                    <a href={p.court_record_url} target="_blank" rel="noopener noreferrer"
+                      style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, color:A,
+                        fontFamily:"'Nunito Sans',sans-serif", fontWeight:600, textDecoration:'none', marginTop:4 }}>
+                      ⚖️ View court record <ExternalLink size={10}/>
+                    </a>
+                  )}
+                </div>
               </div>
             )
           })}

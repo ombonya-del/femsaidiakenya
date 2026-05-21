@@ -1274,6 +1274,8 @@ function AccessCodesTab() {
 // ── KAARADA ADMIN TAB ─────────────────────────────────────────────────────────
 function KaaRadaAdminTab() {
   const [entries,   setEntries]   = useState([])
+  const [urlEdit,    setUrlEdit]    = useState(null) // id of entry being url-edited
+  const [urlInput,   setUrlInput]   = useState('')
   const [loading,   setLoading]   = useState(true)
   const [importing, setImporting] = useState(false)
   const [url,       setUrl]       = useState('')
@@ -1588,15 +1590,37 @@ function KaaRadaAdminTab() {
                     }}
                   />
                 </label>
-                <button onClick={()=>{
-                    const url = window.prompt('Or paste photo URL:', e.photo_url||'')
-                    if (url !== null) {
-                      supabase.from('kaarada').update({ photo_url: url||null }).eq('id', e.id).then(loadEntries)
-                    }
-                  }}
-                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:600, padding:'5px 8px', border:`1px solid ${BD}`, background:CRD, color:MUT, cursor:'pointer' }}>
-                  🔗 URL
-                </button>
+                {urlEdit === e.id ? (
+                  <div style={{ display:'flex', gap:4, alignItems:'center' }}>
+                    <input autoFocus value={urlInput} onChange={ev=>setUrlInput(ev.target.value)}
+                      placeholder="https://..."
+                      style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, padding:'4px 8px', border:`1px solid ${BD}`, background:'#DDD0D0', color:TXT, outline:'none', width:180 }}
+                      onKeyDown={async ev=>{
+                        if (ev.key==='Enter') {
+                          await supabase.from('kaarada').update({ photo_url: urlInput||null }).eq('id', e.id)
+                          setUrlEdit(null); setUrlInput(''); loadEntries()
+                        }
+                        if (ev.key==='Escape') { setUrlEdit(null); setUrlInput('') }
+                      }}
+                    />
+                    <button onClick={async()=>{
+                        await supabase.from('kaarada').update({ photo_url: urlInput||null }).eq('id', e.id)
+                        setUrlEdit(null); setUrlInput(''); loadEntries()
+                      }}
+                      style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700, padding:'5px 8px', background:A, color:'#F0D0D8', border:'none', cursor:'pointer' }}>
+                      ✓
+                    </button>
+                    <button onClick={()=>{ setUrlEdit(null); setUrlInput('') }}
+                      style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, padding:'5px 8px', background:'none', border:`1px solid ${BD}`, color:MUT, cursor:'pointer' }}>
+                      ✗
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={()=>{ setUrlEdit(e.id); setUrlInput(e.photo_url||'') }}
+                    style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:600, padding:'5px 8px', border:`1px solid ${BD}`, background:CRD, color:MUT, cursor:'pointer' }}>
+                    🔗 URL
+                  </button>
+                )}
                 {e.court_record_url && (
                   <a href={e.court_record_url} target="_blank" rel="noopener noreferrer"
                     style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:600, padding:'5px 8px', border:`1px solid ${BD}`, background:CRD, color:MUT, textDecoration:'none', cursor:'pointer' }}>
