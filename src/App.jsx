@@ -1007,6 +1007,48 @@ function KaaRadaTab({ isMobile }) {
                 </div>
               </div>
             )
+          })}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, marginTop:20, flexWrap:'wrap' }}>
+          <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1}
+            style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:600, padding:'7px 14px',
+              background:page===1?'#E0D4D8':CRD, border:`1px solid ${BD}`, color:page===1?BD:MUT, cursor:page===1?'default':'pointer' }}>
+            ← Prev
+          </button>
+          {Array.from({length:totalPages},(_,i)=>i+1).map(n=>(
+            <button key={n} onClick={()=>setPage(n)}
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'7px 12px',
+                background:page===n?A:CRD, border:`1px solid ${page===n?A:BD}`,
+                color:page===n?'#F0D0D8':MUT, cursor:'pointer', minWidth:36 }}>
+              {n}
+            </button>
+          ))}
+          <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages}
+            style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:600, padding:'7px 14px',
+              background:page===totalPages?'#E0D4D8':CRD, border:`1px solid ${BD}`, color:page===totalPages?BD:MUT, cursor:page===totalPages?'default':'pointer' }}>
+            Next →
+          </button>
+          <span style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif", marginLeft:8 }}>
+            {filtered.length} entries · Page {page} of {totalPages}
+          </span>
+        </div>
+      )}
+
+      {/* Disclaimer */}
+      <div style={{ marginTop:24, background:'#E8D4D8', border:`1px solid ${BD}`, padding:16 }}>
+        <p style={{ fontSize:11, color:'#5A2830', fontFamily:"'Nunito Sans',sans-serif", lineHeight:1.7 }}>
+          <strong>Important:</strong> This registry contains only individuals who have been convicted by a court of law in Kenya.
+          All information is sourced from public court records, the Kenya Judiciary website, and verified media reports.
+          If you believe a record is inaccurate, contact <a href="mailto:admin@femsaidiakenya.org" style={{ color:A }}>admin@femsaidiakenya.org</a>.
+        </p>
+      </div>
+    </div>
+  )
+}
 
 // Seed data — verified from Kenya Judiciary public records & verified media
 const SEED_PERPS = [
