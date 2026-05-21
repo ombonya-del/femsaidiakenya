@@ -1285,7 +1285,7 @@ function KaaRadaAdminTab() {
   const [form, setForm] = useState({
     name:'', alias:'', crime_type:'Murder/Femicide',
     conviction_date:'', sentence:'', case_number:'',
-    county:'', status:'Incarcerated', court_record_url:'', notes:''
+    county:'', status:'Incarcerated', court_record_url:'', photo_url:'', notes:''
   })
 
   const CRIME_TYPES = ['Murder/Femicide','Rape/Sexual assault','GBV/Assault','Attempted murder','Stalking/Harassment','Defilement','Other']
@@ -1350,6 +1350,7 @@ function KaaRadaAdminTab() {
       county: form.county||null,
       status: form.status||'Unknown',
       court_record_url: form.court_record_url||null,
+      photo_url: form.photo_url||null,
       notes: form.notes||null,
       verified: true,
     }])
