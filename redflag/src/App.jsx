@@ -768,11 +768,11 @@ function JiTumeScreen({ setTab: goHome }) {
               <div style={{padding:'12px'}}>
                 {(tab==='signs'?role.signs:role.actions).map((item,j) => (
                   <div key={j} style={{display:'flex',gap:12,padding:'12px 14px',
-                    background:'#fff',border:'1px solid #e8dde4',borderLeft:`3px solid ${tab==='signs'?role.color:GRN}`,
+                    background:'#F5E8ED',border:'1px solid #D4BEC4',borderLeft:`3px solid ${tab==='signs'?role.color:GRN}`,
                     marginBottom:6}}>
                     <span style={{flexShrink:0,fontSize:16}}>{tab==='signs'?'👁':'→'}</span>
                     <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,
-                      color:TXT,lineHeight:1.6}}>{item}</span>
+                      color:'#180410',lineHeight:1.6}}>{item}</span>
                   </div>
                 ))}
               </div>
