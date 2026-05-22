@@ -1176,7 +1176,7 @@ function AccessCodesTab() {
     <div>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
         <h2 style={{ fontFamily:"'Lora',serif", fontSize:22, fontWeight:700, color:TXT }}>Access Codes</h2>
-        <button onClick={()=>{setCreating(true);setError('')}}
+        <button onClick={()=>{setCreating(true);setError('');setForm(f=>({...f, code: generateSlug()}))}}
           style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700,
             padding:'8px 16px', background:A, color:'#fff', border:'none', cursor:'pointer' }}>
           + New code
@@ -1199,7 +1199,7 @@ function AccessCodesTab() {
                 <input value={form.code} onChange={e=>setForm(f=>({...f,code:e.target.value}))}
                   placeholder="e.g. ngec-2026"
                   style={{ ...inputSt, fontFamily:'monospace', flex:1 }}/>
-                <button onClick={generateSlug}
+                <button onClick={()=>setForm(f=>({...f, code: generateSlug()}))}
                   style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, padding:'8px 10px',
                     background:'rgba(180,150,160,0.4)', border:`1px solid ${BD}`, color:MUT, cursor:'pointer', whiteSpace:'nowrap' }}>
                   Auto

@@ -477,7 +477,7 @@ function VoiceForm({ archetypeId, accentColor, onClose, onSubmit }) {
 }
 
 // ── JIJUE SCREEN ──────────────────────────────────────────────────────────────
-function JiJueScreen() {
+function JiJueScreen({ setTab: goHome }) {
   const [active, setActive]   = useState(0)
   const [tab, setTab]         = useState('intro')
   const [dbContent, setDbContent] = useState({})
@@ -527,6 +527,12 @@ function JiJueScreen() {
 
   return (
     <div style={{paddingBottom:16,background:'#faf4f7',minHeight:'100vh'}}>
+      <div style={{display:'flex',alignItems:'center',padding:'10px 16px',borderBottom:'1px solid rgba(184,154,170,0.2)',background:'rgba(0,0,0,0.2)',position:'sticky',top:0,zIndex:10}}>
+        <button onClick={()=>goHome&&goHome('home')}
+          style={{background:'none',border:'none',cursor:'pointer',color:'#B89AAA',fontFamily:"'Nunito Sans',sans-serif",fontSize:13,fontWeight:600,display:'flex',alignItems:'center',gap:4,padding:0}}>
+          ← Home
+        </button>
+      </div>
       {/* Archetype selector */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:2,marginBottom:0}}>
         {ARCHETYPES.map((arch, i) => (
@@ -716,12 +722,18 @@ function JiJueScreen() {
 }
 
 // ── JITUME SCREEN ─────────────────────────────────────────────────────────────
-function JiTumeScreen() {
+function JiTumeScreen({ setTab: goHome }) {
   const [open, setOpen] = useState(null)
   const [tab, setTab]   = useState('signs')
 
   return (
     <div style={{padding:'0 16px 24px'}}>
+      <div style={{display:'flex',alignItems:'center',padding:'10px 16px',borderBottom:'1px solid rgba(184,154,170,0.2)',background:'rgba(0,0,0,0.2)',position:'sticky',top:0,zIndex:10}}>
+        <button onClick={()=>goHome&&goHome('home')}
+          style={{background:'none',border:'none',cursor:'pointer',color:'#B89AAA',fontFamily:"'Nunito Sans',sans-serif",fontSize:13,fontWeight:600,display:'flex',alignItems:'center',gap:4,padding:0}}>
+          ← Home
+        </button>
+      </div>
       <div style={{padding:'20px 0 16px'}}>
         <h2 style={{fontFamily:"'Lora',serif",fontSize:28,fontWeight:700,color:TXT,marginBottom:6}}>JiTume</h2>
         <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:MUT,lineHeight:1.7}}>
@@ -773,7 +785,7 @@ function JiTumeScreen() {
 }
 
 // ── LINDALINDA SCREEN ─────────────────────────────────────────────────────────
-function LindaLindaScreen() {
+function LindaLindaScreen({ setTab: goHome }) {
   const [norms,   setNorms]   = useState([])
   const [loading, setLoading] = useState(true)
   const [showing, setShowing] = useState(false)
@@ -804,6 +816,12 @@ function LindaLindaScreen() {
 
   return (
     <div style={{padding:'0 16px 24px'}}>
+      <div style={{display:'flex',alignItems:'center',padding:'10px 16px',borderBottom:'1px solid rgba(184,154,170,0.2)',background:'rgba(0,0,0,0.2)',position:'sticky',top:0,zIndex:10}}>
+        <button onClick={()=>goHome&&goHome('home')}
+          style={{background:'none',border:'none',cursor:'pointer',color:'#B89AAA',fontFamily:"'Nunito Sans',sans-serif",fontSize:13,fontWeight:600,display:'flex',alignItems:'center',gap:4,padding:0}}>
+          ← Home
+        </button>
+      </div>
       <div style={{padding:'20px 0 16px',display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
         <div>
           <h2 style={{fontFamily:"'Lora',serif",fontSize:28,fontWeight:700,color:TXT,marginBottom:6}}>LindaLinda</h2>
@@ -907,7 +925,7 @@ function NormCard({norm}) {
 }
 
 // ── DATABASE SCREEN ───────────────────────────────────────────────────────────
-function DatabaseScreen() {
+function DatabaseScreen({ setTab: goHome }) {
   const [profiles, setProfiles] = useState([])
   const [loading,  setLoading]  = useState(true)
   const [search,   setSearch]   = useState('')
@@ -926,6 +944,12 @@ function DatabaseScreen() {
 
   return (
     <div style={{padding:'0 16px 24px'}}>
+      <div style={{display:'flex',alignItems:'center',padding:'10px 16px',borderBottom:'1px solid rgba(184,154,170,0.2)',background:'rgba(0,0,0,0.2)',position:'sticky',top:0,zIndex:10}}>
+        <button onClick={()=>goHome&&goHome('home')}
+          style={{background:'none',border:'none',cursor:'pointer',color:'#B89AAA',fontFamily:"'Nunito Sans',sans-serif",fontSize:13,fontWeight:600,display:'flex',alignItems:'center',gap:4,padding:0}}>
+          ← Home
+        </button>
+      </div>
       <div style={{padding:'20px 0 12px'}}>
         <h2 style={{fontFamily:"'Lora',serif",fontSize:28,fontWeight:700,marginBottom:4}}>
           <span style={{color:RED}}>Red</span>
@@ -1018,7 +1042,7 @@ function BottomNav({ tab, setTab }) {
 
 // ── ROOT APP ──────────────────────────────────────────────────────────────────
 export default function App() {
-  const [tab,    setTab]    = useState('home')
+  const [tab,    setTab]    = useState(localStorage.getItem('redflag_tab')||'home')
   const [county, setCounty] = useState(localStorage.getItem('redflag_county')||'')
   const [showCountyPrompt, setShowCountyPrompt] = useState(!localStorage.getItem('redflag_county'))
 
@@ -1050,10 +1074,13 @@ export default function App() {
                 fontSize:14,background:'#f8f4f6',border:'1px solid #D4BEC4',
                 color:'#180410',outline:'none',marginBottom:12,boxSizing:'border-box'}}>
               <option value="" disabled>Select your county...</option>
-              {['Nairobi','Kiambu','Mombasa','Nakuru','Kisumu','Kajiado','Kwale',
-                "Machakos","Murang'a",'Kilifi','Uasin Gishu','Trans Nzoia','Meru',
-                'Kakamega','Nyeri','Nandi','Embu','Kirinyaga','Bungoma','Homa Bay',
-                'Siaya','Migori','Kisii','Nyamira','Kericho','Bomet','Narok','Other'
+              {['Baringo','Bomet','Bungoma','Busia','Elegeyo-Marakwet','Embu','Garissa',
+                'Homa Bay','Isiolo','Kajiado','Kakamega','Kericho','Kiambu','Kilifi',
+                'Kirinyaga','Kisii','Kisumu','Kitui','Kwale','Laikipia','Lamu','Machakos',
+                "Makueni","Mandera","Marsabit","Meru","Migori","Mombasa","Murang'a",
+                'Nairobi','Nakuru','Nandi','Narok','Nyamira','Nyandarua','Nyeri','Samburu',
+                'Siaya','Taita Taveta','Tana River','Tharaka Nithi','Trans Nzoia','Turkana',
+                'Uasin Gishu','Vihiga','Wajir','West Pokot','Other'
               ].map(c=><option key={c} value={c}>{c}</option>)}
             </select>
             <button onClick={()=>setShowCountyPrompt(false)}
@@ -1068,13 +1095,13 @@ export default function App() {
 
       <div style={{overflowY:'auto'}}>
         {tab==='home'     && <HomeScreen setTab={setTab}/>}
-        {tab==='jijue'    && <JiJueScreen/>}
-        {tab==='jitume'   && <JiTumeScreen/>}
-        {tab==='linda'    && <LindaLindaScreen/>}
-        {tab==='database' && <DatabaseScreen/>}
+        {tab==='jijue'    && <JiJueScreen setTab={t=>{localStorage.setItem('redflag_tab',t);setTab(t)}}/>}
+        {tab==='jitume'   && <JiTumeScreen setTab={t=>{localStorage.setItem('redflag_tab',t);setTab(t)}}/>}
+        {tab==='linda'    && <LindaLindaScreen setTab={t=>{localStorage.setItem('redflag_tab',t);setTab(t)}}/>}
+        {tab==='database' && <DatabaseScreen setTab={t=>{localStorage.setItem('redflag_tab',t);setTab(t)}}/>}
       </div>
 
-      <BottomNav tab={tab} setTab={setTab}/>
+      <BottomNav tab={tab} setTab={t=>{localStorage.setItem('redflag_tab',t);setTab(t)}}/>
     </div>
   )
 }
