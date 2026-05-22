@@ -32,9 +32,13 @@ const STATUS_OPTIONS = [
   'reported','investigated','charged','trial','convicted','acquitted','dismissed','cold','no_action'
 ]
 const COUNTIES = [
-  'Nairobi','Kiambu','Mombasa','Nakuru','Kisumu','Kajiado','Kwale',
-  "Machakos","Murang'a",'Kilifi','Uasin Gishu','Trans Nzoia','Meru',
-  'Kakamega','Nyeri','Nandi','Embu','Kirinyaga','Bungoma','Homa Bay','Other'
+  'Baringo','Bomet','Bungoma','Busia','Elegeyo-Marakwet','Embu','Garissa',
+  'Homa Bay','Isiolo','Kajiado','Kakamega','Kericho','Kiambu','Kilifi',
+  'Kirinyaga','Kisii','Kisumu','Kitui','Kwale','Laikipia','Lamu','Machakos',
+  "Makueni","Mandera","Marsabit","Meru","Migori","Mombasa","Murang'a",
+  'Nairobi','Nakuru','Nandi','Narok','Nyamira','Nyandarua','Nyeri','Samburu',
+  'Siaya','Taita Taveta','Tana River','Tharaka Nithi','Trans Nzoia','Turkana',
+  'Uasin Gishu','Vihiga','Wajir','West Pokot','Other'
 ]
 const STATUS_COLORS = {
   reported:'#DDD0D0', investigated:'#E8D8C0', charged:'#D8E0C8',

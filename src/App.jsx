@@ -1115,12 +1115,42 @@ const SEED_PERPS = [
 ]
 
 // ── INVITE GATE ───────────────────────────────────────────────────────────────
+const SESSION_INITIAL  = 30 * 60 * 1000  // 30 min
+const SESSION_EXT      = 15 * 60 * 1000  // 15 min extension
+const SESSION_MAX_EXTS = 2               // max 2 extensions = 1 hour total
+
 function InviteGate({ children }) {
-  const stored = sessionStorage.getItem('femsaidia_access')
-  const [unlocked, setUnlocked] = useState(!!stored)
-  const [code,     setCode]     = useState('')
-  const [error,    setError]    = useState('')
-  const [loading,  setLoading]  = useState(false)
+  const stored    = sessionStorage.getItem('femsaidia_access')
+  const storedExp = sessionStorage.getItem('femsaidia_expires')
+  const storedExt = sessionStorage.getItem('femsaidia_exts')
+
+  const isValid = stored && storedExp && Date.now() < parseInt(storedExp)
+
+  const [unlocked,  setUnlocked]  = useState(isValid)
+  const [code,      setCode]      = useState('')
+  const [error,     setError]     = useState('')
+  const [loading,   setLoading]   = useState(false)
+  const [expired,   setExpired]   = useState(false)
+  const [extsUsed,  setExtsUsed]  = useState(isValid ? parseInt(storedExt||'0') : 0)
+  const [remaining, setRemaining] = useState(isValid ? Math.ceil((parseInt(storedExp) - Date.now()) / 60000) : 0)
+
+  // Countdown timer
+  useEffect(() => {
+    if (!unlocked) return
+    const tick = setInterval(() => {
+      const exp = parseInt(sessionStorage.getItem('femsaidia_expires') || '0')
+      const left = Math.ceil((exp - Date.now()) / 60000)
+      setRemaining(left)
+      if (left <= 0) {
+        clearInterval(tick)
+        sessionStorage.removeItem('femsaidia_access')
+        sessionStorage.removeItem('femsaidia_expires')
+        setExpired(true)
+        setUnlocked(false)
+      }
+    }, 10000) // check every 10 seconds
+    return () => clearInterval(tick)
+  }, [unlocked])
 
   const tryCode = async () => {
     if (!code.trim()) return
@@ -1146,12 +1176,100 @@ function InviteGate({ children }) {
       setCode(''); setLoading(false); return
     }
     await _sb.from('invite_codes').update({ uses_count: (data.uses_count||0)+1 }).eq('id', data.id)
+    const exp = Date.now() + SESSION_INITIAL
     sessionStorage.setItem('femsaidia_access', '1')
+    sessionStorage.setItem('femsaidia_expires', String(exp))
+    sessionStorage.setItem('femsaidia_exts', '0')
+    setExtsUsed(0)
+    setExpired(false)
     setUnlocked(true)
     setLoading(false)
   }
 
-  if (unlocked) return children
+  const extend = () => {
+    const exp = Date.now() + SESSION_EXT
+    sessionStorage.setItem('femsaidia_expires', String(exp))
+    const newExts = extsUsed + 1
+    sessionStorage.setItem('femsaidia_exts', String(newExts))
+    setExtsUsed(newExts)
+    setExpired(false)
+    setUnlocked(true)
+  }
+
+  // Session expiry modal — shown when session expires and extensions remain
+  if (expired && extsUsed < SESSION_MAX_EXTS) {
+    const isFirstExpiry = extsUsed === 0
+    return (
+      <div style={{position:'fixed',inset:0,background:'rgba(24,4,16,0.85)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:24}}>
+        <div style={{background:'#C4AABB',border:'1px solid #B89AAA',padding:32,maxWidth:380,width:'100%',textAlign:'center'}}>
+          <div style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,color:'#180410',marginBottom:12}}>
+            {isFirstExpiry ? 'Session expiring' : 'Session expired'}
+          </div>
+          <p style={{fontSize:13,color:'#7A4A60',lineHeight:1.7,marginBottom:24,fontFamily:"'Nunito Sans',sans-serif"}}>
+            {isFirstExpiry
+              ? 'Your 30-minute preview session has ended. Extend by 15 minutes?'
+              : 'Your extended session has ended. Enter a new access code for 15 more minutes.'}
+          </p>
+          {isFirstExpiry ? (
+            <button onClick={extend}
+              style={{width:'100%',fontFamily:"'Nunito Sans',sans-serif",fontSize:13,fontWeight:700,padding:'11px',background:'#8A1030',color:'#F0D0D8',border:'none',cursor:'pointer',marginBottom:10}}>
+              + 15 more minutes
+            </button>
+          ) : (
+            <>
+              <input value={code} onChange={e=>setCode(e.target.value)}
+                onKeyDown={e=>e.key==='Enter'&&tryCode()}
+                placeholder="Enter new access code"
+                style={{width:'100%',fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'#180410',background:'#DDD0D0',border:'1px solid #B89AAA',padding:'10px 12px',outline:'none',marginBottom:10}}
+              />
+              {error&&<p style={{fontSize:11,color:'#8A1030',marginBottom:10,fontFamily:"'Nunito Sans',sans-serif"}}>{error}</p>}
+              <button onClick={tryCode} disabled={loading}
+                style={{width:'100%',fontFamily:"'Nunito Sans',sans-serif",fontSize:13,fontWeight:700,padding:'11px',background:loading?'#7A4A60':'#8A1030',color:'#F0D0D8',border:'none',cursor:loading?'wait':'pointer'}}>
+                {loading?'Checking...':'Access platform →'}
+              </button>
+            </>
+          )}
+          <button onClick={()=>{sessionStorage.clear();setExpired(false);setUnlocked(false)}}
+            style={{width:'100%',marginTop:8,fontFamily:"'Nunito Sans',sans-serif",fontSize:12,padding:'8px',background:'none',border:'1px solid #B89AAA',color:'#7A4A60',cursor:'pointer'}}>
+            Exit platform
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Hard expired — must fully re-enter
+  if (expired && extsUsed >= SESSION_MAX_EXTS) {
+    sessionStorage.clear()
+    return (
+      <div style={{minHeight:'100vh',background:'#D4BEC4',display:'flex',alignItems:'center',justifyContent:'center',padding:24,fontFamily:"'Nunito Sans',sans-serif"}}>
+        <div style={{width:'100%',maxWidth:400}}>
+          <div style={{textAlign:'center',marginBottom:32}}>
+            <div style={{fontFamily:"'Lora',serif",fontSize:32,fontWeight:700,color:'#180410'}}>Fem<span style={{color:'#8A1030'}}>Saidia</span> Kenya</div>
+          </div>
+          <div style={{background:'#C4AABB',border:'1px solid #B89AAA',padding:28}}>
+            <div style={{fontFamily:"'Lora',serif",fontSize:18,fontWeight:700,color:'#180410',marginBottom:8}}>Session ended</div>
+            <p style={{fontSize:12,color:'#7A4A60',lineHeight:1.7,marginBottom:20}}>Your preview session has ended. Contact us to continue exploring FemSaidia Kenya.</p>
+            <a href="mailto:admin@femsaidiakenya.org"
+              style={{display:'block',width:'100%',textAlign:'center',fontFamily:"'Nunito Sans',sans-serif",fontSize:13,fontWeight:700,padding:'11px',background:'#8A1030',color:'#F0D0D8',textDecoration:'none'}}>
+              Contact admin@femsaidiakenya.org
+            </a>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (unlocked) return (
+    <>
+      {remaining <= 5 && remaining > 0 && (
+        <div style={{position:'fixed',bottom:80,left:'50%',transform:'translateX(-50%)',background:'#8A1030',color:'#F0D0D8',padding:'8px 18px',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:600,zIndex:9998,whiteSpace:'nowrap'}}>
+          ⏱ Session expires in {remaining} minute{remaining!==1?'s':''}
+        </div>
+      )}
+      {children}
+    </>
+  )
 
   return (
     <div style={{minHeight:'100vh',background:'#D4BEC4',display:'flex',alignItems:'center',justifyContent:'center',padding:24,fontFamily:"'Nunito Sans',sans-serif"}}>
