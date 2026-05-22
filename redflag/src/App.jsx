@@ -102,7 +102,34 @@ const ARCHETYPES = [
       '🚩 Visit femsaidiakenya.org and the Red Flag section. Know who is operating in your space.',
     ],
     sisterSays:`You are probably the least likely person to think this applies to you. That is the thing I want you to sit with. The women who end up in the most dangerous situations in this lane are often the sharpest, the most strategic — the ones who thought they had it under control. Your intelligence is real. So is their experience.`,
-  },
+  },,
+  {
+    id:'onoff', emoji:'🔄', color:'#8A4A10', light:'#FFF0E0', bg:'#FFF8F0', surf:'#FFE8D0', card:'#fff', text:'#2A1000', muted:'#7A4A20',
+    label:'The On & Off', age:'25–40 · Co-parents & long-term on/off partners',
+    intro:`You have history with him. Real history — maybe children, shared finances, years of your life. You have left before. Maybe more than once. And something always brought you back — love, the kids, hope, pressure, fear.\n\nThis is what the elders call Vumbi la Zamani — the dust of the past that keeps blowing back in. And it is one of the most dangerous places a woman can be. Not because you are weak. Because the pattern is designed to keep you there.`,
+    redFlags:[
+      {flag:'The breakups never quite stick',why:'Every separation followed by reconciliation teaches him that you will come back. It also teaches him how far he can push.'},
+      {flag:'He uses the children as leverage',why:'Threatening custody, withholding support, using the kids as messengers — these are control tactics, not parenting.'},
+      {flag:'He monitors who you are seeing after a breakup',why:'Surveillance disguised as co-parenting communication is still surveillance.'},
+      {flag:'Violence or threats escalated after a separation',why:'Separation is statistically the most dangerous time. When he feels he is losing control permanently, the risk spikes.'},
+      {flag:'He tells the children things about you',why:'Weaponising your children against you is emotional abuse of both you and them.'},
+      {flag:'He shows up uninvited after you separated',why:'Showing up at your home, workplace or family is not love. It is a warning.'},
+      {flag:'You feel responsible for his emotional state',why:'If you are managing his feelings so he does not explode, you are already in a cycle of control.'},
+    ],
+    protective:[
+      'Document everything — every threat, every incident, every missed payment. Dates, screenshots, messages. Patterns matter in court.',
+      'Tell your children\'s school who is and is not authorised to pick them up. Get it in writing.',
+      'Do handovers in public places or at a police station — they are peak danger moments.',
+      'Never meet him alone to "talk things through" after a separation. Bring someone or meet in public.',
+      'A court order is only useful if you report violations. Report every single one.',
+      'Your children need you alive more than they need their parents together.',
+      'Know that leaving is a process, not a single moment. You are not weak for taking more than one attempt.',
+      '📱 Install hepa — disguised as a calculator. Long press = sends your GPS location instantly. hepa.femsaidiakenya.org',
+      '📞 Salmin — *384*89056# · Salama Salmin · Safe & Sound. Works on any phone, no internet. Save it now.',
+      '🚩 Check Red Flag — community profiles of known abusers. You may not be the first. redflag.femsaidiakenya.org',
+    ],
+    sisterSays:`The most dangerous moment in an on/off relationship is not when she goes back. It is when she finally, truly, leaves for good. That is when he realises the control is gone. That is when you need a plan — not just courage. Plan the exit like your life depends on it. Because it might.`,
+  }
 ]
 
 // ── ECOSYSTEM DATA ────────────────────────────────────────────────────────────
