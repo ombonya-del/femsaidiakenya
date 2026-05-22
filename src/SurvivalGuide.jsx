@@ -13,6 +13,68 @@ export default function SurvivalGuideTab() {
   return (
     <div className="fade-up" style={{width:'100%'}}>
 
+      {/* ── FEMSAIDIA TOOLS STRIP ── */}
+      <div style={{background:'#180410',padding: mobile ? '16px 14px' : '20px 28px',marginBottom:2}}>
+        <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,letterSpacing:'.14em',textTransform:'uppercase',color:'#8A1030',marginBottom:12}}>
+          ● FemSaidia Safety Tools · Use these before you need them
+        </p>
+        <div style={{display:'grid',gridTemplateColumns: mobile ? '1fr 1fr' : 'repeat(4,1fr)',gap:8}}>
+
+          {/* hepa */}
+          <a href="https://hepa.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
+            style={{textDecoration:'none',background:'#1A0818',border:'1px solid #3A1828',padding:'14px 16px',display:'flex',flexDirection:'column',gap:6}}>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <span style={{fontSize:20}}>🛡</span>
+              <span style={{fontFamily:"'Lora',serif",fontSize:16,fontWeight:700,color:'#F0D0D8'}}>hepa</span>
+            </div>
+            <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:'#B89AAA',lineHeight:1.5}}>
+              Disguised as a calculator. Hold <strong style={{color:'#FF9500'}}>=</strong> for 3 seconds to access safety tools.
+            </p>
+            <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:'#8A1030',fontWeight:700,letterSpacing:'.06em'}}>hepa.femsaidiakenya.org →</span>
+          </a>
+
+          {/* Salmin */}
+          <a href="tel:*384*89056%23"
+            style={{textDecoration:'none',background:'#1A0818',border:'1px solid #3A1828',padding:'14px 16px',display:'flex',flexDirection:'column',gap:6}}>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <span style={{fontSize:20}}>📞</span>
+              <span style={{fontFamily:"'Lora',serif",fontSize:16,fontWeight:700,color:'#F0D0D8'}}>Salmin</span>
+            </div>
+            <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:'#B89AAA',lineHeight:1.5}}>
+              <em style={{color:'#D4B0B8'}}>Salama Salmin · Safe & Sound</em><br/>
+              Works on any phone, any network, no internet needed.
+            </p>
+            <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'#F0D0D8',fontWeight:700,letterSpacing:'.04em'}}>*384*89056#</span>
+          </a>
+
+          {/* Red Flag */}
+          <a href="https://redflag.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
+            style={{textDecoration:'none',background:'#1A0818',border:'1px solid #3A1828',padding:'14px 16px',display:'flex',flexDirection:'column',gap:6}}>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <span style={{fontSize:20}}>🚩</span>
+              <span style={{fontFamily:"'Lora',serif",fontSize:16,fontWeight:700,color:'#F0D0D8'}}>Red Flag</span>
+            </div>
+            <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:'#B89AAA',lineHeight:1.5}}>
+              Know who is operating near you. Community-sourced perpetrator profiles & safety intelligence.
+            </p>
+            <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:'#8A1030',fontWeight:700,letterSpacing:'.06em'}}>redflag.femsaidiakenya.org →</span>
+          </a>
+
+          {/* Itika */}
+          <div style={{background:'#1A0818',border:'1px solid #3A1828',padding:'14px 16px',display:'flex',flexDirection:'column',gap:6}}>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <span style={{fontSize:20}}>🤝</span>
+              <span style={{fontFamily:"'Lora',serif",fontSize:16,fontWeight:700,color:'#F0D0D8'}}>Itika</span>
+            </div>
+            <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:'#B89AAA',lineHeight:1.5}}>
+              Community responders activated automatically when you trigger hepa or Red Flag SOS. Always on.
+            </p>
+            <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:'#7A4A60',fontWeight:700,letterSpacing:'.06em'}}>Activated via hepa · *384*89056#</span>
+          </div>
+
+        </div>
+      </div>
+
       {/* Header */}
       <div style={{borderBottom:`1px solid ${BD}`,paddingBottom:20,marginBottom:2}}>
         <p className="label" style={{marginBottom:8,color:A}}>● Safety protocols · evidence-based · Kenya context</p>
