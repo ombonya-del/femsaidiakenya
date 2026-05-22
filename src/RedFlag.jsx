@@ -97,7 +97,7 @@ const ARCHETYPES = [
     ],
     protective:[
       'Document everything — every threat, every incident, every missed payment. Dates, screenshots, messages. Patterns matter in court.',
-      'Tell your children's school who is and is not authorised to pick them up. Get it in writing.',
+      'Tell your children\'s school who is and is not authorised to pick them up. Get it in writing.',
       'Do handovers in public places or at a police station — they are peak danger moments.',
       'Never meet him alone to "talk things through" after a separation. Bring someone or meet in public.',
       'A court order is only useful if you report violations. Report every single one.',
