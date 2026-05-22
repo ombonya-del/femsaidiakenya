@@ -102,7 +102,7 @@ const ARCHETYPES = [
       '🚩 Visit femsaidiakenya.org and the Red Flag section. Know who is operating in your space.',
     ],
     sisterSays:`You are probably the least likely person to think this applies to you. That is the thing I want you to sit with. The women who end up in the most dangerous situations in this lane are often the sharpest, the most strategic — the ones who thought they had it under control. Your intelligence is real. So is their experience.`,
-  },,
+  },
   {
     id:'onoff', emoji:'🔄', color:'#8A4A10', light:'#FFF0E0', bg:'#FFF8F0', surf:'#FFE8D0', card:'#fff', text:'#2A1000', muted:'#7A4A20',
     label:'The On & Off', age:'25–40 · Co-parents & long-term on/off partners',
@@ -561,7 +561,7 @@ function JiJueScreen({ setTab: goHome }) {
         </button>
       </div>
       {/* Archetype selector */}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:2,marginBottom:0}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(2,2fr)',gap:2,marginBottom:0}}>
         {ARCHETYPES.map((arch, i) => (
           <button key={arch.id} onClick={() => { setActive(i); setTab('intro'); loadVoices(arch.id) }}
             style={{fontFamily:"'Nunito Sans',sans-serif",border:'none',cursor:'pointer',
