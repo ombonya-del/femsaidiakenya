@@ -14,10 +14,11 @@ import {
 import {
   Lock, ExternalLink, AlertTriangle, Download, Play, FileText,
   Scale, Database, Newspaper,
-  Home, TrendingUp, ShieldCheck, Flame, Users
+  Home, TrendingUp, ShieldCheck, Flame, Users, Lightbulb
 } from 'lucide-react'
 import { INCIDENTS, DOCUMENTS, RESOURCES } from './data.js'
 import KenyaCountyMap from './KenyaCountyMap.jsx'
+import HalaFuTab from './Halafu.jsx'
 import './App.css'
 import { createClient } from '@supabase/supabase-js'
 const _sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY)
@@ -117,6 +118,12 @@ const NAV_GROUPS = [
     tabs:  ['petition', 'report'],
   },
   {
+    id:    'halafu',
+    label: 'Halafu?',
+    icon:  <Lightbulb size={19}/>,
+    tabs:  ['halafu'],
+  },
+  {
     id:    'partners',
     label: 'Partners',
     icon:  <Users size={19}/>,
@@ -154,6 +161,7 @@ const TABS = [
   {id:'tech-tracker',    label:'Tech Tracker'},
   {id:'cases',           label:'Case Tracker',    red:true},
   {id:'kaarada',          label:'KaaRada',         red:true},
+  {id:'halafu',           label:'Halafu?'},
 ]
 
 // ── CHART TOOLTIP ─────────────────────────────────────────────────────────────
@@ -1574,6 +1582,7 @@ export default function App() {
           {activeTab==='silencing-women' && <SilencingWomenTab/>}
           {activeTab==='resources'       && <ResourcesTab key='resources'/>}
           {activeTab==='kaarada'         && <KaaRadaTab isMobile={isMobile}/>}
+          {activeTab==='halafu'          && <HalaFuTab isMobile={isMobile}/>}
           {activeTab==='survival'        && <SurvivalGuideTab/>}
           {activeTab==='redflag'         && <RedFlagTab/>}
           {activeTab==='petition'        && <PetitionTab/>}
