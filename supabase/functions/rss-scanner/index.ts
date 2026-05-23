@@ -6,9 +6,18 @@ const SUPABASE_SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 const supabase         = createClient(SUPABASE_URL, SUPABASE_SERVICE)
 
 const FEEDS = [
+  // Google News — targeted searches (most reliable)
   'https://news.google.com/rss/search?q=Kenya+femicide+women+killed&hl=en-KE&gl=KE&ceid=KE:en',
-  'https://news.google.com/rss/search?q=Kenya+gender+based+violence+GBV+2025+2026&hl=en-KE&gl=KE&ceid=KE:en',
-  'https://news.google.com/rss/search?q=Kenya+domestic+violence+rape+sexual+assault&hl=en-KE&gl=KE&ceid=KE:en',
+  'https://news.google.com/rss/search?q=Kenya+gender+based+violence+GBV+2026&hl=en-KE&gl=KE&ceid=KE:en',
+  'https://news.google.com/rss/search?q=Kenya+woman+killed+boyfriend+husband+2026&hl=en-KE&gl=KE&ceid=KE:en',
+  'https://news.google.com/rss/search?q=Kenya+femicide+court+convicted+sentenced+2026&hl=en-KE&gl=KE&ceid=KE:en',
+  'https://news.google.com/rss/search?q=manosphere+misogyny+incel+Kenya+2026&hl=en&gl=KE&ceid=KE:en',
+  // Nation & Standard
+  'https://nation.africa/kenya/rss',
+  'https://www.standardmedia.co.ke/rss/kenya.xml',
+  // YouTube — GBV/femicide coverage
+  'https://www.youtube.com/feeds/videos.xml?channel_id=UCsEukrAd64fqA7FjwkmZ_Dg',
+  'https://www.youtube.com/feeds/videos.xml?channel_id=UCQgrVNIIDV2tLYhKkvLquoA',
 ]
 
 const GBV_KEYWORDS = ['femicide','murdered','killed','found dead','gender-based violence','gbv','domestic violence','sexual assault','rape','acid attack','strangled','beaten to death','intimate partner','missing woman','missing girl','body found','woman dead','girl dead','violence against women','gender violence','woman killed','she died','killed her','he killed','beaten her','abused her','feminist','patriarchy','misogyn','toxic masculin','dating app','airbnb','tinder','whatsapp','facebook','tiktok','online predator','cyber harassment','revenge porn','digital abuse','end femicide','women rights','#femicide','#gbvkenya','#endfemicide']
