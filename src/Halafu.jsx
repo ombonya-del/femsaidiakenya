@@ -539,6 +539,34 @@ export default function HalaFuTab({ isMobile }) {
         </div>
       </div>
 
+      {/* Donor magnet strip */}
+      <div style={{ background:'#180410', border:`1px solid #3A1830`, padding: isMobile?'16px 14px':'20px 24px',
+        marginBottom:2, display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
+        <div>
+          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, letterSpacing:'.1em',
+            textTransform:'uppercase', color:A, marginBottom:6 }}>● Funding opportunities open</p>
+          <p style={{ fontFamily:"'Lora',serif", fontSize:isMobile?14:17, fontWeight:700, color:'#F0D0D8', lineHeight:1.4 }}>
+            {[...new Set(PROJECTS.flatMap(p=>p.donors.map(d=>d.name)))].length} funding prospects identified across {PROJECTS.length} projects.
+            <br/><em style={{ fontWeight:400, color:'#B89AAA' }}>Are you one of them?</em>
+          </p>
+        </div>
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+          <a href="mailto:halafu@femsaidiakenya.org?subject=Funding interest — Halafu? project pipeline"
+            style={{ display:'inline-flex', alignItems:'center', gap:8, background:A, color:'#F0D0D8',
+              fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'10px 18px',
+              textDecoration:'none', letterSpacing:'.04em', whiteSpace:'nowrap' }}>
+            💰 I want to fund this
+          </a>
+          <a href="/assets/halafu-brief.pdf" target="_blank" rel="noopener noreferrer"
+            style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.08)',
+              color:'#D4B0B8', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:600,
+              padding:'10px 18px', textDecoration:'none', border:'1px solid rgba(255,255,255,0.15)',
+              letterSpacing:'.04em', whiteSpace:'nowrap' }}>
+            📄 Download brief
+          </a>
+        </div>
+      </div>
+
       {/* Stats */}
       <div style={{ display:'grid', gridTemplateColumns:isMobile?'1fr 1fr':'repeat(4,1fr)', gap:2, marginBottom:2 }}>
         {[
