@@ -557,7 +557,7 @@ export default function HalaFuTab({ isMobile }) {
               textDecoration:'none', letterSpacing:'.04em', whiteSpace:'nowrap' }}>
             💰 I want to fund one of these
           </a>
-          <a href="/assets/halafu-brief.pdf" target="_blank" rel="noopener noreferrer"
+          <a href="/halafu-brief.pdf" target="_blank" rel="noopener noreferrer"
             style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.08)',
               color:'#D4B0B8', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:600,
               padding:'10px 18px', textDecoration:'none', border:'1px solid rgba(255,255,255,0.15)',

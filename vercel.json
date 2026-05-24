@@ -1,8 +1,14 @@
 {
+  "cleanUrls": true,
   "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
     {
-      "source": "/((?!.*\\.[a-zA-Z0-9]+$).*)",
-      "destination": "/index.html"
+      "source": "/halafu-brief.pdf",
+      "headers": [
+        { "key": "Content-Type", "value": "application/pdf" }
+      ]
     }
   ]
 }
