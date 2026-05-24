@@ -1268,6 +1268,9 @@ function InviteGate({ children }) {
     )
   }
 
+  // Allow direct PDF access without gate
+  if (window.location.pathname.endsWith('.pdf')) { window.location.href = window.location.pathname; return children }
+
   if (unlocked) return (
     <>
       {remaining <= 5 && remaining > 0 && (
