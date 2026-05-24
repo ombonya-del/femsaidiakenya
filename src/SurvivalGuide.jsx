@@ -9,7 +9,7 @@ const TXT = '#180410'
 const MUT = '#7A4A60'
 
 export default function SurvivalGuideTab() {
-  const mobile = window.innerWidth < 768
+  const [mobile, setMobile] = useState(window.innerWidth < 768)
   return (
     <div className="fade-up" style={{width:'100%'}}>
 

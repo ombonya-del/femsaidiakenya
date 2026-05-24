@@ -289,7 +289,7 @@ function ArticleCard({ a, onClick }) {
 
 // ── MAIN TAB ──────────────────────────────────────────────────────────────────
 export default function SocialsSentimentTab() {
-  const isMobile = window.innerWidth < 768
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [index,      setIndex]      = useState([])
   const [articles,   setArticles]   = useState([])
   const [loading,    setLoading]    = useState(true)
