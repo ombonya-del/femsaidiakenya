@@ -2100,44 +2100,27 @@ function RespondersTab() {
 }
 
 const TAB_GROUPS = [
-  {
-    id:'dashboard', label:'Dashboard', color:'#6B3A50',
-    tabs:[
-      { id:'submissions', label:'Submissions',  icon:<Flag size={14}/> },
-      { id:'analytics',   label:'Analytics',    icon:<BarChart2 size={14}/> },
-      { id:'codes',       label:'Access codes', icon:<Users size={14}/> },
-    ]
-  },
-  {
-    id:'intelligence', label:'Intelligence', color:'#1A3F6F',
-    tabs:[
+  { id:'submissions', label:'Submissions',  color:'#6B3A50', standalone:true,  tabs:[{ id:'submissions', label:'Submissions',  icon:<Flag size={14}/> }] },
+  { id:'analytics',   label:'Analytics',    color:'#6B3A50', standalone:true,  tabs:[{ id:'analytics',   label:'Analytics',    icon:<BarChart2 size={14}/> }] },
+  { id:'codes',       label:'Access codes', color:'#6B3A50', standalone:true,  tabs:[{ id:'codes',       label:'Access codes', icon:<Users size={14}/> }] },
+  { id:'intelligence', label:'Intelligence', color:'#1A3F6F', standalone:false, tabs:[
       { id:'cases',      label:'Case tracker',    icon:<FileText size={14}/> },
       { id:'highlights', label:'Misogyny of Day', icon:<AlertTriangle size={14}/> },
-    ]
-  },
-  {
-    id:'redflag', label:'Red Flag', color:'#8A1030',
-    tabs:[
+  ]},
+  { id:'redflag', label:'Red Flag', color:'#8A1030', standalone:false, tabs:[
       { id:'kaarada',    label:'KaaRada',      icon:<Shield size={14}/> },
       { id:'profiles',   label:'Profiles',     icon:<Users size={14}/> },
       { id:'archetypes', label:'JiJue/JiTume', icon:<BookOpen size={14}/> },
       { id:'voices',     label:'Voices',       icon:<MessageSquare size={14}/> },
       { id:'lindalinda', label:'LindaLinda',   icon:<Shield size={14}/> },
-    ]
-  },
-  {
-    id:'community', label:'Community', color:'#1A5A2A',
-    tabs:[
+  ]},
+  { id:'community', label:'Community', color:'#1A5A2A', standalone:false, tabs:[
       { id:'memorial',   label:'We Remember',     icon:<Heart size={14}/> },
       { id:'responders', label:'Itika Responders', icon:<Shield size={14}/> },
-    ]
-  },
-  {
-    id:'halafu', label:'Halafu?', color:'#8A4010',
-    tabs:[
+  ]},
+  { id:'halafu', label:'Halafu?', color:'#8A4010', standalone:false, tabs:[
       { id:'donors', label:'Donor Interest', icon:<Flag size={14}/> },
-    ]
-  },
+  ]},
 ]
 
 const TABS = TAB_GROUPS.flatMap(g => g.tabs)
@@ -2173,20 +2156,44 @@ export default function App() {
         <div style={{ padding:'14px 0', marginRight:16, fontFamily:"'Lora',serif", fontSize:16, fontWeight:700, color:'#fff', whiteSpace:'nowrap' }}>
           FemSaidia Admin
         </div>
-        {TAB_GROUPS.map(g => (
-          <div key={g.id} style={{ display:'flex', alignItems:'center', borderRight:'1px solid rgba(255,255,255,0.1)' }}>
-            <span style={{ fontSize:9, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase',
-              color:'rgba(255,255,255,0.4)', padding:'0 8px', whiteSpace:'nowrap' }}>{g.label}</span>
-            {g.tabs.map(t => (
-              <button key={t.id}
-                className={`nav-tab${tab===t.id?' active':''}`}
-                onClick={() => setTab(t.id)}
-                style={{ borderBottom: tab===t.id ? `2px solid ${g.color}` : '2px solid transparent' }}>
-                {t.icon} {t.label}
+        {TAB_GROUPS.map(g => {
+          const groupActive = g.tabs.some(t => t.id === tab)
+          if (g.standalone) return (
+            <button key={g.id}
+              className={`nav-tab${groupActive?' active':''}`}
+              onClick={() => setTab(g.tabs[0].id)}
+              style={{ borderBottom: groupActive ? `2px solid ${g.color}` : '2px solid transparent' }}>
+              {g.tabs[0].icon} {g.label}
+            </button>
+          )
+          return (
+            <div key={g.id} style={{ position:'relative', display:'inline-flex', alignItems:'center' }}>
+              <button
+                className={`nav-tab${groupActive?' active':''}`}
+                onClick={() => { if (!groupActive) setTab(g.tabs[0].id) }}
+                style={{ borderBottom: groupActive ? `2px solid ${g.color}` : '2px solid transparent' }}>
+                {g.label} {groupActive ? '▲' : '▼'}
               </button>
-            ))}
-          </div>
-        ))}
+              {groupActive && (
+                <div style={{ position:'absolute', top:'100%', left:0, background:'#4A1A30',
+                  border:'1px solid rgba(255,255,255,0.15)', zIndex:100, minWidth:160, boxShadow:'0 4px 12px rgba(0,0,0,0.3)' }}>
+                  {g.tabs.map(t => (
+                    <button key={t.id}
+                      onClick={() => setTab(t.id)}
+                      style={{ display:'flex', alignItems:'center', gap:8, width:'100%',
+                        padding:'10px 14px', background: tab===t.id ? g.color : 'transparent',
+                        border:'none', borderBottom:'1px solid rgba(255,255,255,0.08)',
+                        color: tab===t.id ? '#fff' : 'rgba(255,255,255,0.7)',
+                        fontFamily:"'Nunito Sans',sans-serif", fontSize:12, cursor:'pointer',
+                        textAlign:'left' }}>
+                      {t.icon} {t.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
         <button onClick={() => supabase.auth.signOut()}
           style={{ marginLeft:'auto', display:'inline-flex', alignItems:'center', gap:6,
             fontSize:11, color:'rgba(255,255,255,0.7)', fontFamily:"'Nunito Sans',sans-serif",
