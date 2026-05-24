@@ -1131,6 +1131,8 @@ function InviteGate({ children }) {
   // Admin bypass — set localStorage.femsaidia_admin=true in browser console
   if (localStorage.getItem('femsaidia_admin') === 'true') return children
 
+  if (localStorage.getItem('femsaidia_admin') === 'true') return children
+
   const stored    = sessionStorage.getItem('femsaidia_access')
   const storedExp = sessionStorage.getItem('femsaidia_expires')
   const storedExt = sessionStorage.getItem('femsaidia_exts')
