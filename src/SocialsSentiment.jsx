@@ -424,81 +424,120 @@ export default function SocialsSentimentTab() {
           </button>
         </div>
 
-        {/* ── MISOGYNY OF THE DAY + SCANNER CAUGHT ── */}
+        {/* ── WSC (left/Intelligence) + MOTD (right/Pulse) ── */}
         <div style={{ marginBottom:2, display: isMobile?'block':'grid', gridTemplateColumns:'1fr 1fr', gap:2, alignItems:'start' }}>
-          <div style={{ background:'#0A0008', border:`2px solid #CC1010`, overflow:'hidden' }}>
-            {/* Header */}
+
+          {/* ── WHAT THE SCANNER CAUGHT — Intelligence side ── */}
+          <div style={{ background:CRD, border:`1px solid ${BD}`, overflow:'hidden' }}>
+            <div style={{ background:'#180410', padding:'10px 18px', display:'flex', alignItems:'center', gap:8 }}>
+              <span style={{ fontSize:14 }}>📡</span>
+              <div>
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                  letterSpacing:'.1em', textTransform:'uppercase', color:'#F0D0D8' }}>What the scanner caught</p>
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, color:'#7A4A60' }}>Highest misogyny scores in the last scan</p>
+              </div>
+            </div>
+            <div style={{ padding:'14px 16px' }}>
+            {(() => {
+              const autoFlagged = articles.filter(a => a.misogyny_score >= 7).slice(0, 5)
+              if (!autoFlagged.length) return (
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT, fontStyle:'italic' }}>No high-alert items yet.</p>
+              )
+              return (
+                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                  {autoFlagged.map((a, i) => (
+                    <div key={a.id||i} style={{ background:'#F5EEF2', border:`1px solid ${BD}`,
+                      padding:'10px 14px', display:'flex', justifyContent:'space-between',
+                      alignItems:'flex-start', gap:12, borderLeft:`3px solid ${A}` }}>
+                      <div style={{ flex:1 }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4, flexWrap:'wrap' }}>
+                          <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+                            letterSpacing:'.06em', textTransform:'uppercase', padding:'1px 6px',
+                            background:A, color:'#F0D0D8' }}>{a.misogyny_score}/10</span>
+                          <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT }}>{a.source_name}</span>
+                        </div>
+                        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:TXT, lineHeight:1.5, margin:0 }}>
+                          {a.article_title}
+                        </p>
+                        {a.summary && (
+                          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT,
+                            lineHeight:1.5, marginTop:4, fontStyle:'italic' }}>
+                            {a.summary.slice(0,120)}...
+                          </p>
+                        )}
+                      </div>
+                      {a.article_url && (
+                        <a href={a.article_url} target="_blank" rel="noopener noreferrer"
+                          style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:A,
+                            textDecoration:'none', flexShrink:0, fontWeight:700 }}>Read →</a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )
+            })()}
+            </div>
+          </div>
+
+          {/* ── MISOGYNY OF THE DAY — Community Pulse side ── */}
+          <div style={{ background:CRD, border:`1px solid ${BD}`, overflow:'hidden' }}>
             <div style={{ background:'#CC1010', padding:'10px 18px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
               <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                <span style={{ fontSize:16 }}>⚡</span>
-                <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
-                  letterSpacing:'.12em', textTransform:'uppercase', color:'#fff' }}>
-                  Misogyny of the Day
-                </span>
+                <span style={{ fontSize:14 }}>⚡</span>
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                  letterSpacing:'.1em', textTransform:'uppercase', color:'#fff' }}>Misogyny of the Day</p>
               </div>
-              <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'rgba(255,255,255,0.7)', fontStyle:'italic' }}>
+              <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, color:'rgba(255,255,255,0.7)', fontStyle:'italic' }}>
                 {new Date().toLocaleDateString('en-KE',{weekday:'short',day:'numeric',month:'short'})}
               </span>
             </div>
-            <div style={{ padding:'4px 18px 6px', background:'rgba(204,16,16,0.15)' }}>
-              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'rgba(255,255,255,0.5)', lineHeight:1.5 }}>
+            <div style={{ padding:'4px 16px 6px', background:'rgba(204,16,16,0.08)', borderBottom:`1px solid ${BD}` }}>
+              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT, lineHeight:1.5 }}>
                 This is what normalisation looks like. One post. Every day.
               </p>
             </div>
-
-            {/* Content */}
-            <div style={{ padding:'16px 18px' }}>
+            <div style={{ padding:'14px 16px' }}>
             {(() => {
               const todayStr = new Date().toISOString().slice(0,10)
               const todayHL  = highlights.filter(h => h.highlight_date === todayStr)
               const recentHL = highlights.filter(h => h.highlight_date !== todayStr).slice(0,7)
-              const [showPrev, setShowPrev] = [showAllHighlights, setShowAllHighlights]
 
               const HighlightCard = ({h, featured}) => (
-                <div style={{ background: featured?'rgba(204,16,16,0.12)':'rgba(255,255,255,0.03)',
-                  border:`1px solid ${featured?'#CC1010':'rgba(139,16,48,0.3)'}`,
-                  padding:'14px 16px', borderLeft:`3px solid ${featured?'#CC1010':'rgba(204,16,16,0.3)'}` }}>
+                <div style={{ background: featured?'#F5EEF2':'#EDE0E8',
+                  border:`1px solid ${featured?A:BD}`,
+                  padding:'14px 16px', borderLeft:`3px solid ${featured?'#CC1010':BD}` }}>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:8, marginBottom:10 }}>
                     <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                       <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
                         letterSpacing:'.08em', textTransform:'uppercase', padding:'2px 8px',
-                        background: h.platform==='TikTok'?'#010101':h.platform==='X'?'#1D9BF0':h.platform==='Facebook'?'#1877F2':h.platform==='Instagram'?'#C13584':h.platform==='Reddit'?'#FF4500':'#333',
+                        background: h.platform==='TikTok'?'#010101':h.platform==='X'?'#1D9BF0':h.platform==='Facebook'?'#1877F2':h.platform==='Instagram'?'#C13584':h.platform==='Reddit'?'#FF4500':'#555',
                         color:'#fff' }}>{h.platform||'X'}</span>
-                      {h.reach && <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, color:'rgba(255,255,255,0.4)' }}>{h.reach}</span>}
+                      {h.reach && <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, color:MUT }}>{h.reach}</span>}
                     </div>
-                    <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, color:'rgba(255,255,255,0.3)' }}>
+                    <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, color:MUT }}>
                       {h.highlight_date && new Date(h.highlight_date).toLocaleDateString('en-KE',{day:'numeric',month:'short'})}
                     </span>
                   </div>
                   <p style={{ fontFamily:"'Lora',serif", fontSize: featured?14:12,
-                    color: featured?'#FFD0D0':'rgba(255,255,255,0.75)', lineHeight:1.8, margin:0, fontStyle:'italic' }}>
+                    color:TXT, lineHeight:1.8, margin:0, fontStyle:'italic' }}>
                     "{h.content}"
                   </p>
                   {h.context && (
                     <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
-                      color:'#FF8080', marginTop:8, lineHeight:1.6 }}>↳ {h.context}</p>
+                      color:A, marginTop:8, lineHeight:1.6 }}>↳ {h.context}</p>
                   )}
                 </div>
               )
 
               return (
                 <>
-                  {todayHL.length > 0
-                    ? <HighlightCard h={todayHL[0]} featured={true}/>
-                    : <div style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(139,16,48,0.3)',
-                        padding:16, textAlign:'center' }}>
-                        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12,
-                          color:'rgba(255,255,255,0.35)', fontStyle:'italic' }}>
-                          No highlight for today — add one via the admin portal.
-                        </p>
-                      </div>
-                  }
+                  {todayHL.length > 0 && <HighlightCard h={todayHL[0]} featured={true}/>}
                   {recentHL.length > 0 && (
                     <div style={{ marginTop:10 }}>
                       <button onClick={() => setShowAllHighlights(!showAllHighlights)}
                         style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-                          color:'rgba(255,255,255,0.4)', background:'none', border:'none',
-                          cursor:'pointer', padding:'6px 0', letterSpacing:'.06em', textTransform:'uppercase' }}>
+                          color:MUT, background:'none', border:'none', cursor:'pointer',
+                          padding:'6px 0', letterSpacing:'.06em', textTransform:'uppercase' }}>
                         {showAllHighlights ? '▲ Hide previous' : `▼ Show ${recentHL.length} previous posts`}
                       </button>
                       {showAllHighlights && (
@@ -512,63 +551,6 @@ export default function SocialsSentimentTab() {
               )
             })()}
             </div>
-          </div>
-
-          {/* ── WHAT THE SCANNER CAUGHT ── */}
-          <div style={{ background:'#1A0818', border:`1px solid ${BD}`, padding:'20px 24px' }}>
-            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-              letterSpacing:'.15em', textTransform:'uppercase', color:A, marginBottom:4 }}>
-              📡 What the scanner caught
-            </p>
-            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:'#7A4A60', lineHeight:1.6, marginBottom:16 }}>
-              Auto-flagged articles with highest misogyny scores
-            </p>
-            {(() => {
-              const autoFlagged = articles.filter(a => a.misogyny_score >= 7).slice(0, 5)
-              if (!autoFlagged.length) return (
-                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:'#7A4A60', fontStyle:'italic' }}>
-                  No high-alert items today.
-                </p>
-              )
-              return (
-                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                  {autoFlagged.map((a, i) => (
-                    <div key={a.id||i} style={{ background:CRD, border:`1px solid ${BD}`,
-                      padding:'10px 14px', display:'flex', justifyContent:'space-between',
-                      alignItems:'flex-start', gap:12 }}>
-                      <div style={{ flex:1 }}>
-                        <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4, flexWrap:'wrap' }}>
-                          <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
-                            letterSpacing:'.06em', textTransform:'uppercase', padding:'1px 6px',
-                            background:A, color:'#F0D0D8' }}>
-                            {a.misogyny_score}/10
-                          </span>
-                          <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT }}>
-                            {a.source_name}
-                          </span>
-                        </div>
-                        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:TXT, lineHeight:1.5, margin:0 }}>
-                          {a.article_title}
-                        </p>
-                        {a.summary && (
-                          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT,
-                            lineHeight:1.5, marginTop:4, fontStyle:'italic' }}>
-                            {a.summary.slice(0,100)}...
-                          </p>
-                        )}
-                      </div>
-                      {a.article_url && (
-                        <a href={a.article_url} target="_blank" rel="noopener noreferrer"
-                          style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:A,
-                            textDecoration:'none', flexShrink:0, fontWeight:700 }}>
-                          Read →
-                        </a>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )
-            })()}
           </div>
 
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
