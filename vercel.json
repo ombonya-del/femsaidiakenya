@@ -1,6 +1,6 @@
 {
-  "routes": [
-    { "src": "/halafu-brief.pdf", "dest": "/halafu-brief.pdf" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/halafu-brief.pdf", "destination": "/halafu-brief.pdf" },
+    { "source": "/((?!assets/).*)", "destination": "/index.html" }
   ]
 }
