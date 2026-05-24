@@ -30,6 +30,21 @@ async function fetchFeed(url: string): Promise<any[]> {
     if (!res.ok) { console.log(`Feed ${url.slice(0,60)}: HTTP ${res.status}`); return [] }
     const text = await res.text()
     const items: any[] = []
+    const isAtom = text.includes("<feed") && text.includes("<entry>")
+    if (isAtom) {
+      const entryRx = /<entry>([\s\S]*?)<\/entry>/g
+      let m2
+      const chanTitle = text.match(/<title>([^<]+)<\/title>/)?.[1] || new URL(url).hostname
+      while ((m2 = entryRx.exec(text)) !== null) {
+        const e = m2[1]
+        const t = e.match(/<title>([^<]+)<\/title>/)?.[1]?.trim() || ""
+        const lnk = e.match(/<link[^>]*href="([^"]+)"/)?.[1] || ""
+        const pd = e.match(/<published>([^<]+)<\/published>/)?.[1] || ""
+        const snip = (e.match(/<media:description>([^<]*)<\/media:description>/)?.[1] || "").trim()
+        if (t && lnk) items.push({ source: chanTitle, title: t, snippet: snip, url: lnk, pubDate: pd, content_type: "video" })
+      }
+      console.log("Atom feed: " + items.length + " entries")
+    } else {
     const itemRegex = /<item>([\s\S]*?)<\/item>/g
     let match
     while ((match = itemRegex.exec(text)) !== null) {
@@ -52,6 +67,7 @@ async function fetchFeed(url: string): Promise<any[]> {
         .trim()
       if (title) items.push({ source, title, snippet, url:link, pubDate })
     }
+    } // end else
     console.log(`Feed fetched: ${items.length} items`)
     return items
   } catch (err:any) { console.error(`Feed error: ${err.message}`); return [] }
