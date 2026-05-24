@@ -322,7 +322,7 @@ export default function SocialsSentimentTab() {
   }
 
   // ── INTELLIGENCE BREAKDOWN METRICS ─────────────────────────────────────────
-  const intelligenceFeed = articles.filter(a => a.platform === 'news' || a.content_type === 'article' || !a.platform)
+  const intelligenceFeed = articles.filter(a => a.platform === 'news' || a.platform === 'youtube' || a.content_type === 'article' || a.content_type === 'video' || !a.platform)
   const pulseFeed        = articles.filter(a => a.platform === 'x' || a.content_type === 'social_post' || a.platform === 'tiktok' || a.platform === 'youtube')
 
   const total       = articles.length
