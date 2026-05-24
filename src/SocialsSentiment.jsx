@@ -423,8 +423,8 @@ export default function SocialsSentimentTab() {
           </button>
         </div>
 
-        {/* ── MISOGYNY OF THE DAY ── */}
-        <div style={{ marginBottom:2 }}>
+        {/* ── MISOGYNY OF THE DAY + SCANNER CAUGHT ── */}
+        <div style={{ marginBottom:2, display: isMobile?'block':'grid', gridTemplateColumns:'1fr 1fr', gap:2, alignItems:'start' }}>
           <div style={{ background:'#3A0818', border:`2px solid ${A}`, padding:'20px 24px' }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16, flexWrap:'wrap', gap:8 }}>
               <div>
@@ -509,52 +509,60 @@ export default function SocialsSentimentTab() {
               )
             })()}
 
-            {/* Option B: What the scanner caught — auto-flagged high misogyny */}
+          </div>
+
+          {/* ── WHAT THE SCANNER CAUGHT ── */}
+          <div style={{ background:'#1A0818', border:`1px solid ${BD}`, padding:'20px 24px' }}>
+            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+              letterSpacing:'.15em', textTransform:'uppercase', color:A, marginBottom:4 }}>
+              📡 What the scanner caught
+            </p>
+            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:'#7A4A60', lineHeight:1.6, marginBottom:16 }}>
+              Auto-flagged articles with highest misogyny scores
+            </p>
             {(() => {
-              const todayStr = new Date().toISOString().slice(0,10)
-              const autoFlagged = articles
-                .filter(a => a.misogyny_score >= 7)
-                .slice(0, 3)
-              if (!autoFlagged.length) return null
+              const autoFlagged = articles.filter(a => a.misogyny_score >= 7).slice(0, 5)
+              if (!autoFlagged.length) return (
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:'#7A4A60', fontStyle:'italic' }}>
+                  No high-alert items today.
+                </p>
+              )
               return (
-                <div>
-                  <div style={{ borderTop:'1px solid rgba(184,154,170,0.3)', paddingTop:14, marginBottom:12 }}>
-                    <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-                      letterSpacing:'.15em', textTransform:'uppercase', color:'rgba(255,255,255,0.3)', marginBottom:8 }}>
-                      📡 What the scanner caught — highest misogyny scores today
-                    </p>
-                  </div>
-                  <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                    {autoFlagged.map((a, i) => (
-                      <div key={a.id||i} style={{ background:CRD,
-                        border:`1px solid ${BD}`, padding:'10px 14px',
-                        display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12 }}>
-                        <div style={{ flex:1 }}>
-                          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
-                            <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
-                              letterSpacing:'.08em', textTransform:'uppercase', padding:'1px 6px',
-                              background:A, color:'#fff', border:'none' }}>
-                              Misogyny {a.misogyny_score}/10
-                            </span>
-                            <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'rgba(255,255,255,0.3)' }}>
-                              {a.source_name}
-                            </span>
-                          </div>
-                          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12,
-                            color:TXT, lineHeight:1.5, margin:0 }}>
-                            {a.article_title}
-                          </p>
+                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                  {autoFlagged.map((a, i) => (
+                    <div key={a.id||i} style={{ background:CRD, border:`1px solid ${BD}`,
+                      padding:'10px 14px', display:'flex', justifyContent:'space-between',
+                      alignItems:'flex-start', gap:12 }}>
+                      <div style={{ flex:1 }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4, flexWrap:'wrap' }}>
+                          <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+                            letterSpacing:'.06em', textTransform:'uppercase', padding:'1px 6px',
+                            background:A, color:'#F0D0D8' }}>
+                            {a.misogyny_score}/10
+                          </span>
+                          <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT }}>
+                            {a.source_name}
+                          </span>
                         </div>
-                        {a.article_url && (
-                          <a href={a.article_url} target="_blank" rel="noopener noreferrer"
-                            style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'#CC1010',
-                              textDecoration:'none', flexShrink:0, fontWeight:700 }}>
-                            Read →
-                          </a>
+                        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:TXT, lineHeight:1.5, margin:0 }}>
+                          {a.article_title}
+                        </p>
+                        {a.summary && (
+                          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT,
+                            lineHeight:1.5, marginTop:4, fontStyle:'italic' }}>
+                            {a.summary.slice(0,100)}...
+                          </p>
                         )}
                       </div>
-                    ))}
-                  </div>
+                      {a.article_url && (
+                        <a href={a.article_url} target="_blank" rel="noopener noreferrer"
+                          style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:A,
+                            textDecoration:'none', flexShrink:0, fontWeight:700 }}>
+                          Read →
+                        </a>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )
             })()}
@@ -570,75 +578,42 @@ export default function SocialsSentimentTab() {
           fontSize:13, color:MUT }}>Loading intelligence feed…</div>
       ) : (
         <>
-          {/* ── MISOGYNY INDEX COMMAND PANEL ── */}
-          <div style={{ background:'#B89AAA', border:`2px solid ${A}`, padding:20, marginBottom:2 }}>
-            <div style={{ display:'flex', alignItems:'flex-start', gap:24, flexWrap:'wrap' }}>
-
-              {/* Gauge */}
-              <div style={{ textAlign:'center', flexShrink:0 }}>
-                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-                  letterSpacing:'.12em', textTransform:'uppercase', color:A, marginBottom:8 }}>
-                  Misogyny Index · Today
+          {/* ── MISOGYNY INDEX — compact strip ── */}
+          <div style={{ background:'#180410', border:`1px solid ${A}`, padding:'12px 20px',
+            marginBottom:2, display:'flex', alignItems:'center', gap:20, flexWrap:'wrap' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+              <div style={{ textAlign:'center' }}>
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+                  letterSpacing:'.12em', textTransform:'uppercase', color:A, marginBottom:2 }}>
+                  Misogyny Index
                 </p>
-                <MisogynyGauge score={score}/>
-                <div style={{ display:'flex', alignItems:'center', gap:6, justifyContent:'center',
-                  marginTop:4 }}>
-                  {trend > 0 ? <TrendingUp size={14} color="#CC1010"/> :
-                   trend < 0 ? <TrendingDown size={14} color="#2D7A3A"/> :
-                   <Minus size={14} color={MUT}/>}
-                  <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
-                    color: trend > 0 ? '#CC1010' : trend < 0 ? '#2D7A3A' : MUT }}>
-                    {trend > 0 ? '+' : ''}{trend.toFixed(1)} from yesterday
-                  </span>
-                </div>
+                <span style={{ fontFamily:"'Lora',serif", fontSize:32, fontWeight:700,
+                  color: score>=70?'#CC1010':score>=50?'#C05010':score>=30?'#CA8A04':'#2D7A3A' }}>
+                  {score}%
+                </span>
               </div>
-
-              {/* What makes up the score */}
-              <div style={{ flex:1, minWidth:280 }}>
-                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-                  letterSpacing:'.12em', textTransform:'uppercase', color:A, marginBottom:10 }}>
-                  What makes up {score}%?  ·  Click to filter articles below
-                </p>
-                <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-                  {breakdownMetrics.map(m => (
-                    <div key={m.id}
-                      onClick={() => setActiveBreak(activeBreak === m.id ? null : m.id)}
-                      style={{ cursor:'pointer', padding:'10px 12px',
-                        background: activeBreak === m.id ? m.color : 'rgba(255,255,255,0.25)',
-                        border:`1px solid ${activeBreak === m.id ? m.color : BD}`,
-                        transition:'all .15s' }}>
-                      <div style={{ display:'flex', justifyContent:'space-between',
-                        alignItems:'center', marginBottom:4 }}>
-                        <div>
-                          <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12,
-                            fontWeight:700, color: activeBreak === m.id ? '#fff' : TXT }}>
-                            {m.label}
-                          </span>
-                          <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
-                            color: activeBreak === m.id ? 'rgba(255,255,255,0.7)' : MUT,
-                            marginLeft:8 }}>{m.sublabel}</span>
-                        </div>
-                        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                          <span style={{ fontFamily:"'Lora',serif", fontSize:18, fontWeight:700,
-                            color: activeBreak === m.id ? '#fff' : m.color }}>
-                            {m.pct}%
-                          </span>
-                          <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
-                            color: activeBreak === m.id ? 'rgba(255,255,255,0.7)' : MUT }}>
-                            ({m.count} articles)
-                          </span>
-                        </div>
-                      </div>
-                      {/* Progress bar */}
-                      <div style={{ height:4, background:'rgba(0,0,0,0.1)', borderRadius:2 }}>
-                        <div style={{ height:'100%', width:`${m.pct}%`,
-                          background: activeBreak === m.id ? 'rgba(255,255,255,0.7)' : m.color,
-                          transition:'width .4s ease', borderRadius:2 }}/>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                {trend > 0 ? <TrendingUp size={16} color="#CC1010"/> :
+                 trend < 0 ? <TrendingDown size={16} color="#2D7A3A"/> :
+                 <Minus size={16} color={MUT}/>}
+                <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                  color: trend > 0 ? '#CC1010' : trend < 0 ? '#2D7A3A' : '#B89AAA' }}>
+                  {trend > 0 ? '+' : ''}{trend.toFixed(1)} from yesterday
+                </span>
               </div>
+            </div>
+            <div style={{ flex:1, display:'flex', gap:8, flexWrap:'wrap' }}>
+              {breakdownMetrics.map(m => (
+                <button key={m.id} onClick={() => setActiveBreak(activeBreak===m.id?null:m.id)}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                    padding:'4px 10px', border:`1px solid ${activeBreak===m.id?m.color:BD}`,
+                    background: activeBreak===m.id?m.color:'rgba(255,255,255,0.05)',
+                    color: activeBreak===m.id?'#fff':'#B89AAA', cursor:'pointer' }}>
+                  {m.label} · {m.pct}%
+                </button>
+              ))}
+            </div>
+          </div>
 
               {/* Platform breakdown */}
               <div style={{ minWidth:180, flexShrink:0 }}>
