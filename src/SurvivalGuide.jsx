@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createClient } from '@supabase/supabase-js'
+const _sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY)
 import { AlertTriangle, Phone } from 'lucide-react'
 
 const A   = '#8A1030'
@@ -10,6 +12,17 @@ const MUT = '#7A4A60'
 
 export default function SurvivalGuideTab() {
   const [mobile, setMobile] = useState(window.innerWidth < 768)
+  const [emergency, setEmergency] = useState([])
+  const [cso, setCso] = useState([])
+  useEffect(() => {
+    _sb.from('site_contacts').select('*').eq('active', true).order('sort_order')
+      .then(({ data }) => {
+        if (data) {
+          setEmergency(data.filter(c => c.category === 'emergency'))
+          setCso(data.filter(c => c.category === 'cso'))
+        }
+      })
+  }, [])
   return (
     <div className="fade-up" style={{width:'100%'}}>
 

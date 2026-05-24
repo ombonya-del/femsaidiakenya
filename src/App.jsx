@@ -138,7 +138,6 @@ const TAB_SHORT = {
   'silencing-women': 'Silencing W.',
   'tech-tracker':    'TechTrack',
   'sentiment':       'Socials',
-  'resources':       'Help Lines',
   'survival':        'Guide',
   'redflag':         'Red Flag',
   'petition':        'Petition',
@@ -1588,7 +1587,6 @@ export default function App() {
           {activeTab==='dashboard'       && <DashboardTab isMobile={isMobile}/>}
           {activeTab==='data'            && <DataTab/>}
           {activeTab==='silencing-women' && <SilencingWomenTab/>}
-          {activeTab==='resources'       && <ResourcesTab key='resources'/>}
           {activeTab==='kaarada'         && <KaaRadaTab isMobile={isMobile}/>}
           {activeTab==='halafu'          && <HalaFuTab isMobile={isMobile}/>}
           {activeTab==='survival'        && <SurvivalGuideTab/>}
