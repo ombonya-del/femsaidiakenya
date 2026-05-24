@@ -544,7 +544,7 @@ export default function HalaFuTab({ isMobile }) {
         marginBottom:2, display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
         <div>
           <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, letterSpacing:'.1em',
-            textTransform:'uppercase', color:A, marginBottom:6 }}>● Funding opportunities open</p>
+            textTransform:'uppercase', color:A, marginBottom:6 }}>● Are you a funder? These projects need you.</p>
           <p style={{ fontFamily:"'Lora',serif", fontSize:isMobile?14:17, fontWeight:700, color:'#F0D0D8', lineHeight:1.4 }}>
             {[...new Set(PROJECTS.flatMap(p=>p.donors.map(d=>d.name)))].length} funding prospects identified across {PROJECTS.length} projects.
             <br/><em style={{ fontWeight:400, color:'#B89AAA' }}>Are you one of them?</em>
@@ -555,7 +555,7 @@ export default function HalaFuTab({ isMobile }) {
             style={{ display:'inline-flex', alignItems:'center', gap:8, background:A, color:'#F0D0D8',
               fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'10px 18px',
               textDecoration:'none', letterSpacing:'.04em', whiteSpace:'nowrap' }}>
-            💰 I want to fund this
+            💰 I want to fund one of these
           </a>
           <a href="/assets/halafu-brief.pdf" target="_blank" rel="noopener noreferrer"
             style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.08)',
