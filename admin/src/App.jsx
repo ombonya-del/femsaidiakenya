@@ -1735,8 +1735,25 @@ function HighlightsTab() {
     setForm({platform:'X',content:'',context:'',reach:'',post_date:'',highlight_date:new Date().toISOString().slice(0,10)})
     load()
   }
+  const [editing, setEditing] = useState(null)
+  const [editForm, setEditForm] = useState({})
+
   const toggle = async (id, active) => {
     await supabase.from('misogyny_highlights').update({active:!active}).eq('id',id)
+    load()
+  }
+  const del = async (id) => {
+    if (!confirm('Delete this highlight?')) return
+    await supabase.from('misogyny_highlights').delete().eq('id',id)
+    load()
+  }
+  const startEdit = (item) => {
+    setEditing(item.id)
+    setEditForm({ platform:item.platform, content:item.content, context:item.context||'', reach:item.reach||'', highlight_date:item.highlight_date })
+  }
+  const saveEdit = async () => {
+    await supabase.from('misogyny_highlights').update(editForm).eq('id',editing)
+    setEditing(null)
     load()
   }
 
@@ -1808,10 +1825,37 @@ function HighlightsTab() {
           </div>
           <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:TXT,lineHeight:1.7,fontStyle:'italic',marginBottom:item.context?8:0}}>"{item.content}"</p>
           {item.context&&<p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:A,marginBottom:10}}>↳ {item.context}</p>}
-          <button onClick={()=>toggle(item.id,item.active)}
-            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,padding:'4px 10px',background:item.active?A:'#1A5A2A',color:'#fff',border:'none',cursor:'pointer'}}>
-            {item.active?'Hide':'Show'}
-          </button>
+          {editing===item.id ? (
+            <div style={{marginTop:10,display:'flex',flexDirection:'column',gap:6}}>
+              <select value={editForm.platform} onChange={e=>setEditForm({...editForm,platform:e.target.value})} style={inputSt}>
+                {PLATFORMS.map(p=><option key={p} value={p}>{p}</option>)}
+              </select>
+              <textarea value={editForm.content} onChange={e=>setEditForm({...editForm,content:e.target.value})}
+                rows={3} style={{width:'100%',padding:'8px 12px',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,background:'rgba(255,255,255,0.8)',border:`1px solid ${BD}`,color:TXT,outline:'none',resize:'vertical',boxSizing:'border-box'}}/>
+              <input value={editForm.context} onChange={e=>setEditForm({...editForm,context:e.target.value})} placeholder="Context..." style={inputSt}/>
+              <input value={editForm.reach} onChange={e=>setEditForm({...editForm,reach:e.target.value})} placeholder="Reach..." style={inputSt}/>
+              <input type="date" value={editForm.highlight_date} onChange={e=>setEditForm({...editForm,highlight_date:e.target.value})} style={inputSt}/>
+              <div style={{display:'flex',gap:6}}>
+                <button onClick={saveEdit} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,padding:'4px 12px',background:'#1A5A2A',color:'#fff',border:'none',cursor:'pointer'}}>Save</button>
+                <button onClick={()=>setEditing(null)} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,padding:'4px 12px',background:'none',border:`1px solid ${BD}`,color:MUT,cursor:'pointer'}}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <div style={{display:'flex',gap:6,marginTop:8}}>
+              <button onClick={()=>toggle(item.id,item.active)}
+                style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,padding:'4px 10px',background:item.active?A:'#1A5A2A',color:'#fff',border:'none',cursor:'pointer'}}>
+                {item.active?'Hide':'Show'}
+              </button>
+              <button onClick={()=>startEdit(item)}
+                style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,padding:'4px 10px',background:BD,color:TXT,border:'none',cursor:'pointer'}}>
+                Edit
+              </button>
+              <button onClick={()=>del(item.id)}
+                style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,padding:'4px 10px',background:'#CC1010',color:'#fff',border:'none',cursor:'pointer'}}>
+                Delete
+              </button>
+            </div>
+          )}
         </div>
       ))}
     </div>
