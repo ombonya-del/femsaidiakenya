@@ -289,6 +289,7 @@ function ArticleCard({ a, onClick }) {
 
 // ── MAIN TAB ──────────────────────────────────────────────────────────────────
 export default function SocialsSentimentTab() {
+  const isMobile = window.innerWidth < 768
   const [index,      setIndex]      = useState([])
   const [articles,   setArticles]   = useState([])
   const [loading,    setLoading]    = useState(true)
@@ -320,6 +321,9 @@ export default function SocialsSentimentTab() {
   }
 
   // ── INTELLIGENCE BREAKDOWN METRICS ─────────────────────────────────────────
+  const intelligenceFeed = articles.filter(a => a.platform === 'news' || a.content_type === 'article' || !a.platform)
+  const pulseFeed        = articles.filter(a => a.platform === 'x' || a.content_type === 'social_post' || a.platform === 'tiktok' || a.platform === 'youtube')
+
   const total       = articles.length
   const highMiso    = articles.filter(a => a.misogyny_score >= 7)
   const techGBV     = articles.filter(a => a.tech_facilitated)
@@ -866,31 +870,90 @@ export default function SocialsSentimentTab() {
               ) : null
             })()}
 
-            {/* Article grid */}
-            {shown.length === 0 ? (
-              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT,
-                fontStyle:'italic', padding:'20px 0' }}>
-                No articles match this filter. The scanner runs every 6 hours.
-              </p>
-            ) : (
-              <>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-                  {shown.map((a, i) => (
-                    <ArticleCard key={a.id || i} a={a} onClick={setModal}/>
-                  ))}
+            {/* Split layout — Intelligence + Community Pulse */}
+            <div style={{ display: isMobile ? 'block' : 'grid', gridTemplateColumns:'1fr 1fr', gap:2, alignItems:'start' }}>
+
+              {/* ── INTELLIGENCE FEED ── */}
+              <div>
+                <div style={{ background:'#180410', padding:'10px 14px', marginBottom:2, display:'flex', alignItems:'center', gap:8 }}>
+                  <span style={{ fontSize:16 }}>📰</span>
+                  <div>
+                    <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, color:'#F0D0D8', letterSpacing:'.06em', textTransform:'uppercase' }}>Intelligence Feed</p>
+                    <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'#7A4A60' }}>News · research · advocacy · verified media</p>
+                  </div>
+                  <span style={{ marginLeft:'auto', fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT }}>{intelligenceFeed.length} articles</span>
                 </div>
-                {displayed.length > 12 && (
-                  <button onClick={() => setShowAll(!showAll)}
-                    style={{ display:'flex', alignItems:'center', gap:6, margin:'12px auto 0',
-                      fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
-                      padding:'8px 16px', background:'transparent',
-                      border:`1px solid ${BD}`, color:MUT, cursor:'pointer' }}>
-                    {showAll ? <ChevronUp size={13}/> : <ChevronDown size={13}/>}
-                    {showAll ? 'Show less' : `Show all ${displayed.length} articles`}
-                  </button>
+                {intelligenceFeed.length === 0 ? (
+                  <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT, fontStyle:'italic', padding:'16px 0' }}>No intelligence articles yet.</p>
+                ) : (
+                  <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+                    {(showAll ? intelligenceFeed : intelligenceFeed.slice(0,10)).map((a,i) => (
+                      <ArticleCard key={a.id||i} a={a} onClick={setModal}/>
+                    ))}
+                    {intelligenceFeed.length > 10 && (
+                      <button onClick={() => setShowAll(!showAll)}
+                        style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                          padding:'8px', background:'transparent', border:`1px solid ${BD}`, color:MUT, cursor:'pointer', marginTop:4 }}>
+                        {showAll ? 'Show less' : `+ ${intelligenceFeed.length - 10} more`}
+                      </button>
+                    )}
+                  </div>
                 )}
-              </>
-            )}
+              </div>
+
+              {/* ── COMMUNITY PULSE ── */}
+              <div style={{ marginTop: isMobile ? 16 : 0 }}>
+                <div style={{ background:'#200818', padding:'10px 14px', marginBottom:2, display:'flex', alignItems:'center', gap:8 }}>
+                  <span style={{ fontSize:16 }}>🔥</span>
+                  <div>
+                    <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, color:'#F0D0D8', letterSpacing:'.06em', textTransform:'uppercase' }}>Community Pulse</p>
+                    <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'#7A4A60' }}>X posts · testimonies · street-level signal</p>
+                  </div>
+                  <span style={{ marginLeft:'auto', fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT }}>{pulseFeed.length} posts</span>
+                </div>
+                {pulseFeed.length === 0 ? (
+                  <div style={{ background:CRD, border:`1px solid ${BD}`, padding:20, textAlign:'center' }}>
+                    <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT, fontStyle:'italic', marginBottom:8 }}>
+                      No community posts yet — IFTTT pipeline activates when accounts tweet.
+                    </p>
+                    <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT }}>
+                      Monitoring {10} X handles + 8 keyword searches
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+                    {pulseFeed.map((a,i) => (
+                      <div key={a.id||i} onClick={() => setModal(a)}
+                        style={{ background:CRD, border:`1px solid ${BD}`, padding:'12px 14px', cursor:'pointer' }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:6 }}>
+                          <span style={{ fontSize:10, fontFamily:"'Nunito Sans',sans-serif", fontWeight:700, color:A }}>
+                            @{a.source_name?.replace('X / @','').replace('@','')}
+                          </span>
+                          <span style={{ fontSize:9, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>
+                            {a.scanned_at ? new Date(a.scanned_at).toLocaleDateString('en-KE',{day:'numeric',month:'short'}) : ''}
+                          </span>
+                          {a.misogyny_score >= 7 && (
+                            <span style={{ fontSize:9, padding:'1px 6px', background:'#CC1010', color:'#fff',
+                              fontFamily:"'Nunito Sans',sans-serif", fontWeight:700, marginLeft:'auto' }}>
+                              HIGH ALERT
+                            </span>
+                          )}
+                        </div>
+                        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:TXT, lineHeight:1.6, marginBottom:6 }}>
+                          {a.article_title || a.article_snippet}
+                        </p>
+                        {a.summary && (
+                          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT, lineHeight:1.5, fontStyle:'italic' }}>
+                            {a.summary}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+            </div>
           </div>
         </>
       )}
