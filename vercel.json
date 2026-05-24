@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/halafu-brief.pdf", "destination": "/halafu-brief.pdf" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
