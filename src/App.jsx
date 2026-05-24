@@ -1128,6 +1128,9 @@ const SESSION_EXT      = 15 * 60 * 1000  // 15 min extension
 const SESSION_MAX_EXTS = 2               // max 2 extensions = 1 hour total
 
 function InviteGate({ children }) {
+  // Admin bypass — set localStorage.femsaidia_admin=true in browser console
+  if (localStorage.getItem('femsaidia_admin') === 'true') return children
+
   const stored    = sessionStorage.getItem('femsaidia_access')
   const storedExp = sessionStorage.getItem('femsaidia_expires')
   const storedExt = sessionStorage.getItem('femsaidia_exts')
