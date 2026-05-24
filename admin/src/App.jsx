@@ -1644,6 +1644,70 @@ function KaaRadaAdminTab() {
   )
 }
 
+// ── DONOR INTEREST TAB ────────────────────────────────────────────────────────
+function DonorInterestTab() {
+  const [donors,  setDonors]  = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    supabase.from('halafu_donor_interest')
+      .select('*').order('created_at', { ascending: false })
+      .then(({ data }) => { setDonors(data || []); setLoading(false) })
+  }, [])
+
+  const byProject = donors.reduce((acc, d) => {
+    if (!acc[d.project_title]) acc[d.project_title] = []
+    acc[d.project_title].push(d)
+    return acc
+  }, {})
+
+  return (
+    <div>
+      <div style={{ borderBottom:`1px solid ${BD}`, paddingBottom:20, marginBottom:24 }}>
+        <p className="label" style={{ marginBottom:8, color:A }}>Halafu? · Funding pipeline</p>
+        <h1 className="serif" style={{ fontSize:28, fontWeight:700, color:TXT }}>Donor Interest</h1>
+        <p style={{ fontSize:13, color:MUT, marginTop:6, fontFamily:"'Nunito Sans',sans-serif" }}>
+          {donors.length} expressions of interest across {Object.keys(byProject).length} projects
+        </p>
+      </div>
+      {loading ? <p style={{ color:MUT, fontSize:13 }}>Loading...</p> : (
+        donors.length === 0 ? (
+          <p style={{ color:MUT, fontSize:13, fontStyle:'italic' }}>No donor interest recorded yet.</p>
+        ) : (
+          <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+            {Object.entries(byProject).map(([project, entries]) => (
+              <div key={project} style={{ background:CRD, border:`1px solid ${BD}`, overflow:'hidden' }}>
+                <div style={{ background:'#180410', padding:'10px 16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                  <p style={{ fontFamily:"'Lora',serif", fontSize:15, fontWeight:700, color:'#F0D0D8' }}>{project}</p>
+                  <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:'#7A4A60' }}>{entries.length} interested</span>
+                </div>
+                <div style={{ padding:'12px 16px', display:'flex', flexDirection:'column', gap:8 }}>
+                  {entries.map((d,i) => (
+                    <div key={i} style={{ background:'#F5EEF2', border:`1px solid ${BD}`, padding:'10px 14px' }}>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8 }}>
+                        <div>
+                          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:13, fontWeight:700, color:TXT }}>{d.name}</p>
+                          {d.organisation && <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT }}>{d.organisation}</p>}
+                          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:A }}>{d.email}</p>
+                          <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, padding:'1px 6px', background:BD, color:TXT, fontWeight:700 }}>{d.donor_type}</span>
+                        </div>
+                        <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT, flexShrink:0 }}>
+                          {new Date(d.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}
+                        </span>
+                      </div>
+                      {d.message && <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT, marginTop:8, lineHeight:1.6, fontStyle:'italic' }}>"{d.message}"</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      )}
+    </div>
+  )
+}
+
 // ── TABS CONFIG ───────────────────────────────────────────────────────────────
 
 // ── HIGHLIGHTS TAB ────────────────────────────────────────────────────────────
@@ -2035,20 +2099,48 @@ function RespondersTab() {
   )
 }
 
-const TABS = [
-  { id:'submissions', label:'Submissions',    icon:<Flag size={14}/> },
-  { id:'kaarada',     label:'KaaRada',       icon:<Shield size={14}/> },
-  { id:'profiles',    label:'Profiles',       icon:<Users size={14}/> },
-  { id:'lindalinda',  label:'LindaLinda',     icon:<Shield size={14}/> },
-  { id:'archetypes',  label:'JiJue/JiTume',   icon:<BookOpen size={14}/> },
-  { id:'voices',      label:'Voices',         icon:<MessageSquare size={14}/> },
-  { id:'memorial',    label:'We Remember',    icon:<Heart size={14}/> },
-  { id:'analytics',   label:'Analytics',      icon:<BarChart2 size={14}/> },
-  { id:'cases',       label:'Case tracker',   icon:<FileText size={14}/> },
-  { id:'codes',       label:'Access codes',   icon:<Users size={14}/> },
-  { id:'responders',  label:'Itika Responders', icon:<Shield size={14}/> },
-  { id:'highlights',  label:'Misogyny of Day', icon:<AlertTriangle size={14}/> },
+const TAB_GROUPS = [
+  {
+    id:'dashboard', label:'Dashboard', color:'#6B3A50',
+    tabs:[
+      { id:'submissions', label:'Submissions',  icon:<Flag size={14}/> },
+      { id:'analytics',   label:'Analytics',    icon:<BarChart2 size={14}/> },
+      { id:'codes',       label:'Access codes', icon:<Users size={14}/> },
+    ]
+  },
+  {
+    id:'intelligence', label:'Intelligence', color:'#1A3F6F',
+    tabs:[
+      { id:'cases',      label:'Case tracker',    icon:<FileText size={14}/> },
+      { id:'highlights', label:'Misogyny of Day', icon:<AlertTriangle size={14}/> },
+    ]
+  },
+  {
+    id:'redflag', label:'Red Flag', color:'#8A1030',
+    tabs:[
+      { id:'kaarada',    label:'KaaRada',      icon:<Shield size={14}/> },
+      { id:'profiles',   label:'Profiles',     icon:<Users size={14}/> },
+      { id:'archetypes', label:'JiJue/JiTume', icon:<BookOpen size={14}/> },
+      { id:'voices',     label:'Voices',       icon:<MessageSquare size={14}/> },
+      { id:'lindalinda', label:'LindaLinda',   icon:<Shield size={14}/> },
+    ]
+  },
+  {
+    id:'community', label:'Community', color:'#1A5A2A',
+    tabs:[
+      { id:'memorial',   label:'We Remember',     icon:<Heart size={14}/> },
+      { id:'responders', label:'Itika Responders', icon:<Shield size={14}/> },
+    ]
+  },
+  {
+    id:'halafu', label:'Halafu?', color:'#8A4010',
+    tabs:[
+      { id:'donors', label:'Donor Interest', icon:<Flag size={14}/> },
+    ]
+  },
 ]
+
+const TABS = TAB_GROUPS.flatMap(g => g.tabs)
 
 // ── ROOT APP ──────────────────────────────────────────────────────────────────
 export default function App() {
@@ -2081,12 +2173,19 @@ export default function App() {
         <div style={{ padding:'14px 0', marginRight:16, fontFamily:"'Lora',serif", fontSize:16, fontWeight:700, color:'#fff', whiteSpace:'nowrap' }}>
           FemSaidia Admin
         </div>
-        {TABS.map(t => (
-          <button key={t.id}
-            className={`nav-tab${tab===t.id?' active':''}`}
-            onClick={() => setTab(t.id)}>
-            {t.icon} {t.label}
-          </button>
+        {TAB_GROUPS.map(g => (
+          <div key={g.id} style={{ display:'flex', alignItems:'center', borderRight:'1px solid rgba(255,255,255,0.1)' }}>
+            <span style={{ fontSize:9, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase',
+              color:'rgba(255,255,255,0.4)', padding:'0 8px', whiteSpace:'nowrap' }}>{g.label}</span>
+            {g.tabs.map(t => (
+              <button key={t.id}
+                className={`nav-tab${tab===t.id?' active':''}`}
+                onClick={() => setTab(t.id)}
+                style={{ borderBottom: tab===t.id ? `2px solid ${g.color}` : '2px solid transparent' }}>
+                {t.icon} {t.label}
+              </button>
+            ))}
+          </div>
         ))}
         <button onClick={() => supabase.auth.signOut()}
           style={{ marginLeft:'auto', display:'inline-flex', alignItems:'center', gap:6,
@@ -2109,6 +2208,7 @@ export default function App() {
         {tab==='codes'       && <AccessCodesTab/>}
         {tab==='responders'  && <RespondersTab/>}
         {tab==='highlights'  && <HighlightsTab/>}
+        {tab==='donors'      && <DonorInterestTab/>}
       </main>
 
       <footer style={{ borderTop:`1px solid ${BD}`, padding:'16px 24px', marginTop:40 }}>
