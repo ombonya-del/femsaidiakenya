@@ -1,5 +1,6 @@
 {
-  "rewrites": [
-    { "source": "/((?!halafu-brief.pdf).*)", "destination": "/index.html" }
+  "routes": [
+    { "src": "/halafu-brief.pdf", "dest": "/halafu-brief.pdf" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }

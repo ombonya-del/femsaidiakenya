@@ -498,9 +498,9 @@ export default function SocialsSentimentTab() {
             </div>
             <div style={{ padding:'14px 16px' }}>
             {(() => {
-              const todayStr = new Date().toISOString().slice(0,10)
-              const todayHL  = highlights.filter(h => h.highlight_date === todayStr)
-              const recentHL = highlights.filter(h => h.highlight_date !== todayStr).slice(0,7)
+              const sorted   = [...highlights].sort((a,b) => new Date(b.highlight_date) - new Date(a.highlight_date))
+              const latestHL = sorted[0]
+              const recentHL = sorted.slice(1, 8)
 
               const HighlightCard = ({h, featured}) => (
                 <div style={{ background: featured?'#F5EEF2':'#EDE0E8',
@@ -531,7 +531,7 @@ export default function SocialsSentimentTab() {
 
               return (
                 <>
-                  {todayHL.length > 0 && <HighlightCard h={todayHL[0]} featured={true}/>}
+                  {latestHL && <HighlightCard h={latestHL} featured={true}/>}
                   {recentHL.length > 0 && (
                     <div style={{ marginTop:10 }}>
                       <button onClick={() => setShowAllHighlights(!showAllHighlights)}
