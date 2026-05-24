@@ -298,6 +298,7 @@ export default function SocialsSentimentTab() {
   const [search,     setSearch]     = useState('')
   const [modal,      setModal]      = useState(null)
   const [showAll,    setShowAll]    = useState(false)
+  const [showAllHighlights, setShowAllHighlights] = useState(false)
   const [activeBreak, setActiveBreak] = useState(null) // clicked breakdown metric
 
   const today     = index[index.length - 1]
@@ -425,90 +426,92 @@ export default function SocialsSentimentTab() {
 
         {/* ── MISOGYNY OF THE DAY + SCANNER CAUGHT ── */}
         <div style={{ marginBottom:2, display: isMobile?'block':'grid', gridTemplateColumns:'1fr 1fr', gap:2, alignItems:'start' }}>
-          <div style={{ background:'#3A0818', border:`2px solid ${A}`, padding:'20px 24px' }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16, flexWrap:'wrap', gap:8 }}>
-              <div>
-                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-                  letterSpacing:'.2em', textTransform:'uppercase', color:'#CC1010', marginBottom:6 }}>
-                  ⚡ Misogyny of the Day
-                </p>
-                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:'rgba(255,255,255,0.6)', lineHeight:1.6, maxWidth:500 }}>
-                  Curated posts circulating online that illustrate the pipeline from toxic rhetoric to violence.
-                  This is what normalisation looks like.
-                </p>
+          <div style={{ background:'#0A0008', border:`2px solid #CC1010`, overflow:'hidden' }}>
+            {/* Header */}
+            <div style={{ background:'#CC1010', padding:'10px 18px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <span style={{ fontSize:16 }}>⚡</span>
+                <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                  letterSpacing:'.12em', textTransform:'uppercase', color:'#fff' }}>
+                  Misogyny of the Day
+                </span>
               </div>
-              <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'rgba(255,255,255,0.3)',
-                fontStyle:'italic', flexShrink:0 }}>
-                {new Date().toLocaleDateString('en-KE',{weekday:'long',day:'numeric',month:'long'})}
+              <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'rgba(255,255,255,0.7)', fontStyle:'italic' }}>
+                {new Date().toLocaleDateString('en-KE',{weekday:'short',day:'numeric',month:'short'})}
               </span>
             </div>
+            <div style={{ padding:'4px 18px 6px', background:'rgba(204,16,16,0.15)' }}>
+              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'rgba(255,255,255,0.5)', lineHeight:1.5 }}>
+                This is what normalisation looks like. One post. Every day.
+              </p>
+            </div>
 
-            {/* Today's highlight + rolling 7-day window */}
+            {/* Content */}
+            <div style={{ padding:'16px 18px' }}>
             {(() => {
               const todayStr = new Date().toISOString().slice(0,10)
               const todayHL  = highlights.filter(h => h.highlight_date === todayStr)
-              const recentHL = highlights.filter(h => h.highlight_date !== todayStr).slice(0,5)
+              const recentHL = highlights.filter(h => h.highlight_date !== todayStr).slice(0,7)
+              const [showPrev, setShowPrev] = [showAllHighlights, setShowAllHighlights]
 
-              const HighlightCard = ({h, i, dimmed}) => (
-                <div key={h.id||i} style={{ background: dimmed?'rgba(255,255,255,0.02)':'rgba(255,255,255,0.05)',
-                  border:'1px solid rgba(139,16,48,0.4)', padding:'14px 16px',
-                  borderLeft:`3px solid ${dimmed?'rgba(204,16,16,0.3)':'#CC1010'}`,
-                  opacity: dimmed?0.7:1 }}>
-                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8, marginBottom:8 }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                      <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+              const HighlightCard = ({h, featured}) => (
+                <div style={{ background: featured?'rgba(204,16,16,0.12)':'rgba(255,255,255,0.03)',
+                  border:`1px solid ${featured?'#CC1010':'rgba(139,16,48,0.3)'}`,
+                  padding:'14px 16px', borderLeft:`3px solid ${featured?'#CC1010':'rgba(204,16,16,0.3)'}` }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:8, marginBottom:10 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                      <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
                         letterSpacing:'.08em', textTransform:'uppercase', padding:'2px 8px',
-                        background: h.platform==='TikTok'?'#010101':h.platform==='X'?'#1A1A1A':h.platform==='Facebook'?'#1877F2':h.platform==='Instagram'?'#C13584':h.platform==='Reddit'?'#FF4500':'#333',
-                        color:'#fff' }}>{h.platform}</span>
-                      {h.reach && <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'rgba(255,255,255,0.4)' }}>{h.reach}</span>}
+                        background: h.platform==='TikTok'?'#010101':h.platform==='X'?'#1D9BF0':h.platform==='Facebook'?'#1877F2':h.platform==='Instagram'?'#C13584':h.platform==='Reddit'?'#FF4500':'#333',
+                        color:'#fff' }}>{h.platform||'X'}</span>
+                      {h.reach && <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, color:'rgba(255,255,255,0.4)' }}>{h.reach}</span>}
                     </div>
-                    <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'rgba(255,255,255,0.3)' }}>
+                    <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, color:'rgba(255,255,255,0.3)' }}>
                       {h.highlight_date && new Date(h.highlight_date).toLocaleDateString('en-KE',{day:'numeric',month:'short'})}
                     </span>
                   </div>
-                  <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize: dimmed?12:13,
-                    color:'rgba(255,255,255,0.9)', lineHeight:1.7, margin:0, fontStyle:'italic' }}>
+                  <p style={{ fontFamily:"'Lora',serif", fontSize: featured?14:12,
+                    color: featured?'#FFD0D0':'rgba(255,255,255,0.75)', lineHeight:1.8, margin:0, fontStyle:'italic' }}>
                     "{h.content}"
                   </p>
                   {h.context && (
                     <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
-                      color:'#FF8080', marginTop:8 }}>↳ {h.context}</p>
+                      color:'#FF8080', marginTop:8, lineHeight:1.6 }}>↳ {h.context}</p>
                   )}
                 </div>
               )
 
               return (
-                <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>
-                  {/* TODAY — full prominence */}
-                  {todayHL.length > 0 ? (
-                    <>
-                      <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
-                        letterSpacing:'.15em', textTransform:'uppercase',
-                        color:'rgba(255,255,255,0.4)', marginBottom:2 }}>TODAY</p>
-                      {todayHL.map((h,i) => <HighlightCard key={h.id||i} h={h} i={i} dimmed={false}/>)}
-                    </>
-                  ) : (
-                    <div style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(139,16,48,0.3)',
-                      padding:12, textAlign:'center' }}>
-                      <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12,
-                        color:'rgba(255,255,255,0.35)', fontStyle:'italic' }}>
-                        No highlight for today — add one via the admin portal.
-                      </p>
+                <>
+                  {todayHL.length > 0
+                    ? <HighlightCard h={todayHL[0]} featured={true}/>
+                    : <div style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(139,16,48,0.3)',
+                        padding:16, textAlign:'center' }}>
+                        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12,
+                          color:'rgba(255,255,255,0.35)', fontStyle:'italic' }}>
+                          No highlight for today — add one via the admin portal.
+                        </p>
+                      </div>
+                  }
+                  {recentHL.length > 0 && (
+                    <div style={{ marginTop:10 }}>
+                      <button onClick={() => setShowAllHighlights(!showAllHighlights)}
+                        style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                          color:'rgba(255,255,255,0.4)', background:'none', border:'none',
+                          cursor:'pointer', padding:'6px 0', letterSpacing:'.06em', textTransform:'uppercase' }}>
+                        {showAllHighlights ? '▲ Hide previous' : `▼ Show ${recentHL.length} previous posts`}
+                      </button>
+                      {showAllHighlights && (
+                        <div style={{ display:'flex', flexDirection:'column', gap:6, marginTop:6 }}>
+                          {recentHL.map((h,i) => <HighlightCard key={h.id||i} h={h} featured={false}/>)}
+                        </div>
+                      )}
                     </div>
                   )}
-                  {/* RECENT — last 7 days, slightly dimmed */}
-                  {recentHL.length > 0 && (
-                    <>
-                      <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
-                        letterSpacing:'.15em', textTransform:'uppercase',
-                        color:'rgba(255,255,255,0.25)', marginTop:8, marginBottom:2 }}>RECENT</p>
-                      {recentHL.map((h,i) => <HighlightCard key={h.id||i} h={h} i={i} dimmed={true}/>)}
-                    </>
-                  )}
-                </div>
+                </>
               )
             })()}
-
+            </div>
           </div>
 
           {/* ── WHAT THE SCANNER CAUGHT ── */}
