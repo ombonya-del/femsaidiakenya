@@ -1644,6 +1644,120 @@ function KaaRadaAdminTab() {
   )
 }
 
+
+// -- CONTACTS TAB --
+function ContactsTab() {
+  const [contacts, setContacts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [adding, setAdding] = useState(false)
+  const [editing, setEditing] = useState(null)
+  const empty = { category:'emergency', name:'', description:'', phone:'', email:'', url:'', sort_order:0 }
+  const [form, setForm] = useState(empty)
+
+  const load = () => {
+    setLoading(true)
+    supabase.from('site_contacts').select('*').order('category').order('sort_order')
+      .then(({data}) => { setContacts(data||[]); setLoading(false) })
+  }
+  useEffect(() => { load() }, [])
+
+  const save = async () => {
+    if (!form.name.trim()) return
+    if (editing) {
+      await supabase.from('site_contacts').update(form).eq('id', editing)
+      setEditing(null)
+    } else {
+      await supabase.from('site_contacts').insert([{...form, active:true}])
+      setAdding(false)
+    }
+    setForm(empty)
+    load()
+  }
+
+  const del = async (id) => {
+    if (!confirm('Delete this contact?')) return
+    await supabase.from('site_contacts').delete().eq('id', id)
+    load()
+  }
+
+  const startEdit = (c) => {
+    setEditing(c.id)
+    setForm({ category:c.category, name:c.name, description:c.description||'', phone:c.phone||'', email:c.email||'', url:c.url||'', sort_order:c.sort_order||0 })
+    setAdding(false)
+  }
+
+  const catLabels = { emergency:'Emergency lines', cso:'CSO / Legal support', document:'Documents' }
+
+  return (
+    <div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20}}>
+        <div>
+          <h2 style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,color:TXT,marginBottom:4}}>Contacts and Resources</h2>
+          <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT}}>Edit helpline numbers, CSO contacts and resource links shown on the site.</p>
+        </div>
+        <button onClick={() => { setAdding(!adding); setEditing(null) }}
+          style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,padding:'8px 16px',background:A,color:'#fff',border:'none',cursor:'pointer'}}>
+          {adding ? 'Cancel' : '+ Add contact'}
+        </button>
+      </div>
+      {(adding || editing) && (
+        <div style={{background:CRD,border:`1px solid ${BD}`,padding:16,marginBottom:16}}>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
+            <div>
+              <label style={labelSt}>Category</label>
+              <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})} style={inputSt}>
+                <option value="emergency">Emergency</option>
+                <option value="cso">CSO / Legal</option>
+                <option value="document">Document</option>
+              </select>
+            </div>
+            <div><label style={labelSt}>Name *</label><input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inputSt}/></div>
+            <div><label style={labelSt}>Phone</label><input value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} style={inputSt}/></div>
+            <div><label style={labelSt}>Email</label><input value={form.email} onChange={e=>setForm({...form,email:e.target.value})} style={inputSt}/></div>
+            <div><label style={labelSt}>URL</label><input value={form.url} onChange={e=>setForm({...form,url:e.target.value})} style={inputSt}/></div>
+            <div><label style={labelSt}>Sort order</label><input type="number" value={form.sort_order} onChange={e=>setForm({...form,sort_order:parseInt(e.target.value)||0})} style={inputSt}/></div>
+          </div>
+          <div style={{marginBottom:10}}><label style={labelSt}>Description</label><input value={form.description} onChange={e=>setForm({...form,description:e.target.value})} style={inputSt}/></div>
+          <div style={{display:'flex',gap:6}}>
+            <button onClick={save} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,padding:'8px 16px',background:A,color:'#fff',border:'none',cursor:'pointer'}}>
+              {editing ? 'Save changes' : 'Add contact'}
+            </button>
+            <button onClick={() => { setAdding(false); setEditing(null); setForm(empty) }}
+              style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,padding:'8px 14px',background:'none',border:`1px solid ${BD}`,color:MUT,cursor:'pointer'}}>Cancel</button>
+          </div>
+        </div>
+      )}
+      {loading ? <p style={{color:MUT,fontSize:13}}>Loading...</p> : (
+        ['emergency','cso','document'].map(cat => {
+          const items = contacts.filter(c => c.category === cat)
+          if (!items.length) return null
+          return (
+            <div key={cat} style={{marginBottom:24}}>
+              <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:A,marginBottom:8}}>{catLabels[cat]}</p>
+              {items.map(c => (
+                <div key={c.id} style={{background:CRD,border:`1px solid ${BD}`,padding:'12px 14px',marginBottom:6,display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12}}>
+                  <div>
+                    <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,fontWeight:700,color:TXT,marginBottom:2}}>{c.name}</p>
+                    {c.description && <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,marginBottom:4}}>{c.description}</p>}
+                    <div style={{display:'flex',gap:12,flexWrap:'wrap'}}>
+                      {c.phone && <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:A,fontWeight:700}}>tel: {c.phone}</span>}
+                      {c.url && <a href={c.url} target="_blank" rel="noopener noreferrer" style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:A}}>{c.url}</a>}
+                    </div>
+                  </div>
+                  <div style={{display:'flex',gap:6,flexShrink:0}}>
+                    <button onClick={() => startEdit(c)} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,padding:'4px 10px',background:BD,color:TXT,border:'none',cursor:'pointer'}}>Edit</button>
+                    <button onClick={() => del(c.id)} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,padding:'4px 10px',background:'#CC1010',color:'#fff',border:'none',cursor:'pointer'}}>Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        })
+      )}
+    </div>
+  )
+}
+
 // ── DONOR INTEREST TAB ────────────────────────────────────────────────────────
 function DonorInterestTab() {
   const [donors,  setDonors]  = useState([])
@@ -2147,6 +2261,7 @@ const TAB_GROUPS = [
   { id:'submissions', label:'Submissions',  color:'#6B3A50', standalone:true,  tabs:[{ id:'submissions', label:'Submissions',  icon:<Flag size={14}/> }] },
   { id:'analytics',   label:'Analytics',    color:'#6B3A50', standalone:true,  tabs:[{ id:'analytics',   label:'Analytics',    icon:<BarChart2 size={14}/> }] },
   { id:'codes',       label:'Access codes', color:'#6B3A50', standalone:true,  tabs:[{ id:'codes',       label:'Access codes', icon:<Users size={14}/> }] },
+  { id:'contacts', label:'Contacts', color:'#6B3A50', standalone:true, tabs:[{ id:'contacts', label:'Contacts', icon:<Users size={14}/> }] },
   { id:'intelligence', label:'Intelligence', color:'#1A3F6F', standalone:false, tabs:[
       { id:'cases',      label:'Case tracker',    icon:<FileText size={14}/> },
       { id:'highlights', label:'Misogyny of Day', icon:<AlertTriangle size={14}/> },
@@ -2260,6 +2375,7 @@ export default function App() {
         {tab==='responders'  && <RespondersTab/>}
         {tab==='highlights'  && <HighlightsTab/>}
         {tab==='donors'      && <DonorInterestTab/>}
+        {tab==='contacts'    && <ContactsTab/>}
       </main>
 
       <footer style={{ borderTop:`1px solid ${BD}`, padding:'16px 24px', marginTop:40 }}>
