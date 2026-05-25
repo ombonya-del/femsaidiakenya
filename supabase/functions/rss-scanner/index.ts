@@ -41,7 +41,8 @@ async function fetchFeed(url: string): Promise<any[]> {
         const lnk = e.match(/<link[^>]*href="([^"]+)"/)?.[1] || ""
         const pd = e.match(/<published>([^<]+)<\/published>/)?.[1] || ""
         const snip = (e.match(/<media:description>([^<]*)<\/media:description>/)?.[1] || "").trim()
-        if (t && lnk) items.push({ source: chanTitle, title: t, snippet: snip, url: lnk, pubDate: pd, content_type: "video" })
+        const tl = t.toLowerCase()
+        if (t && lnk && (tl.includes("kenya") || tl.includes("nairobi") || tl.includes("africa") || tl.includes("femicide") || tl.includes("gbv"))) items.push({ source: chanTitle, title: t, snippet: snip, url: lnk, pubDate: pd, content_type: "video" })
       }
       console.log("Atom feed: " + items.length + " entries")
     } else {
