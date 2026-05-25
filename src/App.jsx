@@ -1530,7 +1530,9 @@ export default function App() {
               </div>
               <div style={{textAlign:'right',paddingBottom:4}}>
                 <p style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>Last updated</p>
-                <p style={{fontSize:12,color:'#5A3050',fontFamily:"'Nunito Sans',sans-serif",marginTop:2}}>04 May 2026 · 08:00 EAT</p>
+                <p style={{fontSize:12,color:'#5A3050',fontFamily:"'Nunito Sans',sans-serif",marginTop:2}}>
+                  {new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'short',year:'numeric'})} · {new Date().toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit',timeZone:'Africa/Nairobi'})} EAT
+                </p>
               </div>
             </div>
             <nav style={{display:'flex',overflowX:'auto'}}>
