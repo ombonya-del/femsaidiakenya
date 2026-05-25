@@ -111,12 +111,12 @@ export default function SurvivalGuideTab() {
             </div>
           </div>
           <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-            {[
+            {(emergency.length > 0 ? emergency.slice(0,4).map(c => ({l:c.name, p:c.phone||''})) : [
               {l:'Emergency',      p:'999'},
               {l:'DCI Gender Desk',p:'0800 722 203'},
               {l:'GVRC',           p:'0800 723 253'},
               {l:'Usikimye',       p:'0800 723 253'},
-            ].map((c,i)=>(
+            ]).map((c,i)=>(
               <a key={i} href={`tel:${c.p.replace(/\s/g,'')}`}
                 style={{background:'rgba(255,255,255,0.15)',border:'1px solid rgba(255,255,255,0.3)',
                   padding:'8px 14px',textDecoration:'none',display:'flex',flexDirection:'column',alignItems:'center'}}>
