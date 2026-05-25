@@ -530,6 +530,30 @@ export default function SocialsSentimentTab() {
                     <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
                       color:A, marginTop:8, lineHeight:1.6 }}>↳ {h.context}</p>
                   )}
+                  {/* Media — screenshot or video */}
+                  {h.media_url && h.media_type === 'image' && (
+                    <img src={h.media_url} alt="Post screenshot"
+                      style={{ width:'100%', maxHeight:280, objectFit:'cover', marginTop:10, borderRadius:2 }}/>
+                  )}
+                  {h.media_url && h.media_type === 'video' && (
+                    <video src={h.media_url} controls
+                      style={{ width:'100%', maxHeight:280, marginTop:10 }}/>
+                  )}
+                  {h.embed_url && h.embed_url.includes('youtube') && (
+                    <div style={{ marginTop:10, position:'relative', paddingBottom:'56.25%', height:0 }}>
+                      <iframe
+                        src={h.embed_url.replace('watch?v=','embed/').replace('youtu.be/','www.youtube.com/embed/')}
+                        style={{ position:'absolute', top:0, left:0, width:'100%', height:'100%', border:'none' }}
+                        allowFullScreen title="Video"/>
+                    </div>
+                  )}
+                  {h.embed_url && (h.embed_url.includes('tiktok') || h.embed_url.includes('x.com') || h.embed_url.includes('twitter')) && (
+                    <a href={h.embed_url} target="_blank" rel="noopener noreferrer"
+                      style={{ display:'inline-flex', alignItems:'center', gap:6, marginTop:10,
+                        fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:A, fontWeight:700, textDecoration:'none' }}>
+                      ▶ View original post →
+                    </a>
+                  )}
                 </div>
               )
 

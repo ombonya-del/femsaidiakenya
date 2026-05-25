@@ -1832,8 +1832,22 @@ function HighlightsTab() {
   const [adding,  setAdding]  = useState(false)
   const [form,    setForm]    = useState({
     platform:'X', content:'', context:'', reach:'', post_date:'',
-    highlight_date: new Date().toISOString().slice(0,10)
+    highlight_date: new Date().toISOString().slice(0,10),
+    media_url:'', media_type:'', embed_url:''
   })
+  const [uploading, setUploading] = useState(false)
+
+  const uploadMedia = async (file) => {
+    setUploading(true)
+    const ext  = file.name.split('.').pop()
+    const name = `highlight_${Date.now()}.${ext}`
+    const { data, error } = await supabase.storage.from('highlights-media').upload(name, file, { upsert:true })
+    if (!error) {
+      const url = supabase.storage.from('highlights-media').getPublicUrl(name).data.publicUrl
+      setForm(f => ({ ...f, media_url: url, media_type: file.type.startsWith('video') ? 'video' : 'image' }))
+    }
+    setUploading(false)
+  }
 
   const load = () => {
     setLoading(true)
@@ -1846,7 +1860,7 @@ function HighlightsTab() {
     if(!form.content.trim()) return
     await supabase.from('misogyny_highlights').insert([{...form,active:true}])
     setAdding(false)
-    setForm({platform:'X',content:'',context:'',reach:'',post_date:'',highlight_date:new Date().toISOString().slice(0,10)})
+    setForm({platform:'X',content:'',context:'',reach:'',post_date:'',highlight_date:new Date().toISOString().slice(0,10),media_url:'',media_type:'',embed_url:''})
     load()
   }
   const [editing, setEditing] = useState(null)
@@ -1918,8 +1932,35 @@ function HighlightsTab() {
               placeholder="e.g. This post has 45K likes. This is what normalisation looks like."
               style={inputSt}/>
           </div>
-          <button onClick={add}
-            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,padding:'8px 20px',background:A,color:'#fff',border:'none',cursor:'pointer'}}>
+          {/* Media upload */}
+          <div style={{marginBottom:12}}>
+            <label style={labelSt}>Screenshot or video upload (optional)</label>
+            <input type="file" accept="image/*,video/*"
+              onChange={e => e.target.files[0] && uploadMedia(e.target.files[0])}
+              style={{display:'block',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT,marginBottom:6}}/>
+            {uploading && <p style={{fontSize:11,color:MUT}}>Uploading...</p>}
+            {form.media_url && (
+              <div style={{marginTop:6}}>
+                {form.media_type==='image'
+                  ? <img src={form.media_url} style={{maxWidth:200,maxHeight:150,objectFit:'cover'}} alt="preview"/>
+                  : <video src={form.media_url} style={{maxWidth:200,maxHeight:150}} controls/>
+                }
+                <button onClick={() => setForm(f=>({...f,media_url:'',media_type:''}))}
+                  style={{display:'block',marginTop:4,fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:A,background:'none',border:'none',cursor:'pointer'}}>
+                  Remove
+                </button>
+              </div>
+            )}
+          </div>
+          {/* Embed URL */}
+          <div style={{marginBottom:12}}>
+            <label style={labelSt}>OR paste embed URL (YouTube, TikTok, X video)</label>
+            <input value={form.embed_url} onChange={e=>setForm({...form,embed_url:e.target.value})}
+              placeholder="https://youtube.com/watch?v=... or https://x.com/..."
+              style={inputSt}/>
+          </div>
+          <button onClick={add} disabled={uploading}
+            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,padding:'8px 20px',background:uploading?MUT:A,color:'#fff',border:'none',cursor:uploading?'wait':'pointer'}}>
             Publish highlight
           </button>
         </div>
