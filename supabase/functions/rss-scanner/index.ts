@@ -88,13 +88,18 @@ async function classifyArticles(articles: any[]): Promise<any[]> {
 }
 
 async function updateMisogynyIndex() {
-  const since = new Date(Date.now()-30*24*60*60*1000).toISOString()
-  const { data } = await supabase.from('sentiment_articles').select('gbv_relevance,misogyny_score,sentiment,tech_facilitated').gte('scanned_at',since)
-  if (!data?.length) return
-  const total=data.length, highMiso=data.filter((a:any)=>a.misogyny_score>=7).length, techFacil=data.filter((a:any)=>a.tech_facilitated).length, alarming=data.filter((a:any)=>a.sentiment==='alarming'||a.sentiment==='negative').length, highGBV=data.filter((a:any)=>a.gbv_relevance>=8).length
-  const score=Math.min(100,Math.round((highMiso/total)*40+(techFacil/total)*20+(alarming/total)*25+(highGBV/total)*15))
-  await supabase.from('misogyny_index').upsert({date:new Date().toISOString().split('T')[0],score,article_count:total,high_alert:score>=60},{onConflict:'date'})
-  console.log(`Misogyny index: ${score}/100 from ${total} articles`)
+  const now=Date.now(), since7=new Date(now-7*24*60*60*1000).toISOString()
+  const today=new Date().toISOString().split('T')[0], yest=new Date(now-24*60*60*1000).toISOString().split('T')[0]
+  const {data:all}=await supabase.from('sentiment_articles').select('gbv_relevance,misogyny_score,sentiment,tech_facilitated,platform,content_type').gte('scanned_at',since7)
+  if (!all?.length) return
+  const news=all.filter((a:any)=>a.platform==='news'||a.content_type==='article'||a.content_type==='video')
+  const social=all.filter((a:any)=>a.platform==='x'||a.content_type==='social_post')
+  const calc=(arr:any[])=>{if(!arr.length)return 0;const hm=arr.filter((a:any)=>a.misogyny_score>=7).length,tf=arr.filter((a:any)=>a.tech_facilitated).length,al=arr.filter((a:any)=>a.sentiment==='alarming'||a.sentiment==='negative').length,hg=arr.filter((a:any)=>a.gbv_relevance>=8).length;return Math.min(100,Math.round((hm/arr.length)*40+(tf/arr.length)*20+(al/arr.length)*25+(hg/arr.length)*15))}
+  const score=calc(all),news_score=calc(news),social_score=calc(social)
+  const {data:yd}=await supabase.from('misogyny_index').select('score').eq('date',yest).single()
+  const prev_score=yd?.score??score
+  await supabase.from('misogyny_index').upsert({date:today,score,news_score,social_score,prev_score,article_count:all.length,news_count:news.length,social_count:social.length,high_alert:score>=60},{onConflict:'date'})
+  console.log(`Index: ${score} (news:${news_score} social:${social_score}) delta:${score-prev_score}`)
 }
 
 Deno.serve(async (req: Request) => {

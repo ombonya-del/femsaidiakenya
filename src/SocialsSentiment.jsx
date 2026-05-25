@@ -301,10 +301,13 @@ export default function SocialsSentimentTab() {
   const [showAllHighlights, setShowAllHighlights] = useState(false)
   const [activeBreak, setActiveBreak] = useState(null) // clicked breakdown metric
 
-  const today     = index[index.length - 1]
-  const yesterday = index[index.length - 2]
-  const trend     = today && yesterday ? today.score - yesterday.score : 0
-  const score     = today?.score || 0
+  const today       = index[index.length - 1]
+  const yesterday   = index[index.length - 2]
+  const trend       = today && yesterday ? today.score - yesterday.score : 0
+  const score       = today?.score       || 0
+  const newsScore   = today?.news_score  || 0
+  const socialScore = today?.social_score|| 0
+  const prevScore   = today?.prev_score  || score
 
   useEffect(() => { load() }, [])
 
@@ -593,25 +596,44 @@ export default function SocialsSentimentTab() {
           {/* ── MISOGYNY INDEX — compact strip ── */}
           <div style={{ background:'#180410', border:`1px solid ${A}`, padding:'12px 20px',
             marginBottom:2, display:'flex', alignItems:'center', gap:20, flexWrap:'wrap' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:16, flexWrap:'wrap' }}>
+              {/* Overall score */}
               <div style={{ textAlign:'center' }}>
                 <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
                   letterSpacing:'.12em', textTransform:'uppercase', color:A, marginBottom:2 }}>
-                  Misogyny Index
+                  Overall · 7 days
                 </p>
                 <span style={{ fontFamily:"'Lora',serif", fontSize:32, fontWeight:700,
                   color: score>=70?'#CC1010':score>=50?'#C05010':score>=30?'#CA8A04':'#2D7A3A' }}>
                   {score}%
                 </span>
               </div>
-              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                {trend > 0 ? <TrendingUp size={16} color="#CC1010"/> :
-                 trend < 0 ? <TrendingDown size={16} color="#2D7A3A"/> :
-                 <Minus size={16} color={MUT}/>}
-                <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+              {/* Delta */}
+              <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+                {trend > 0 ? <TrendingUp size={14} color="#CC1010"/> :
+                 trend < 0 ? <TrendingDown size={14} color="#2D7A3A"/> :
+                 <Minus size={14} color={MUT}/>}
+                <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
                   color: trend > 0 ? '#CC1010' : trend < 0 ? '#2D7A3A' : '#B89AAA' }}>
-                  {trend > 0 ? '+' : ''}{trend.toFixed(1)} from yesterday
+                  {trend > 0 ? '+' : ''}{trend}pts
                 </span>
+              </div>
+              {/* Split scores */}
+              <div style={{ display:'flex', gap:8 }}>
+                <div style={{ background:'rgba(255,255,255,0.05)', padding:'4px 10px', borderLeft:'2px solid #1A3F6F' }}>
+                  <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:8, color:'#B89AAA', letterSpacing:'.08em', textTransform:'uppercase', marginBottom:1 }}>📰 Media</p>
+                  <span style={{ fontFamily:"'Lora',serif", fontSize:16, fontWeight:700,
+                    color: newsScore>=70?'#CC1010':newsScore>=50?'#C05010':newsScore>=30?'#CA8A04':'#2D7A3A' }}>
+                    {newsScore}%
+                  </span>
+                </div>
+                <div style={{ background:'rgba(255,255,255,0.05)', padding:'4px 10px', borderLeft:'2px solid #8A1030' }}>
+                  <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:8, color:'#B89AAA', letterSpacing:'.08em', textTransform:'uppercase', marginBottom:1 }}>🔥 Community</p>
+                  <span style={{ fontFamily:"'Lora',serif", fontSize:16, fontWeight:700,
+                    color: socialScore>=70?'#CC1010':socialScore>=50?'#C05010':socialScore>=30?'#CA8A04':'#2D7A3A' }}>
+                    {socialScore>0 ? `${socialScore}%` : '—'}
+                  </span>
+                </div>
               </div>
             </div>
             <div style={{ flex:1, display:'flex', gap:8, flexWrap:'wrap' }}>
