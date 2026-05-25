@@ -310,13 +310,17 @@ export default function SocialsSentimentTab() {
 
   const load = async () => {
     setLoading(true)
-    const [idxRes, artRes, hlRes] = await Promise.all([
+    const [idxRes, artRes, hlRes, vidRes] = await Promise.all([
       supabase.from('misogyny_index').select('*').order('date', { ascending:true }).limit(30),
-      supabase.from('sentiment_articles').select('*').order('scanned_at', { ascending:false }).limit(100),
+      supabase.from('sentiment_articles').select('*').order('scanned_at', { ascending:false }).limit(200),
       supabase.from('misogyny_highlights').select('*').eq('active', true).order('highlight_date', { ascending:false }).limit(10),
+      supabase.from('sentiment_articles').select('*').eq('content_type', 'video').order('scanned_at', { ascending:false }).limit(20),
     ])
     setIndex(idxRes.data || [])
-    setArticles(artRes.data || [])
+    const arts = artRes.data || []
+    const vids = vidRes.data || []
+    const merged = [...vids, ...arts.filter(a => a.content_type !== 'video')]
+    setArticles(merged)
     setHighlights(hlRes.data || [])
     setLoading(false)
   }
