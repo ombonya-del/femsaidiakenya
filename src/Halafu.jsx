@@ -513,7 +513,14 @@ function ProjectCard({ p, isMobile }) {
 
 export default function HalaFuTab({ isMobile }) {
   const [lane, setLane] = useState('all')
+  const [briefs, setBriefs] = useState([])
   const filtered = lane === 'all' ? PROJECTS : PROJECTS.filter(p => p.lane === lane)
+
+  useState(() => {
+    _sb.from('intel_briefs').select('id,title,generated_at,period_start,period_end').eq('active', true)
+      .order('generated_at', { ascending: false }).limit(10)
+      .then(({ data }) => setBriefs(data || []))
+  }, [])
   const counts = {
     all:        PROJECTS.length,
     Understand: PROJECTS.filter(p=>p.lane==='Understand').length,
@@ -598,6 +605,37 @@ export default function HalaFuTab({ isMobile }) {
           📥 Download latest brief
         </a>
       </div>
+
+      {/* Brief archive */}
+      {briefs.length > 1 && (
+        <div style={{ marginBottom:2 }}>
+          <div style={{ background:'#180410', padding:'10px 20px', display:'flex', alignItems:'center', gap:8 }}>
+            <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+              letterSpacing:'.1em', textTransform:'uppercase', color:'#8A1030' }}>📁 Brief archive</span>
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', gap:1 }}>
+            {briefs.map((b,i) => (
+              <div key={b.id} style={{ background:i===0?'#1A0818':'rgba(255,255,255,0.02)',
+                border:'1px solid rgba(138,16,48,0.2)', padding:'10px 20px',
+                display:'flex', justifyContent:'space-between', alignItems:'center', gap:12 }}>
+                <div>
+                  <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700,
+                    color:'#F0D0D8', marginBottom:2 }}>{b.title}</p>
+                  <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'#8892B0' }}>
+                    {b.period_start} — {b.period_end}
+                  </p>
+                </div>
+                <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf"
+                  target="_blank" rel="noopener noreferrer"
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                    color:'#8A1030', textDecoration:'none', flexShrink:0 }}>
+                  📥 Download
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div style={{ display:'grid', gridTemplateColumns:isMobile?'1fr 1fr':'repeat(4,1fr)', gap:2, marginBottom:2 }}>
