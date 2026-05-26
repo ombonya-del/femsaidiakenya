@@ -1,0 +1,2 @@
+[functions.x-stream]
+verify_jwt = false
