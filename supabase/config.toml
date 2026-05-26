@@ -440,3 +440,6 @@ entrypoint = "./functions/backfill-summaries/index.ts"
 
 [functions.x-stream]
 verify_jwt = false
+
+[functions.intel-brief]
+verify_jwt = false
