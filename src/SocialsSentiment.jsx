@@ -505,7 +505,7 @@ export default function SocialsSentimentTab() {
             </div>
             <div style={{ padding:'14px 16px' }}>
             {(() => {
-              const sorted   = [...highlights].sort((a,b) => new Date(b.highlight_date) - new Date(a.highlight_date))
+              const sorted   = [...highlights].sort((a,b) => new Date(b.created_at) - new Date(a.created_at))
               const latestHL = sorted[0]
               const recentHL = sorted.slice(1, 8)
 
@@ -534,11 +534,11 @@ export default function SocialsSentimentTab() {
                       color:A, marginTop:8, lineHeight:1.6 }}>↳ {h.context}</p>
                   )}
                   {/* Media — screenshot or video */}
-                  {h.media_url && h.media_type === 'image' && (
+                  {h.media_url && h.media_url.length > 0 && h.media_type === 'image' && (
                     <img src={h.media_url} alt="Post screenshot"
                       style={{ width:'100%', maxHeight:280, objectFit:'cover', marginTop:10, borderRadius:2 }}/>
                   )}
-                  {h.media_url && h.media_type === 'video' && (
+                  {h.media_url && h.media_url.length > 0 && h.media_type === 'video' && (
                     <video src={h.media_url} controls
                       style={{ width:'100%', maxHeight:280, marginTop:10 }}/>
                   )}
@@ -550,11 +550,11 @@ export default function SocialsSentimentTab() {
                         allowFullScreen title="Video"/>
                     </div>
                   )}
-                  {h.embed_url && (h.embed_url.includes('tiktok') || h.embed_url.includes('x.com') || h.embed_url.includes('twitter')) && (
+                  {h.embed_url && h.embed_url.length > 0 && (h.embed_url.includes('tiktok') || h.embed_url.includes('x.com') || h.embed_url.includes('twitter')) && (
                     <a href={h.embed_url} target="_blank" rel="noopener noreferrer"
                       style={{ display:'inline-flex', alignItems:'center', gap:6, marginTop:10,
-                        fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:A, fontWeight:700, textDecoration:'none' }}>
-                      ▶ View original post →
+                        fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, textDecoration:'none', background:'#1D9BF0', padding:'6px 12px', color:'#fff' }}>
+                      🐦 View on X →
                     </a>
                   )}
                 </div>
