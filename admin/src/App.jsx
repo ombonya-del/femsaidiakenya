@@ -1758,6 +1758,164 @@ function ContactsTab() {
   )
 }
 
+
+// -- INTEL BRIEFS TAB --
+function IntelBriefsTab() {
+  const [briefs,   setBriefs]   = useState([])
+  const [loading,  setLoading]  = useState(true)
+  const [editing,  setEditing]  = useState(null)
+  const [editText, setEditText] = useState('')
+  const [saving,   setSaving]   = useState(false)
+  const [triggering, setTriggering] = useState(false)
+
+  const load = () => {
+    setLoading(true)
+    supabase.from('intel_briefs').select('*').order('generated_at', { ascending:false }).limit(10)
+      .then(({ data }) => { setBriefs(data||[]); setLoading(false) })
+  }
+  useEffect(() => { load() }, [])
+
+  const triggerBrief = async () => {
+    setTriggering(true)
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/intel-brief`, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: '{}'
+      })
+      const data = await res.json()
+      if (data.success) { alert('Brief generated and published!'); load() }
+      else alert('Error: ' + data.error)
+    } catch (e) { alert('Error: ' + e.message) }
+    setTriggering(false)
+  }
+
+  const startEdit = (b) => {
+    setEditing(b.id)
+    setEditText(b.content)
+  }
+
+  const saveEdit = async () => {
+    setSaving(true)
+    await supabase.from('intel_briefs').update({ content: editText }).eq('id', editing)
+    setEditing(null)
+    setSaving(false)
+    load()
+    alert('Brief updated. Re-generate PDF by triggering a new brief or uploading manually.')
+  }
+
+  const toggleActive = async (id, active) => {
+    await supabase.from('intel_briefs').update({ active: !active }).eq('id', id)
+    load()
+  }
+
+  const del = async (id) => {
+    if (!confirm('Delete this brief?')) return
+    await supabase.from('intel_briefs').delete().eq('id', id)
+    load()
+  }
+
+  return (
+    <div>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:20 }}>
+        <div>
+          <h2 style={{ fontFamily:"'Lora',serif", fontSize:22, fontWeight:700, color:TXT, marginBottom:4 }}>Intel Briefs</h2>
+          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT }}>
+            AI-generated femicide intelligence briefs. Edit content, toggle visibility, trigger new generation.
+          </p>
+        </div>
+        <button onClick={triggerBrief} disabled={triggering}
+          style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'8px 16px',
+            background:triggering?MUT:A, color:'#fff', border:'none', cursor:triggering?'wait':'pointer', flexShrink:0 }}>
+          {triggering ? 'Generating...' : '+ Generate new brief'}
+        </button>
+      </div>
+
+      {loading ? <p style={{ color:MUT, fontSize:13 }}>Loading...</p> : (
+        briefs.length === 0 ? (
+          <p style={{ color:MUT, fontSize:13, fontStyle:'italic' }}>No briefs yet. Click "Generate new brief" to create the first one.</p>
+        ) : (
+          <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            {briefs.map(b => (
+              <div key={b.id} style={{ background:CRD, border:`1px solid ${BD}`, overflow:'hidden' }}>
+                <div style={{ background:'#180410', padding:'10px 16px', display:'flex', justifyContent:'space-between', alignItems:'center', gap:12 }}>
+                  <div>
+                    <p style={{ fontFamily:"'Lora',serif", fontSize:14, fontWeight:700, color:'#F0D0D8', marginBottom:2 }}>{b.title}</p>
+                    <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'#7A4A60' }}>
+                      {b.period_start} — {b.period_end} · Generated {new Date(b.generated_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}
+                    </p>
+                  </div>
+                  <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+                    <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, padding:'2px 8px',
+                      background: b.active?'#1A5A2A':A, color:'#fff', fontWeight:700 }}>
+                      {b.active ? 'Published' : 'Hidden'}
+                    </span>
+                  </div>
+                </div>
+
+                {editing === b.id ? (
+                  <div style={{ padding:16 }}>
+                    <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT, marginBottom:8 }}>
+                      Edit brief content below. Use ---SECTION--- markers to preserve structure.
+                    </p>
+                    <textarea value={editText} onChange={e=>setEditText(e.target.value)}
+                      rows={20} style={{ width:'100%', padding:'10px 12px', fontFamily:'monospace', fontSize:11,
+                        background:'#F5EEF2', border:`1px solid ${BD}`, color:TXT, outline:'none',
+                        resize:'vertical', boxSizing:'border-box', lineHeight:1.6 }}/>
+                    <div style={{ display:'flex', gap:6, marginTop:10 }}>
+                      <button onClick={saveEdit} disabled={saving}
+                        style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700,
+                          padding:'8px 16px', background:saving?MUT:A, color:'#fff', border:'none', cursor:'pointer' }}>
+                        {saving ? 'Saving...' : 'Save changes'}
+                      </button>
+                      <button onClick={() => setEditing(null)}
+                        style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, padding:'8px 14px',
+                          background:'none', border:`1px solid ${BD}`, color:MUT, cursor:'pointer' }}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ padding:'10px 16px' }}>
+                    <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT,
+                      lineHeight:1.6, fontStyle:'italic', marginBottom:10 }}>
+                      {b.content?.slice(0,300)}...
+                    </p>
+                    <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                      <button onClick={() => startEdit(b)}
+                        style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                          padding:'4px 10px', background:BD, color:TXT, border:'none', cursor:'pointer' }}>
+                        Edit content
+                      </button>
+                      <button onClick={() => toggleActive(b.id, b.active)}
+                        style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                          padding:'4px 10px', background:b.active?A:'#1A5A2A', color:'#fff', border:'none', cursor:'pointer' }}>
+                        {b.active ? 'Hide' : 'Publish'}
+                      </button>
+                      {b.pdf_url && (
+                        <a href={b.pdf_url} target="_blank" rel="noopener noreferrer"
+                          style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                            padding:'4px 10px', background:'#1A3F6F', color:'#fff', textDecoration:'none' }}>
+                          View PDF
+                        </a>
+                      )}
+                      <button onClick={() => del(b.id)}
+                        style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                          padding:'4px 10px', background:'#CC1010', color:'#fff', border:'none', cursor:'pointer' }}>
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )
+      )}
+    </div>
+  )
+}
+
 // ── DONOR INTEREST TAB ────────────────────────────────────────────────────────
 function DonorInterestTab() {
   const [donors,  setDonors]  = useState([])
@@ -2320,6 +2478,7 @@ const TAB_GROUPS = [
   ]},
   { id:'halafu', label:'Halafu?', color:'#8A4010', standalone:false, tabs:[
       { id:'donors', label:'Donor Interest', icon:<Flag size={14}/> },
+      { id:'intel-briefs', label:'Intel Briefs', icon:<FileText size={14}/> },
   ]},
 ]
 
@@ -2417,6 +2576,7 @@ export default function App() {
         {tab==='highlights'  && <HighlightsTab/>}
         {tab==='donors'      && <DonorInterestTab/>}
         {tab==='contacts'    && <ContactsTab/>}
+        {tab==='intel-briefs' && <IntelBriefsTab/>}
       </main>
 
       <footer style={{ borderTop:`1px solid ${BD}`, padding:'16px 24px', marginTop:40 }}>
