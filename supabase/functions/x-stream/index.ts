@@ -42,7 +42,7 @@ Deno.serve(async (req: Request) => {
         const tweetId = tweet.id || tweet.id_str || Date.now()
         const tweetUrl = `https://x.com/${user}/status/${tweetId}`
 
-        const keywords = ['femicide','killed','gbv','gender','violence','rape','assault','murdered','manosphere','misogyn','patriarchy','mke','mwanamke','unyanyasaji','jeuri']
+        const keywords = ['femicide','killed','gbv','gender','violence','rape','assault','murdered','manosphere','misogyn','patriarchy','mke','mwanamke','unyanyasaji','jeuri','woman','women','girl','mtoto','mama','dada','binti','rights','justice','haki','amani']
         if (!keywords.some(k => text.toLowerCase().includes(k))) {
           console.log('Not relevant:', text.slice(0, 50))
           continue
