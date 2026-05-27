@@ -443,3 +443,6 @@ verify_jwt = false
 
 [functions.intel-brief]
 verify_jwt = false
+
+[functions.x-poller]
+verify_jwt = false
