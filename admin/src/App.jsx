@@ -1767,6 +1767,7 @@ function IntelBriefsTab() {
   const [editText, setEditText] = useState('')
   const [saving,   setSaving]   = useState(false)
   const [triggering, setTriggering] = useState(false)
+  const [showPrev, setShowPrev] = useState(false)
 
   const load = () => {
     setLoading(true)
@@ -1836,7 +1837,7 @@ function IntelBriefsTab() {
           <p style={{ color:MUT, fontSize:13, fontStyle:'italic' }}>No briefs yet. Click "Generate new brief" to create the first one.</p>
         ) : (
           <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-            {briefs.map(b => (
+            {(showPrev ? briefs : briefs.slice(0,1)).map(b => (
               <div key={b.id} style={{ background:CRD, border:`1px solid ${BD}`, overflow:'hidden' }}>
                 <div style={{ background:'#180410', padding:'10px 16px', display:'flex', justifyContent:'space-between', alignItems:'center', gap:12 }}>
                   <div>
@@ -1877,8 +1878,8 @@ function IntelBriefsTab() {
                   </div>
                 ) : (
                   <div style={{ padding:'10px 16px' }}>
-                    <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT,
-                      lineHeight:1.6, fontStyle:'italic', marginBottom:10 }}>
+                    <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:TXT,
+                      lineHeight:1.6, marginBottom:10 }}>
                       {b.content?.slice(0,300)}...
                     </p>
                     <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
@@ -2108,6 +2109,14 @@ function HighlightsTab() {
                   Remove
                 </button>
               </div>
+            )}
+            {briefs.length > 1 && (
+              <button onClick={() => setShowPrev(!showPrev)}
+                style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                  padding:'8px', background:'transparent', border:`1px solid ${BD}`,
+                  color:MUT, cursor:'pointer' }}>
+                {showPrev ? '▲ Hide previous briefs' : `▼ Show ${briefs.length - 1} previous briefs`}
+              </button>
             )}
           </div>
           {/* Embed URL */}
