@@ -583,25 +583,25 @@ export default function HalaFuTab({ isMobile }) {
       </div>
 
       {/* Intel Brief strip */}
-      <div style={{ background:'#0A0818', border:'1px solid #8A1030', padding:'16px 20px', marginBottom:2,
+      <div style={{ background:'#EDE0E8', border:`1px solid #D4BEC4`, padding:'16px 20px', marginBottom:2,
         display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
         <div>
           <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-            letterSpacing:'.12em', textTransform:'uppercase', color:'#8A1030', marginBottom:4 }}>
+            letterSpacing:'.12em', textTransform:'uppercase', color:'#7A4A60', marginBottom:4 }}>
             📊 FemSaidia Intelligence Brief
           </p>
-          <p style={{ fontFamily:"'Lora',serif", fontSize:14, fontWeight:700, color:'#F0D0D8', marginBottom:4 }}>
+          <p style={{ fontFamily:"'Lora',serif", fontSize:14, fontWeight:700, color:'#180410', marginBottom:4 }}>
             Bi-weekly femicide & misogyny intelligence
           </p>
-          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:'#8892B0', lineHeight:1.6 }}>
+          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:'#7A4A60', lineHeight:1.6 }}>
             AI-generated from live platform data — case tracker, misogyny index, scanner catches and community pulse.
             Updated every two weeks. Share with policymakers, funders and researchers.
           </p>
         </div>
         <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf"
           target="_blank" rel="noopener noreferrer"
-          style={{ display:'inline-flex', alignItems:'center', gap:8, background:'#8A1030',
-            color:'#F0D0D8', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700,
+          style={{ display:'inline-flex', alignItems:'center', gap:8, background:'#7A4A60',
+            color:'#F5EEF2', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700,
             padding:'12px 20px', textDecoration:'none', letterSpacing:'.04em', whiteSpace:'nowrap', flexShrink:0 }}>
           📥 Download latest brief
         </a>
