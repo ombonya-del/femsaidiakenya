@@ -16,7 +16,7 @@ SUPABASE_KEY = (
     "cm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MjI2NDAsImV4cCI6MjA5MzQ5ODY0MH0"
     ".KU_wtm0NVUz8vrMqgozPvTlmiCIf_yXP8Z3Gpmh599E"
 )
-OUTPUT_PATH = "/Users/vo/femsaidiakenya/public/intel-brief-latest.pdf"
+OUTPUT_PATH = "public/intel-brief-latest.pdf"
 
 W, H = A4          # 595.27 × 841.89
 MAR  = 22
