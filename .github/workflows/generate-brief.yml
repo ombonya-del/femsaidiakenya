@@ -1,0 +1,30 @@
+name: Generate Intel Brief PDF
+
+on:
+  schedule:
+    - cron: '30 3 1,15 * *'  # 1st and 15th, 30 min after Edge Function runs
+  workflow_dispatch:           # manual trigger anytime
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install reportlab requests
+
+      - name: Generate PDF
+        run: python3 scripts/generate_brief.py
+
+      - name: Commit and push
+        run: |
+          git config user.name "FemSaidia Bot"
+          git config user.email "bot@femsaidiakenya.org"
+          git add public/intel-brief-latest.pdf
+          git diff --staged --quiet || git commit -m "brief: auto $(date +%Y-%m-%d)"
+          git push
