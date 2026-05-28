@@ -534,6 +534,7 @@ function ArchetypesTab() {
     {id:'naive',      label:'The Naive',      color:'#1A3F6F'},
     {id:'precocious', label:'The Precocious',  color:'#C06020'},
     {id:'allin',      label:'The All-In',      color:'#7A4ABA'},
+    {id:'onandoff',   label:'The On & Off',    color:'#8A1030'},
   ]
   const SECTIONS = [
     {id:'protective', label:'Protect Yourself'},
@@ -2498,6 +2499,7 @@ export default function App() {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab]         = useState('submissions')
+  const [openGroup, setOpenGroup] = useState(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -2538,16 +2540,16 @@ export default function App() {
             <div key={g.id} style={{ position:'relative', display:'inline-flex', alignItems:'center' }}>
               <button
                 className={`nav-tab${groupActive?' active':''}`}
-                onClick={() => { if (!groupActive) setTab(g.tabs[0].id) }}
+                onClick={() => setOpenGroup(openGroup === g.id ? null : g.id)}
                 style={{ borderBottom: groupActive ? `2px solid ${g.color}` : '2px solid transparent' }}>
-                {g.label} {groupActive ? '▲' : '▼'}
+                {g.label} {openGroup === g.id ? '▲' : '▼'}
               </button>
-              {groupActive && (
+              {openGroup === g.id && (
                 <div style={{ position:'absolute', top:'100%', left:0, background:'#4A1A30',
                   border:'1px solid rgba(255,255,255,0.15)', zIndex:100, minWidth:160, boxShadow:'0 4px 12px rgba(0,0,0,0.3)' }}>
                   {g.tabs.map(t => (
                     <button key={t.id}
-                      onClick={() => setTab(t.id)}
+                      onClick={() => { setTab(t.id); setOpenGroup(null) }}
                       style={{ display:'flex', alignItems:'center', gap:8, width:'100%',
                         padding:'10px 14px', background: tab===t.id ? g.color : 'transparent',
                         border:'none', borderBottom:'1px solid rgba(255,255,255,0.08)',
