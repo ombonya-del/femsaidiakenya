@@ -9,6 +9,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico'],
       manifest: {
+        id: 'redflag-femsaidia-kenya',
         name: 'Red Flag',
         short_name: 'Red Flag',
         description: 'Safety intelligence for women in Kenya. JiJue · JiTume · LindaLinda',
