@@ -572,7 +572,7 @@ export default function HalaFuTab({ isMobile }) {
               letterSpacing:'.04em', whiteSpace:'nowrap' }}>
             📄 Download Halafu? brief
           </a>
-          <a href="/intel-brief-latest.pdf" target="_blank" rel="noopener noreferrer"
+          <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf" target="_blank" rel="noopener noreferrer"
             style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.08)',
               color:'#D4B0B8', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:600,
               padding:'10px 18px', textDecoration:'none', border:'1px solid rgba(255,255,255,0.15)',
@@ -598,7 +598,7 @@ export default function HalaFuTab({ isMobile }) {
             Updated every two weeks. Share with policymakers, funders and researchers.
           </p>
         </div>
-        <a href="/intel-brief-latest.pdf"
+        <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf"
           target="_blank" rel="noopener noreferrer"
           style={{ display:'inline-flex', alignItems:'center', gap:8, background:'#7A4A60',
             color:'#F5EEF2', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700,
@@ -631,7 +631,7 @@ export default function HalaFuTab({ isMobile }) {
                       {b.period_start} — {b.period_end}
                     </p>
                   </div>
-                  <a href="/intel-brief-latest.pdf"
+                  <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf"
                     target="_blank" rel="noopener noreferrer"
                     style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
                       color:A, textDecoration:'none', flexShrink:0 }}>
