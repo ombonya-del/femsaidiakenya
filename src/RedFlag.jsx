@@ -187,8 +187,16 @@ function ProfileModal({p, onClose}) {
 function ArchetypeCard({a, getContent}) {
   const [open, setOpen] = useState(false)
   const [tab, setTab]   = useState('redflags')
+  const [voices, setVoices] = useState([])
   const redFlags   = getContent ? getContent(a.id,'redflags',null)   : null
   const protective = getContent ? getContent(a.id,'protective',null) : null
+
+  const loadVoices = () => {
+    supabase.from('archetype_voices').select('*')
+      .eq('archetype_id', a.id).eq('status','published')
+      .order('created_at',{ascending:false})
+      .then(({data}) => setVoices(data||[]))
+  }
   return (
     <div style={{border:`2px solid ${a.color}`,marginBottom:16,background:CRD}}>
       <div onClick={()=>setOpen(!open)} style={{background:a.color,padding:'16px 20px',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
@@ -245,9 +253,29 @@ function ArchetypeCard({a, getContent}) {
             })}
           </div>}
           {tab==='sister'&&(
-            <div style={{background:CRD,padding:'32px 28px',borderLeft:`4px solid ${a.color}`}}>
-              <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,letterSpacing:'.15em',textTransform:'uppercase',color:a.color,marginBottom:20}}>From someone who has seen this</div>
-              <p style={{fontFamily:"'Lora',serif",fontSize:20,color:TXT,lineHeight:1.85,fontStyle:'italic',margin:0}}>"{a.sisterSays}"</p>
+            <div>
+              <div style={{background:CRD,padding:'32px 28px',borderLeft:`4px solid ${a.color}`,marginBottom:12}}>
+                <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,letterSpacing:'.15em',textTransform:'uppercase',color:a.color,marginBottom:20}}>From someone who has seen this</div>
+                <p style={{fontFamily:"'Lora',serif",fontSize:20,color:TXT,lineHeight:1.85,fontStyle:'italic',margin:0}}>"{a.sisterSays}"</p>
+              </div>
+              {(() => { if (voices.length===0) loadVoices(); return null })()}
+              {voices.length > 0 && (
+                <div>
+                  <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,letterSpacing:'.12em',textTransform:'uppercase',color:a.color,marginBottom:8}}>Community voices</p>
+                  {voices.map((v,i) => (
+                    <div key={v.id||i} style={{background:'#fff',border:`1px solid ${BD}`,borderLeft:`3px solid ${a.color}`,padding:'16px 18px',marginBottom:8}}>
+                      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+                        <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',padding:'2px 8px',background:a.color,color:'#fff'}}>
+                          {v.voice_type==='survivor'?'Survivor':v.voice_type==='left_behind'?'Left behind':v.voice_type==='witness'?'Witness':'Community'}
+                        </span>
+                        <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT}}>{v.name||'Anonymous'}</span>
+                      </div>
+                      <p style={{fontFamily:"'Lora',serif",fontSize:14,color:TXT,lineHeight:1.8,fontStyle:'italic',margin:0}}>"{v.story}"</p>
+                      {v.relationship && <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,marginTop:6}}>— {v.relationship}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
