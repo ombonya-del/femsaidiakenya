@@ -8,6 +8,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
+        id: 'itika-responder-network',
         name: 'Itika — First Responder Network',
         short_name: 'Itika',
         description: 'FemSaidia Kenya First Responder Network',
@@ -15,7 +16,7 @@ export default defineConfig({
         background_color: '#0A2A1A',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
+        start_url: 'https://itika.femsaidiakenya.org/',
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png' }
