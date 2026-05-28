@@ -539,6 +539,7 @@ function ArchetypesTab() {
   const SECTIONS = [
     {id:'protective', label:'Protect Yourself'},
     {id:'redflags',   label:'Red Flags'},
+    {id:'realtalk',   label:'Real Talk'},
   ]
   const [items,      setItems]      = useState([])
   const [loading,    setLoading]    = useState(true)
@@ -679,6 +680,7 @@ function VoicesTab() {
     {id:'naive',color:'#1A3F6F',label:'The Naive'},
     {id:'precocious',color:'#C06020',label:'The Precocious'},
     {id:'allin',color:'#7A4ABA',label:'The All-In'},
+    {id:'onandoff',color:'#8A1030',label:'The On & Off'},
   ]
   const [voices,     setVoices]     = useState([])
   const [loading,    setLoading]    = useState(true)
@@ -712,7 +714,7 @@ function VoicesTab() {
         <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT }}>Survivor stories, left-behind reflections and witness accounts.</p>
       </div>
       <div style={{ display:'flex', gap:8, marginBottom:12, flexWrap:'wrap' }}>
-        {['all','naive','precocious','allin'].map(a => (
+        {['all','naive','precocious','allin','onandoff'].map(a => (
           <button key={a} onClick={()=>setArchFilter(a)}
             style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
               padding:'5px 12px', border:`1px solid ${BD}`, cursor:'pointer',
@@ -765,6 +767,7 @@ function VoicesTab() {
                     onChange={e=>setEditStory({...editStory,archetype_id:e.target.value})}
                     style={inputSt}>
                     <option value="naive">The Naive</option>
+                    <option value="onandoff">The On & Off</option>
                     <option value="precocious">The Precocious</option>
                     <option value="allin">The All-In</option>
                   </select>
@@ -1281,6 +1284,8 @@ function KaaRadaAdminTab() {
   const [entries,   setEntries]   = useState([])
   const [urlEdit,    setUrlEdit]    = useState(null) // id of entry being url-edited
   const [urlInput,   setUrlInput]   = useState('')
+  const [editEntry,  setEditEntry]  = useState(null)
+  const [editForm,   setEditForm]   = useState({})
   const [loading,   setLoading]   = useState(true)
   const [importing, setImporting] = useState(false)
   const [url,       setUrl]       = useState('')
@@ -1300,6 +1305,12 @@ function KaaRadaAdminTab() {
   const COUNTIES    = ['Baringo','Bomet','Bungoma','Busia','Elegeyo-Marakwet','Embu','Garissa','Homa Bay','Isiolo','Kajiado','Kakamega','Kericho','Kiambu','Kilifi','Kirinyaga','Kisii','Kisumu','Kitui','Kwale','Laikipia','Lamu','Machakos','Makueni','Mandera','Marsabit','Meru','Migori','Mombasa','Muranga','Nairobi','Nakuru','Nandi','Narok','Nyamira','Nyandarua','Nyeri','Samburu','Siaya','Taita Taveta','Tana River','Tharaka Nithi','Trans Nzoia','Turkana','Uasin Gishu','Vihiga','Wajir','West Pokot']
 
   useEffect(() => { loadEntries() }, [])
+
+  const saveEdit = async () => {
+    const { error } = await supabase.from('kaarada').update(editForm).eq('id', editEntry)
+    if (error) { alert('Error: ' + error.message); return }
+    setEditEntry(null); loadEntries()
+  }
 
   const loadEntries = async () => {
     setLoading(true)
@@ -1632,11 +1643,47 @@ function KaaRadaAdminTab() {
                     ⚖️ Court
                   </a>
                 )}
+                <button onClick={()=>{ setEditEntry(e.id); setEditForm({...e}) }}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:600, padding:'5px 8px', border:`1px solid ${BD}`, background:CRD, color:MUT, cursor:'pointer' }}>
+                  Edit
+                </button>
                 <button onClick={()=>deleteEntry(e.id)}
                   style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:600, padding:'5px 8px', border:`1px solid ${A}`, background:'none', color:A, cursor:'pointer' }}>
                   Delete
                 </button>
               </div>
+              {editEntry === e.id && (
+                <div style={{ marginTop:12, background:'#F5EEF2', border:`1px solid ${BD}`, padding:16 }}>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8 }}>
+                    <div><label style={lSt}>Name</label><input value={editForm.name||''} onChange={ev=>setEditForm(f=>({...f,name:ev.target.value}))} style={iSt}/></div>
+                    <div><label style={lSt}>Alias</label><input value={editForm.alias||''} onChange={ev=>setEditForm(f=>({...f,alias:ev.target.value}))} style={iSt}/></div>
+                    <div><label style={lSt}>Crime type</label>
+                      <select value={editForm.crime_type||''} onChange={ev=>setEditForm(f=>({...f,crime_type:ev.target.value}))} style={sSt}>
+                        {CRIME_TYPES.map(c=><option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <div><label style={lSt}>Status</label>
+                      <select value={editForm.status||''} onChange={ev=>setEditForm(f=>({...f,status:ev.target.value}))} style={sSt}>
+                        {STATUSES.map(s=><option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                    <div><label style={lSt}>Conviction date</label><input type="date" value={editForm.conviction_date||''} onChange={ev=>setEditForm(f=>({...f,conviction_date:ev.target.value}))} style={iSt}/></div>
+                    <div><label style={lSt}>Sentence</label><input value={editForm.sentence||''} onChange={ev=>setEditForm(f=>({...f,sentence:ev.target.value}))} style={iSt}/></div>
+                    <div><label style={lSt}>Case number</label><input value={editForm.case_number||''} onChange={ev=>setEditForm(f=>({...f,case_number:ev.target.value}))} style={iSt}/></div>
+                    <div><label style={lSt}>County</label>
+                      <select value={editForm.county||''} onChange={ev=>setEditForm(f=>({...f,county:ev.target.value}))} style={sSt}>
+                        {COUNTIES.map(c=><option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div style={{ marginBottom:8 }}><label style={lSt}>Notes</label><input value={editForm.notes||''} onChange={ev=>setEditForm(f=>({...f,notes:ev.target.value}))} style={iSt}/></div>
+                  <div style={{ marginBottom:8 }}><label style={lSt}>Court record URL</label><input value={editForm.court_record_url||''} onChange={ev=>setEditForm(f=>({...f,court_record_url:ev.target.value}))} style={iSt}/></div>
+                  <div style={{ display:'flex', gap:6 }}>
+                    <button onClick={saveEdit} style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, padding:'6px 14px', background:A, color:'#F0D0D8', border:'none', cursor:'pointer' }}>Save changes</button>
+                    <button onClick={()=>setEditEntry(null)} style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, padding:'6px 12px', background:'none', border:`1px solid ${BD}`, color:MUT, cursor:'pointer' }}>Cancel</button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
