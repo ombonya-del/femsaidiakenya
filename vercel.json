@@ -1,1 +1,11 @@
-{ "framework": "vite" }
+{
+  "headers": [
+    {
+      "source": "/intel-brief-latest.pdf",
+      "headers": [
+        { "key": "Content-Type", "value": "application/pdf" },
+        { "key": "Content-Disposition", "value": "inline; filename=intel-brief-latest.pdf" }
+      ]
+    }
+  ]
+}
