@@ -188,6 +188,10 @@ function ArchetypeCard({a, getContent}) {
   const [open, setOpen] = useState(false)
   const [tab, setTab]   = useState('redflags')
   const [voices, setVoices] = useState([])
+  const [showVoiceForm, setShowVoiceForm] = useState(false)
+  const [vForm, setVForm] = useState({voice_type:'survivor', name:'', relationship:'', story:''})
+  const [vSending, setVSending] = useState(false)
+  const [vDone, setVDone] = useState(false)
   const redFlags   = getContent ? getContent(a.id,'redflags',null)   : null
   const protective = getContent ? getContent(a.id,'protective',null) : null
 
@@ -196,6 +200,22 @@ function ArchetypeCard({a, getContent}) {
       .eq('archetype_id', a.id).eq('status','published')
       .order('created_at',{ascending:false})
       .then(({data}) => setVoices(data||[]))
+  }
+
+  const submitVoice = async () => {
+    if (!vForm.story.trim()) return
+    setVSending(true)
+    await supabase.from('archetype_voices').insert({
+      archetype_id: a.id,
+      voice_type: vForm.voice_type,
+      name: vForm.name.trim() || 'Anonymous',
+      relationship: vForm.relationship.trim(),
+      story: vForm.story.trim(),
+      status: 'pending',
+    })
+    setVSending(false)
+    setVDone(true)
+    setTimeout(() => { setVDone(false); setShowVoiceForm(false); setVForm({voice_type:'survivor',name:'',relationship:'',story:''}) }, 2000)
   }
   return (
     <div style={{border:`2px solid ${a.color}`,marginBottom:16,background:CRD}}>
@@ -259,6 +279,44 @@ function ArchetypeCard({a, getContent}) {
                 <p style={{fontFamily:"'Lora',serif",fontSize:20,color:TXT,lineHeight:1.85,fontStyle:'italic',margin:0}}>"{a.sisterSays}"</p>
               </div>
               {(() => { if (voices.length===0) loadVoices(); return null })()}
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,letterSpacing:'.12em',textTransform:'uppercase',color:a.color}}>Community voices</p>
+                <button onClick={()=>setShowVoiceForm(!showVoiceForm)}
+                  style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,padding:'6px 12px',background:a.color,color:'#fff',border:'none',cursor:'pointer'}}>
+                  + Share your voice
+                </button>
+              </div>
+              {showVoiceForm && (
+                <div style={{background:CRD,border:`1px solid ${BD}`,padding:16,marginBottom:12}}>
+                  {vDone ? (
+                    <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'#2D7A3A',textAlign:'center',padding:12}}>✓ Thank you. Your voice will be reviewed and published.</p>
+                  ) : (
+                    <>
+                      <div style={{display:'flex',gap:6,marginBottom:10}}>
+                        {[{id:'survivor',label:'Survivor'},{id:'left_behind',label:'Left behind'},{id:'witness',label:'Witness'}].map(t=>(
+                          <button key={t.id} onClick={()=>setVForm(f=>({...f,voice_type:t.id}))}
+                            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,padding:'6px 10px',border:`1px solid ${BD}`,background:vForm.voice_type===t.id?a.color:CRD,color:vForm.voice_type===t.id?'#fff':MUT,cursor:'pointer'}}>
+                            {t.label}
+                          </button>
+                        ))}
+                      </div>
+                      <input value={vForm.name} onChange={e=>setVForm(f=>({...f,name:e.target.value}))}
+                        placeholder="Your name (optional — can be anonymous)"
+                        style={{width:'100%',padding:'8px 12px',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,background:'rgba(255,255,255,0.8)',border:`1px solid ${BD}`,color:TXT,outline:'none',boxSizing:'border-box',marginBottom:8}}/>
+                      <input value={vForm.relationship} onChange={e=>setVForm(f=>({...f,relationship:e.target.value}))}
+                        placeholder="Your relationship to this situation (optional)"
+                        style={{width:'100%',padding:'8px 12px',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,background:'rgba(255,255,255,0.8)',border:`1px solid ${BD}`,color:TXT,outline:'none',boxSizing:'border-box',marginBottom:8}}/>
+                      <textarea value={vForm.story} onChange={e=>setVForm(f=>({...f,story:e.target.value}))}
+                        placeholder="Share your experience, what you witnessed, or what you want other women to know..."
+                        rows={4} style={{width:'100%',padding:'8px 12px',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,background:'rgba(255,255,255,0.8)',border:`1px solid ${BD}`,color:TXT,outline:'none',resize:'vertical',boxSizing:'border-box',marginBottom:10}}/>
+                      <button onClick={submitVoice} disabled={vSending||!vForm.story.trim()}
+                        style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,padding:'8px 16px',background:vSending?MUT:a.color,color:'#fff',border:'none',cursor:'pointer'}}>
+                        {vSending?'Submitting...':'Submit voice'}
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
               {voices.length > 0 && (
                 <div>
                   <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,letterSpacing:'.12em',textTransform:'uppercase',color:a.color,marginBottom:8}}>Community voices</p>
