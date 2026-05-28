@@ -2,14 +2,18 @@ name: Generate Intel Brief PDF
 
 on:
   schedule:
-    - cron: '30 3 1,15 * *'  # 1st and 15th, 30 min after Edge Function runs
-  workflow_dispatch:           # manual trigger anytime
+    - cron: '30 3 1,15 * *'
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-python@v5
         with:
