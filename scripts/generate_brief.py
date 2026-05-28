@@ -16,7 +16,7 @@ SUPABASE_KEY = (
     "cm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MjI2NDAsImV4cCI6MjA5MzQ5ODY0MH0"
     ".KU_wtm0NVUz8vrMqgozPvTlmiCIf_yXP8Z3Gpmh599E"
 )
-OUTPUT_PATH = "public/intel-brief-latest.pdf"
+OUTPUT_PATH = "/Users/vo/femsaidiakenya/public/intel-brief-latest.pdf"
 
 W, H = A4          # 595.27 × 841.89
 MAR  = 22
@@ -705,38 +705,47 @@ def fetch_brief():
 
 def _parse_content(md: str) -> dict:
     """
-    Parse the markdown brief into section keys.
-    Looks for lines like:  * OVERVIEW  or  ** OVERVIEW
-    and collects everything until the next such heading.
+    Parse brief text into section keys.
+    Handles two formats:
+      AI-generated:  ---OVERVIEW---
+      Markdown:      * OVERVIEW  or  ** OVERVIEW
     """
-    import re
+    import re as re2
     sections = {}
     current  = None
     lines    = []
 
-    # heading pattern: optional **, then *, then optional >, then ALL CAPS label
-    head_re  = re.compile(
-        r"^[*>\s]*\*?\s*([A-Z][A-Z\s\-/]+?)\s*$"
-    )
-
-    # simpler: split on lines that are ALL CAPS (possibly prefixed with * > etc.)
     for line in md.split("\n"):
-        clean = line.strip().lstrip("*>\u2022\u00bb ").strip()
-        # Detect section header: short, ALL CAPS, no period
-        if (clean and clean == clean.upper()
-                and len(clean) > 3 and len(clean) < 60
-                and "." not in clean and clean.replace(" ","").replace("-","").replace("/","").isalpha()):
+        # Format 1: AI-generated  ---SECTION_KEY---
+        m = re2.match(r'^---([A-Z_]+)---\s*$', line.strip())
+        if m:
             if current is not None:
                 sections[current] = "\n".join(lines).strip()
-            current = _normalise_key(clean)
+            current = m.group(1)
             lines   = []
-        else:
-            lines.append(line)
+            continue
+
+        # Format 2: markdown  * SECTION HEADING
+        clean = line.strip().lstrip("*>\u2022\u2013 ").strip()
+        if (clean and clean == clean.upper()
+                and 3 < len(clean) < 65
+                and "." not in clean
+                and clean.replace(" ","").replace("-","").replace("/","").replace("_","").isalpha()):
+            key = _normalise_key(clean)
+            if key != clean.replace(" ","_"):
+                if current is not None:
+                    sections[current] = "\n".join(lines).strip()
+                current = key
+                lines   = []
+                continue
+
+        lines.append(line)
 
     if current is not None:
         sections[current] = "\n".join(lines).strip()
 
     return sections
+
 
 def _normalise_key(heading: str) -> str:
     """Map any heading variant to the key the draw_ functions expect."""
