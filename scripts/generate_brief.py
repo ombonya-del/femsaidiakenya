@@ -279,34 +279,25 @@ def draw_misogyny(c, x, y, w, h, brief, snap):
     gcy   = y+h-14-GZ + GZ//2 - 5
     draw_gauge(c, gcx, gcy, min(50, w//2-16), mi, 100.0)
 
-    # delta badge
+    # delta in sparkline label — no separate badge (avoids overlap)
+    SZ = round(h * 0.33)
+    sy = y + SZ
     try:
-        dv  = float(delta)
-        ds  = f"▲ +{int(dv)} pts" if dv>=0 else f"▼ {int(dv)} pts"
-        dc  = ALERT if dv>0 else POS
-        dbg = T_RED if dv>0 else T_GRN
-        tw_ = c.stringWidth(ds,FB,7.5)+14
-        rrect(c, gcx-tw_/2, gcy-52, tw_, 14, r=4, fill=dbg)
-        c.setFont(FB,7.5); c.setFillColor(dc)
-        c.drawCentredString(gcx, gcy-44, ds)
-    except: pass
-
-    # sparkline strip in bottom 32 %
-    SZ   = round(h * 0.32)
-    sy   = y + SZ
+        dv = float(delta)
+        ds = f"+{int(dv)}" if dv>=0 else str(int(dv))
+        dc = ALERT if dv>0 else POS
+        trend_lbl = f"INDEX TREND  ·  {ds} pts from prev period"
+    except Exception:
+        dc = MUTED
+        trend_lbl = "INDEX TREND  ·  this period vs prev"
     hrule(c, x+10, sy, w-20, CSEP)
-    c.setFont(FR,6.5); c.setFillColor(MUTED)
-    c.drawString(x+14, sy-10, "INDEX TREND  ·  this period vs prev")
+    c.setFont(FB,6.5); c.setFillColor(dc)
+    c.drawString(x+14, sy-11, trend_lbl)
     if curr and len(curr)>=2:
-        sparkline(c, x+14, y+10, w-28, SZ-22, curr, prev, BRAND)
+        sparkline(c, x+14, y+8, w-28, SZ-24, curr, prev, BRAND)
     else:
-        c.setFont(FI,8); c.setFillColor(CSEP)
-        c.drawCentredString(x+w/2, y+SZ/2, "trend data not available")
-
-    # context line
-    txt = brief.get("MISOGYNY_INDEX","")
-    if txt:
-        wrap_into(c, txt[:120], x+14, sy-22, w-28, 22, FR, 7.2, MUTED, lead=11)
+        c.setFont(FI,7.5); c.setFillColor(CSEP)
+        c.drawCentredString(x+w/2, y+SZ//2, "trend data not available")
 
 
 # ── 3. RECORDED INCIDENTS (right card) ───────────────────────────────────────
