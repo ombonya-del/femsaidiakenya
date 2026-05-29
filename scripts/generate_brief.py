@@ -273,11 +273,12 @@ def draw_misogyny(c, x, y, w, h, brief, snap):
     curr  = snap.get("weekly_incidents",[])
     prev  = snap.get("prev_weekly_incidents",[])
 
-    # gauge — vertically centred in top 58 % of card
-    GZ    = round(h * 0.58)
-    gcx   = x + w/2
-    gcy   = y+h-14-GZ + GZ//2 - 5
-    draw_gauge(c, gcx, gcy, min(50, w//2-16), mi, 100.0)
+    # gauge — top 62%, smaller radius, no overlap
+    GZ  = round(h * 0.62)
+    gcx = x + w/2
+    gcy = y + h - 14 - GZ + GZ//2
+    r   = min(40, w//2 - 22)
+    draw_gauge(c, gcx, gcy, r, mi, 100.0)
 
     # delta in sparkline label — no separate badge (avoids overlap)
     SZ = round(h * 0.33)
@@ -616,14 +617,14 @@ def draw_ask(c, x, y, w, h, brief, snap):
             if cy2 < y+10: break
             num = str(j*2+col_i+1).zfill(2)
             # index number
-            c.setFont(FB,11); c.setFillColor(BRAND2)
+            c.setFont(FB,14); c.setFillColor(BRAND2)
             c.drawString(cx2, cy2, num)
-            nw2 = c.stringWidth(num,FB,11)+6
+            nw2 = c.stringWidth(num,FB,14)+8
             # text
-            c.setFont(FR,7.8); c.setFillColor(HexColor("#F0D0D8"))
-            cpl2=max(1,int((col_w-nw2-4)/(7.8*0.57)))
+            c.setFont(FR,9); c.setFillColor(HexColor("#F0D0D8"))
+            cpl2=max(1,int((col_w-nw2-4)/(9*0.57)))
             for ln in textwrap.wrap(txt[:200],cpl2):
-                c.drawString(cx2+nw2, cy2, ln); cy2-=11
+                c.drawString(cx2+nw2, cy2, ln); cy2-=13
             cy2-=7
 
 
