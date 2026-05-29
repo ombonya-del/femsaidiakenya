@@ -514,6 +514,7 @@ function ProjectCard({ p, isMobile }) {
 export default function HalaFuTab({ isMobile }) {
   const [lane, setLane] = useState('all')
   const [briefs, setBriefs] = useState([])
+  const [showPDF, setShowPDF] = useState(false)
   const [showPrevBriefs, setShowPrevBriefs] = useState(false)
   const filtered = lane === 'all' ? PROJECTS : PROJECTS.filter(p => p.lane === lane)
 
@@ -572,11 +573,7 @@ export default function HalaFuTab({ isMobile }) {
               letterSpacing:'.04em', whiteSpace:'nowrap' }}>
             📄 Download Halafu? brief
           </a>
-          <a href="/intel-brief-latest.pdf" download target="_blank" rel="noopener noreferrer"
-            style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.08)',
-              color:'#D4B0B8', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:600,
-              padding:'10px 18px', textDecoration:'none', border:'1px solid rgba(255,255,255,0.15)',
-              letterSpacing:'.04em', whiteSpace:'nowrap' }}>
+          <button onClick={() => setShowPDF(true)}
             📊 Download Intel Brief
           </a>
         </div>
@@ -598,11 +595,7 @@ export default function HalaFuTab({ isMobile }) {
             Updated every two weeks. Share with policymakers, funders and researchers.
           </p>
         </div>
-        <a href="/intel-brief-latest.pdf" download
-          target="_blank" rel="noopener noreferrer"
-          style={{ display:'inline-flex', alignItems:'center', gap:8, background:'#7A4A60',
-            color:'#F5EEF2', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700,
-            padding:'12px 20px', textDecoration:'none', letterSpacing:'.04em', whiteSpace:'nowrap', flexShrink:0 }}>
+        <button onClick={() => setShowPDF(true)}
           📥 Download latest brief
         </a>
       </div>
@@ -631,10 +624,7 @@ export default function HalaFuTab({ isMobile }) {
                       {b.period_start} — {b.period_end}
                     </p>
                   </div>
-                  <a href="/intel-brief-latest.pdf" download
-                    target="_blank" rel="noopener noreferrer"
-                    style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-                      color:A, textDecoration:'none', flexShrink:0 }}>
+                  <button onClick={() => setShowPDF(true)}
                     📥 Download
                   </a>
                 </div>
@@ -707,5 +697,56 @@ export default function HalaFuTab({ isMobile }) {
         </a>
       </div>
     </div>
+      {/* ── PDF Viewer Modal ─────────────────────────────────────────── */}
+      {showPDF && (
+        <div style={{
+          position:'fixed', inset:0, zIndex:9999,
+          background:'rgba(0,0,0,0.85)',
+          display:'flex', flexDirection:'column',
+          alignItems:'center', justifyContent:'center',
+          padding:'16px',
+        }}>
+          {/* close bar */}
+          <div style={{
+            width:'100%', maxWidth:'860px',
+            display:'flex', justifyContent:'space-between',
+            alignItems:'center', marginBottom:'10px',
+          }}>
+            <span style={{color:'#F0D0D8', fontWeight:700, fontSize:'14px', letterSpacing:'.08em'}}>
+              INTEL BRIEF
+            </span>
+            <button
+              onClick={() => setShowPDF(false)}
+              style={{
+                background:'#8A1030', color:'#fff', border:'none',
+                borderRadius:'6px', padding:'6px 16px',
+                fontWeight:700, fontSize:'13px', cursor:'pointer',
+              }}>
+              ✕ Close
+            </button>
+          </div>
+          {/* PDF frame */}
+          <iframe
+            src="/intel-brief-latest.pdf"
+            title="FemSaidia Intel Brief"
+            style={{
+              width:'100%', maxWidth:'860px',
+              height:'80vh', border:'none',
+              borderRadius:'8px', background:'#fff',
+            }}
+          />
+          {/* external link fallback */}
+          <a
+            href="/intel-brief-latest.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              marginTop:'10px', color:'#C05010',
+              fontSize:'12px', textDecoration:'underline',
+            }}>
+            Open in new tab ↗
+          </a>
+        </div>
+      )}
   )
 }
