@@ -727,7 +727,7 @@ export default function HalaFuTab({ isMobile }) {
           </div>
           {/* PDF frame */}
           <iframe
-            src="/intel-brief-latest.pdf"
+            src="/intel-brief-latest-viewer.html"
             title="FemSaidia Intel Brief"
             style={{
               width:'100%', maxWidth:'860px',
