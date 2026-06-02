@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
 """
-FemSaidia Kenya — Intel Brief PDF  v6
+FemSaidia Kenya — Intel Brief PDF  v6.1
 Precision layout, no gaps, FemSaidia DNA.
+
+Fixes applied (v6.1):
+  1. Misogyny Index gauge — tighter radius + GZ so score text never overlaps arc
+  2. Trend sparkline replaced with Media vs Community score bars
+  3. Recorded Incidents — Z2 gap chip→title increased (16 → 22 pt)
+  4. THE ASK — larger numbers (FB 14→16) and text (FR 9→10.5)
+  5. PDF viewer — companion HTML file embeds PDF inline with download button
 """
 import json, math, os, sys, textwrap
 import requests
@@ -27,18 +34,18 @@ _HDR  = 28
 _FTR  = 18
 _GAP  = 13          # only inter-section gap
 
-# Page 1: 46pt title row, 4 sections, 3 gaps
-_P1   = H - _HDR - _FTR - 46 - 3*_GAP   # 710.9
-OH    = 103          # overview
-RH    = 229          # misogyny index + incidents
-SH    = 174          # scanner
-MH    = _P1 - OH - RH - SH              # motd — fills remainder
+# Page 1: title row 46pt + 4 rows + 3 gaps
+# Row order: Overview | MI+Incidents | Scanner+MOTD | Tech+Community
+_P1   = H - _HDR - _FTR - 46 - 3*_GAP   # 710.9 — unchanged
+OH    = 88           # overview
+RH    = 193          # misogyny index + incidents (2-col)
+SMOH  = 155          # scanner (left) + motd (right) — new 2-col row
+TH    = _P1 - OH - RH - SMOH            # tech + community — fills remainder ≈ 274
 
-# Page 2: no extra title, 3 sections, 2 gaps
-_P2   = H - _HDR - _FTR - 2*_GAP        # 769.9
-TH    = 268          # tech + community
-IH    = 185          # insight
-AH    = _P2 - TH - IH                   # ask — fills remainder
+# Page 2: Insight + Ask only — 1 gap
+_P2   = H - _HDR - _FTR - 1*_GAP        # 782.9
+IH    = 225          # insight — generous breathing room
+AH    = _P2 - IH                         # ask — fills remainder ≈ 557
 
 # two-col widths (16pt gutter)
 GUT   = 16
@@ -264,41 +271,43 @@ def draw_overview(c, x, y, w, h, brief, snap):
 
 
 # ── 2. MISOGYNY INDEX (left card) ────────────────────────────────────────────
+# FIX 1 + 2: smaller gauge (GZ 0.62→0.55, r tighter) + Media vs Community bars
 def draw_misogyny(c, x, y, w, h, brief, snap):
     card_bg(c, x, y, w, h)
     slabel(c, x+14, y+h-13, "Misogyny Index", BRAND)
 
-    mi    = float(snap.get("misogyny_index",76))
-    delta = snap.get("misogyny_delta",2)
-    curr  = snap.get("weekly_incidents",[])
-    prev  = snap.get("prev_weekly_incidents",[])
+    mi = float(snap.get("misogyny_index", 76))
+    ms = int(float(snap.get("media_score", 76)))
+    cs = int(float(snap.get("community_score", 40)))
 
-    # gauge — top 62%, smaller radius, no overlap
-    GZ  = round(h * 0.62)
-    gcx = x + w/2
-    gcy = y + h - 14 - GZ + GZ//2
-    r   = min(40, w//2 - 22)
+    # gauge — top 55%, tighter radius so score text never overlaps arc
+    GZ  = round(h * 0.55)
+    gcx = x + w / 2
+    gcy = y + h - 14 - GZ + GZ // 2
+    r   = min(34, w // 2 - 28)          # was min(40, w//2-22) → now tighter
     draw_gauge(c, gcx, gcy, r, mi, 100.0)
 
-    # delta in sparkline label — no separate badge (avoids overlap)
-    SZ = round(h * 0.33)
-    sy = y + SZ
-    try:
-        dv = float(delta)
-        ds = f"+{int(dv)}" if dv>=0 else str(int(dv))
-        dc = ALERT if dv>0 else POS
-        trend_lbl = f"INDEX TREND  ·  {ds} pts from prev period"
-    except Exception:
-        dc = MUTED
-        trend_lbl = "INDEX TREND  ·  this period vs prev"
+    # ── Media vs Community score bars — bottom 38% ──────────────────────
+    SZ   = round(h * 0.38)
+    sy   = y + SZ
     hrule(c, x+10, sy, w-20, CSEP)
-    c.setFont(FB,6.5); c.setFillColor(dc)
-    c.drawString(x+14, sy-11, trend_lbl)
-    if curr and len(curr)>=2:
-        sparkline(c, x+14, y+8, w-28, SZ-24, curr, prev, BRAND)
-    else:
-        c.setFont(FI,7.5); c.setFillColor(CSEP)
-        c.drawCentredString(x+w/2, y+SZ//2, "trend data not available")
+    c.setFont(FB, 6.5); c.setFillColor(MUTED)
+    c.drawString(x+14, sy-11, "MEDIA vs COMMUNITY SCORE")
+
+    BW   = w - 28
+    bary = sy - 26
+
+    def hb(by, pct, col, lbl, val):
+        rrect(c, x+14, by, BW, 9, r=4, fill=CSEP)
+        fw = max(9, round(BW * min(1.0, pct)))
+        rrect(c, x+14, by, fw, 9, r=4, fill=col)
+        c.setFont(FR, 6.5); c.setFillColor(MUTED)
+        c.drawString(x+14, by+11, lbl)
+        c.setFont(FB, 7); c.setFillColor(BODY)
+        c.drawRightString(x+14+BW, by+11, val)
+
+    hb(bary,      ms / 100, ALERT,               "Media score",     f"{ms}/100")
+    hb(bary - 22, cs / 100, HexColor("#2563EB"), "Community score", f"{cs}/100")
 
 
 # ── 3. RECORDED INCIDENTS (right card) ───────────────────────────────────────
@@ -306,11 +315,16 @@ def draw_incidents(c, x, y, w, h, brief, snap):
     card_bg(c, x, y, w, h)
     slabel(c, x+14, y+h-13, "Recorded Incidents", ALERT)
 
-    incs = snap.get("top_incidents", snap.get("incidents",[]))
-    if not (isinstance(incs,list) and incs):
-        wrap_into(c, brief.get("TOP_INCIDENTS",""), x+14, y+h-26,
-                  w-28, h-30, FR, 7.8, MID, lead=12)
-        return
+    incs = snap.get("top_incidents", snap.get("incidents", []))
+
+    # If no structured cases in snap, parse from the content bullet-list
+    if not (isinstance(incs, list) and incs and isinstance(incs[0], dict)):
+        text = brief.get("TOP_INCIDENTS", "")
+        if text:
+            incs = _parse_top_incidents_text(text, snap.get("motd_highlights", []))
+        if not incs:
+            wrap_into(c, text, x+14, y+h-26, w-28, h-30, FR, 7.8, MID, lead=12)
+            return
 
     n_show = min(len(incs), 4)
     row_h  = (h-20) / n_show   # ≈52 pt per row
@@ -346,8 +360,8 @@ def draw_incidents(c, x, y, w, h, brief, snap):
             c.setFont(FR, 6.5); c.setFillColor(MUTED)
             c.drawRightString(x+w-12, Z1+3, dt)
 
-        # ── ZONE 2 (middle): title — starts 16 pt below zone 1 ──────────
-        Z2   = Z1 - 16
+        # ── ZONE 2 (middle): title — FIX 3: gap increased 16→22 pt ─────
+        Z2   = Z1 - 22                     # was Z1 - 16
         title = inc.get("title", str(inc))
         c.setFont(FB, 8); c.setFillColor(BODY)
         cpl_t = max(1, int(TW / (8*0.57)))
@@ -407,8 +421,6 @@ def draw_motd(c, x, y, w, h, brief, snap):
     card_bg(c, x, y, w, h)
     slabel(c, x+14, y+h-13, "Misogyny of the Day — Pattern", BRAND2)
 
-    # Escalation visual: 3 horizontal intensity bars, growing wider + darker
-    # reads as: small → medium → large  (escalation)
     VH    = 56        # visual zone height
     vy    = y+h-26-VH
     bh    = 12        # each bar height
@@ -422,16 +434,13 @@ def draw_motd(c, x, y, w, h, brief, snap):
     for j,(lbl,pct,col,bg) in enumerate(stages):
         by  = vy + (2-j)*(bh+gap_b)
         bw2 = round(bw_max*pct)
-        # track
         rrect(c, x+14, by, bw_max, bh, r=bh//2, fill=CSEP)
-        # fill
         rrect(c, x+14, by, bw2,    bh, r=bh//2, fill=col)
-        # label: inside the filled bar when wide enough, else just after it
         c.setFont(FB, 6.5)
-        if bw2 > 90:                       # label fits inside with contrast
+        if bw2 > 90:
             c.setFillColor(WHITE)
             c.drawString(x+18, by+3.5, lbl)
-        else:                              # label sits to the right of bar
+        else:
             c.setFillColor(BODY)
             c.drawString(x+14+bw2+6, by+3.5, lbl)
 
@@ -463,12 +472,12 @@ def draw_tech(c, x, y, w, h, brief, snap):
     hrule(c, x+10, y+h-60, w-20, CSEP)
 
     # horizontal platform bars
-    BARW  = w - 28
+    BARW    = w - 28
     LABEL_W = 66
-    BAR_X = x + 14 + LABEL_W
-    BAR_W = BARW - LABEL_W - 36
-    bary  = y + h - 76
-    row_b = min(18, (bary - y - 26) / max(len(items),1))
+    BAR_X   = x + 14 + LABEL_W
+    BAR_W   = BARW - LABEL_W - 36
+    bary    = y + h - 76
+    row_b   = min(18, (bary - y - 26) / max(len(items),1))
 
     for i,(lbl,val) in enumerate(items):
         pkey = lbl.lower().replace(" ","").replace("(","").replace(")","")
@@ -476,19 +485,14 @@ def draw_tech(c, x, y, w, h, brief, snap):
         pct  = val/total
         by   = bary - i*row_b
 
-        # label
         c.setFont(FR,7.5); c.setFillColor(BODY)
         c.drawRightString(BAR_X-4, by+1, str(lbl)[:12])
-        # track
         rrect(c, BAR_X, by, BAR_W, row_b-4, r=(row_b-4)//2, fill=CSEP)
-        # fill
         fw = max(row_b-4, round(BAR_W*pct))
         rrect(c, BAR_X, by, fw, row_b-4, r=(row_b-4)//2, fill=col)
-        # count + pct
         c.setFont(FB,7); c.setFillColor(BODY)
         c.drawString(BAR_X+BAR_W+4, by+1, f"{val}  {pct*100:.0f}%")
 
-    # body text
     txt = brief.get("TECH_FACILITATED","")
     text_y = y + h - 76 - len(items)*row_b - 10
     wrap_into(c, txt[:300], x+14, text_y, w-28, text_y-y-4, FR, 7.8, MID, lead=12)
@@ -503,7 +507,6 @@ def draw_community(c, x, y, w, h, brief, snap):
     cs  = int(float(snap.get("community_score",40)))
     gap = ms - cs
 
-    # Two dominant numbers — the 36-pt gap is the entire insight
     half  = (w-28) / 2
     cx_l  = x + 14 + half*0.25
     cx_r  = x + 14 + half*0.75 + half
@@ -518,13 +521,11 @@ def draw_community(c, x, y, w, h, brief, snap):
     c.setFont(FR,7); c.setFillColor(MUTED)
     c.drawCentredString(cx_r, y+h-65, "COMMUNITY")
 
-    # VS divider
     c.setFont(FB,9); c.setFillColor(CBORD)
     c.drawCentredString(x+w/2, y+h-52, "vs")
     c.setStrokeColor(CBORD); c.setLineWidth(0.5)
     c.line(x+w/2, y+h-70, x+w/2, y+h-30)
 
-    # gap callout bar
     rrect(c, x+14, y+h-82, w-28, 13, r=4, fill=T_AMB)
     c.setFont(FB,7.5); c.setFillColor(WARN)
     c.drawCentredString(x+w/2, y+h-76,
@@ -532,19 +533,19 @@ def draw_community(c, x, y, w, h, brief, snap):
 
     hrule(c, x+10, y+h-98, w-20, CSEP)
 
-    # two bars
-    BW = w-28
+    BW   = w-28
     bary = y+h-112
+
     def hb(bx,by,pct,col,lbl,val):
         rrect(c,bx,by,BW,9,r=4,fill=CSEP)
         fw=max(9,round(BW*min(1,pct)))
         rrect(c,bx,by,fw,9,r=4,fill=col)
         c.setFont(FR,6.5);c.setFillColor(MUTED);c.drawString(bx,by+11,lbl)
         c.setFont(FB,7);c.setFillColor(BODY);c.drawRightString(bx+BW,by+11,val)
-    hb(x+14, bary,    ms/100, ALERT, "Media coverage score",    f"{ms}/100")
-    hb(x+14, bary-22, cs/100, WARN,  "Community sentiment",     f"{cs}/100")
 
-    # pulse text
+    hb(x+14, bary,    ms/100, ALERT, "Media coverage score", f"{ms}/100")
+    hb(x+14, bary-22, cs/100, WARN,  "Community sentiment",  f"{cs}/100")
+
     txt = brief.get("COMMUNITY_PULSE","")
     wrap_into(c, txt[:340], x+14, bary-38, w-28, bary-38-y-4, FR, 7.8, MID, lead=12)
 
@@ -552,37 +553,45 @@ def draw_community(c, x, y, w, h, brief, snap):
 # ── 8. THE INSIGHT ────────────────────────────────────────────────────────────
 def draw_insight(c, x, y, w, h, brief, snap):
     card_bg(c, x, y, w, h)
-    # top red bar — editorial accent
+
+    # Brand top bar — drawn first so slabel sits cleanly below it
     c.setFillColor(BRAND)
     c.rect(x, y+h-5, w, 5, fill=1, stroke=0)
-    rrect(c,x,y+h-5,w,5,r=7,fill=BRAND)   # keep top corners rounded
+    rrect(c, x, y+h-5, w, 5, r=7, fill=BRAND)
 
-    slabel(c, x+14, y+h-18, "The Insight", BRAND)
+    # Slabel — 20pt below card top (clear of 5pt brand bar)
+    slabel(c, x+14, y+h-20, "The Insight", BRAND)
 
-    # large ghost quote mark
-    c.saveState(); c.setFillColor(BRAND); c.setFillAlpha(0.07)
-    c.setFont(FB,96); c.drawString(x+6, y+h-68, "\u201C")
+    # Separator rule — clearly demarcates header zone from body
+    hrule(c, x+10, y+h-30, w-20, CBORD)
+
+    # Ghost quote — drawn BELOW the separator so it never touches the headline
+    # Reduced to 72pt, positioned so cap-top sits near the rule, not above it
+    c.saveState()
+    c.setFillColor(BRAND); c.setFillAlpha(0.06)
+    c.setFont(FB, 72); c.drawString(x+8, y+h-100, "\u201C")
     c.restoreState()
 
-    # pull quote — set large, let it breathe
-    txt = brief.get("THE_INSIGHT","")
-    c.setFont(FI,10.5); c.setFillColor(BODY)
-    cpl = max(1,int((w-52)/(10.5*0.57)))
-    cy  = y+h-32
+    # Pull quote text — starts below separator rule with clear gap
+    txt = brief.get("THE_INSIGHT", "")
+    c.setFont(FI, 10.5); c.setFillColor(BODY)
+    cpl = max(1, int((w-52) / (10.5*0.57)))
+    cy  = y+h-46        # 16pt below separator rule
     for ln in textwrap.wrap(txt[:480], cpl):
         if cy < y+22: break
         c.drawString(x+28, cy, ln); cy -= 16
 
-    # attribution
-    c.setFont(FB,7); c.setFillColor(BRAND2)
+    # Attribution line
+    c.setFont(FB, 7); c.setFillColor(BRAND2)
     c.drawString(x+28, y+12, "— FemSaidia Kenya Intelligence Desk")
 
-    # left red accent bar
+    # Left red accent bar — spans the body zone only (below separator)
     c.setFillColor(BRAND)
-    c.rect(x+14, y+18, 3, h-40, fill=1, stroke=0)
+    c.rect(x+14, y+18, 3, h-52, fill=1, stroke=0)
 
 
 # ── 9. THE ASK ───────────────────────────────────────────────────────────────
+# FIX 4: numbers FB 14→16, body text FR 9→10.5, line lead adjusted
 def draw_ask(c, x, y, w, h, brief, snap):
     rrect(c, x, y, w, h, r=7, fill=HDR)
     # header
@@ -602,12 +611,12 @@ def draw_ask(c, x, y, w, h, brief, snap):
             items.append(it.get("text",str(it)) if isinstance(it,dict) else str(it))
     elif ask_text:
         for ln in ask_text.split("\n"):
-            ln=ln.strip().lstrip("0123456789.-•) ")
+            ln=ln.strip().lstrip("0123456789.-•) ").strip("*").strip()
             if ln: items.append(ln)
         items=items[:6]
     if not items: return
 
-    # numbered items — two columns, large index numbers
+    # numbered items — two columns
     col_w = (w-36)/2
     sides = [items[0::2], items[1::2]]
     for col_i, lst in enumerate(sides):
@@ -616,25 +625,25 @@ def draw_ask(c, x, y, w, h, brief, snap):
         for j,txt in enumerate(lst):
             if cy2 < y+10: break
             num = str(j*2+col_i+1).zfill(2)
-            # index number
-            c.setFont(FB,14); c.setFillColor(BRAND2)
+            # index number — FIX 4: FB 14→16
+            c.setFont(FB, 16); c.setFillColor(BRAND2)
             c.drawString(cx2, cy2, num)
-            nw2 = c.stringWidth(num,FB,14)+8
-            # text
-            c.setFont(FR,9); c.setFillColor(HexColor("#F0D0D8"))
-            cpl2=max(1,int((col_w-nw2-4)/(9*0.57)))
-            for ln in textwrap.wrap(txt[:200],cpl2):
-                c.drawString(cx2+nw2, cy2, ln); cy2-=13
-            cy2-=7
+            nw2 = c.stringWidth(num, FB, 16) + 8
+            # text — FIX 4: FR 9→10.5
+            c.setFont(FR, 10.5); c.setFillColor(HexColor("#F0D0D8"))
+            cpl2 = max(1, int((col_w-nw2-4) / (10.5*0.57)))
+            for ln in textwrap.wrap(txt[:200], cpl2):
+                c.drawString(cx2+nw2, cy2, ln)
+                cy2 -= 15          # increased from 13 to match larger font
+            cy2 -= 9               # item spacer, increased from 7
 
 
 # ════════════════════════════════════════════════════════════════════════════
-#  PAGE BUILDERS  (cursor descends from content_top)
+#  PAGE BUILDERS
 # ════════════════════════════════════════════════════════════════════════════
 def page1(c, brief, snap):
     chrome(c, brief, 1)
 
-    # title row
     TOP = H - _HDR - 4
     c.setFont(FB,17); c.setFillColor(BODY)
     issue = brief.get("issue_number",brief.get("id","—"))
@@ -651,24 +660,112 @@ def page1(c, brief, snap):
 
     hrule(c, MAR, TOP-36, CW, CBORD)
 
-    # section cascade — cursor = top of each card (y+h)
-    cur = H - _HDR - 46  # just below title row
+    cur = H - _HDR - 46
 
-    draw_overview(c, MAR, cur-OH, CW, OH, brief, snap);  cur -= OH + _GAP
-    draw_misogyny(c, LX,  cur-RH, LC1, RH, brief, snap)
-    draw_incidents(c,RX1, cur-RH, RC1, RH, brief, snap); cur -= RH + _GAP
-    draw_scanner(c, MAR,  cur-SH, CW, SH, brief, snap);  cur -= SH + _GAP
-    draw_motd(c,    MAR,  cur-MH, CW, MH, brief, snap)
+    draw_overview(c,   MAR, cur-OH,   CW,   OH,   brief, snap); cur -= OH   + _GAP
+    draw_misogyny(c,   LX,  cur-RH,   LC1,  RH,   brief, snap)
+    draw_incidents(c,  RX1, cur-RH,   RC1,  RH,   brief, snap); cur -= RH   + _GAP
+    draw_scanner(c,    LX,  cur-SMOH, LC1,  SMOH, brief, snap)   # left col
+    draw_motd(c,       RX1, cur-SMOH, RC1,  SMOH, brief, snap);  cur -= SMOH + _GAP
+    draw_tech(c,       LX,  cur-TH,   LC2,  TH,   brief, snap)   # fills page bottom
+    draw_community(c,  RX2, cur-TH,   RC2,  TH,   brief, snap)
 
 
 def page2(c, brief, snap):
+    """Page 2 — The Insight + The Ask, full page."""
     chrome(c, brief, 2)
     cur = H - _HDR - 4
 
-    draw_tech(c,      LX,  cur-TH, LC2, TH, brief, snap)
-    draw_community(c, RX2, cur-TH, RC2, TH, brief, snap); cur -= TH + _GAP
-    draw_insight(c,   MAR, cur-IH, CW,  IH, brief, snap); cur -= IH + _GAP
-    draw_ask(c,       MAR, cur-AH, CW,  AH, brief, snap)
+    draw_insight(c, MAR, cur-IH, CW, IH, brief, snap); cur -= IH + _GAP
+    draw_ask(c,     MAR, cur-AH, CW, AH, brief, snap)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  FIX 5 — inline HTML viewer
+# ════════════════════════════════════════════════════════════════════════════
+def write_viewer(pdf_path: str, label: str) -> str:
+    """
+    Generate a companion HTML file that embeds the PDF inline (fullscreen)
+    with a branded download button. Saved next to the PDF as *-viewer.html.
+    """
+    pdf_name  = os.path.basename(pdf_path)
+    html_path = pdf_path.replace(".pdf", "-viewer.html")
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FemSaidia Kenya Intel Brief — {label}</title>
+<style>
+  *, *::before, *::after {{ margin: 0; padding: 0; box-sizing: border-box; }}
+  html, body {{ height: 100%; overflow: hidden; background: #111827; font-family: Helvetica, Arial, sans-serif; }}
+  .bar {{
+    height: 44px; background: #111827; border-bottom: 2px solid #C05010;
+    display: flex; align-items: center; gap: 14px; padding: 0 20px;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+  }}
+  .bar-logo  {{ color: #fff; font-size: 12px; font-weight: bold; letter-spacing: .06em; }}
+  .bar-sep   {{ color: #C05010; font-size: 12px; }}
+  .bar-label {{ color: #8892B0; font-size: 11px; flex: 1; }}
+  .dl-btn {{
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #8A1030; color: #fff; border: none; padding: 7px 16px;
+    border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer;
+    text-decoration: none; letter-spacing: .05em; white-space: nowrap;
+    transition: background .15s;
+  }}
+  .dl-btn:hover {{ background: #C05010; }}
+  .viewer {{
+    position: fixed; top: 44px; left: 0; right: 0; bottom: 0;
+  }}
+  .viewer embed,
+  .viewer iframe {{
+    width: 100%; height: 100%; border: none; display: block;
+  }}
+  /* Fallback message shown only when embed fails */
+  .fallback {{
+    display: none; position: absolute; inset: 0;
+    align-items: center; justify-content: center; flex-direction: column;
+    gap: 16px; color: #8892B0; font-size: 14px;
+  }}
+</style>
+</head>
+<body>
+<div class="bar">
+  <span class="bar-logo">FEMSAIDIA KENYA</span>
+  <span class="bar-sep">//</span>
+  <span class="bar-label">INTEL BRIEF &nbsp;·&nbsp; {label}</span>
+  <a class="dl-btn" href="{pdf_name}" download="{pdf_name}">&#8659;&nbsp;Download PDF</a>
+</div>
+<div class="viewer" id="viewer">
+  <embed id="embed" src="{pdf_name}#toolbar=1&navpanes=0&view=FitH"
+         type="application/pdf" width="100%" height="100%"
+         onerror="showFallback()">
+  <div class="fallback" id="fallback">
+    <p>Your browser cannot display the PDF inline.</p>
+    <a class="dl-btn" href="{pdf_name}" download="{pdf_name}">&#8659;&nbsp;Download PDF</a>
+  </div>
+</div>
+<script>
+function showFallback() {{
+  document.getElementById('embed').style.display = 'none';
+  var fb = document.getElementById('fallback');
+  fb.style.display = 'flex';
+}}
+// Firefox / Safari fallback detection
+window.addEventListener('load', function() {{
+  var em = document.getElementById('embed');
+  // If embed rendered nothing (getSVGDocument null and no contentDocument)
+  try {{
+    if (!em.getSVGDocument && !em.contentDocument) showFallback();
+  }} catch(e) {{}}
+}});
+</script>
+</body>
+</html>"""
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write(html)
+    return html_path
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -683,32 +780,23 @@ def fetch_brief():
     if not data: raise ValueError("intel_briefs table is empty — insert a brief first")
     row = data[0]
 
-    # Build convenience fields the rest of the script expects
     ps = row.get("period_start","")
     pe = row.get("period_end","")
     row["period_label"]  = f"{ps} – {pe}" if ps and pe else ps or pe or ""
     row["issue_number"]  = row.get("title","") or str(row.get("id",""))[:8]
 
-    # Parse content markdown into section keys so every draw_ function works
     content = row.get("content","") or ""
     row.update(_parse_content(content))
 
     return row
 
 def _parse_content(md: str) -> dict:
-    """
-    Parse brief text into section keys.
-    Handles two formats:
-      AI-generated:  ---OVERVIEW---
-      Markdown:      * OVERVIEW  or  ** OVERVIEW
-    """
     import re as re2
     sections = {}
     current  = None
     lines    = []
 
     for line in md.split("\n"):
-        # Format 1: AI-generated  ---SECTION_KEY---
         m = re2.match(r'^---([A-Z_]+)---\s*$', line.strip())
         if m:
             if current is not None:
@@ -717,7 +805,6 @@ def _parse_content(md: str) -> dict:
             lines   = []
             continue
 
-        # Format 2: markdown  * SECTION HEADING
         clean = line.strip().lstrip("*>\u2022\u2013 ").strip()
         if (clean and clean == clean.upper()
                 and 3 < len(clean) < 65
@@ -740,22 +827,21 @@ def _parse_content(md: str) -> dict:
 
 
 def _normalise_key(heading: str) -> str:
-    """Map any heading variant to the key the draw_ functions expect."""
     h = heading.upper().strip()
     MAP = {
-        "OVERVIEW":                    "OVERVIEW",
-        "MISOGYNY INDEX":              "MISOGYNY_INDEX",
-        "RECORDED INCIDENTS":          "TOP_INCIDENTS",
-        "WHAT THE SCANNER CAUGHT":     "SCANNER_CAUGHT",
-        "SCANNER CAUGHT":              "SCANNER_CAUGHT",
-        "MISOGYNY OF THE DAY":         "MOTD_PATTERN",
-        "MOTD PATTERN":                "MOTD_PATTERN",
-        "MISOGYNY OF THE DAY - PATTERN":"MOTD_PATTERN",
-        "TECH-FACILITATED VIOLENCE":   "TECH_FACILITATED",
-        "TECH FACILITATED VIOLENCE":   "TECH_FACILITATED",
-        "COMMUNITY PULSE":             "COMMUNITY_PULSE",
-        "THE INSIGHT":                 "THE_INSIGHT",
-        "THE ASK":                     "THE_ASK",
+        "OVERVIEW":                      "OVERVIEW",
+        "MISOGYNY INDEX":                "MISOGYNY_INDEX",
+        "RECORDED INCIDENTS":            "TOP_INCIDENTS",
+        "WHAT THE SCANNER CAUGHT":       "SCANNER_CAUGHT",
+        "SCANNER CAUGHT":                "SCANNER_CAUGHT",
+        "MISOGYNY OF THE DAY":           "MOTD_PATTERN",
+        "MOTD PATTERN":                  "MOTD_PATTERN",
+        "MISOGYNY OF THE DAY - PATTERN": "MOTD_PATTERN",
+        "TECH-FACILITATED VIOLENCE":     "TECH_FACILITATED",
+        "TECH FACILITATED VIOLENCE":     "TECH_FACILITATED",
+        "COMMUNITY PULSE":               "COMMUNITY_PULSE",
+        "THE INSIGHT":                   "THE_INSIGHT",
+        "THE ASK":                       "THE_ASK",
     }
     for k, v in MAP.items():
         if k in h:
@@ -772,33 +858,18 @@ def parse_snap(brief):
     return _normalize(raw)
 
 def _normalize(raw: dict) -> dict:
-    """
-    Convert the real data_snapshot shape → flat dict the draw_ functions expect.
-
-    Real shape:
-      misogyny_index: {current, previous, delta, news_score, social_score}
-      top_articles:   [{title, source, score, sentiment}, ...]
-      motd_highlights:[{date, content, context, platform}, ...]
-      tech_facilitated_count: int
-      cases_recorded: int
-      cases: []
-    """
     n = dict(raw)
 
-    # ── misogyny_index ────────────────────────────────────────────────────
     mi = raw.get("misogyny_index", {})
     if isinstance(mi, dict):
-        n["misogyny_index"]  = mi.get("current",  76)
-        n["misogyny_delta"]  = mi.get("delta",      0)
-        n["media_score"]     = mi.get("news_score", 76)
-        n["community_score"] = mi.get("social_score", 40)
-    # if already a plain number, leave as-is
+        n["misogyny_index"]  = mi.get("current",   76)
+        n["misogyny_delta"]  = mi.get("delta",       0)
+        n["media_score"]     = mi.get("news_score",  76)
+        n["community_score"] = mi.get("social_score",40)
 
-    # ── case / incident counts ────────────────────────────────────────────
     n["reports_received"] = raw.get("tech_facilitated_count",
                             raw.get("cases_recorded", 0))
 
-    # ── tech_platforms — build from top_articles grouped by source ────────
     articles = raw.get("top_articles", [])
     if articles:
         src_counts = {}
@@ -807,18 +878,14 @@ def _normalize(raw: dict) -> dict:
             src_counts[src] = src_counts.get(src, 0) + 1
         n["tech_platforms"] = src_counts
     elif isinstance(raw.get("tech_platforms"), list):
-        # list of strings → give each a count of 1
         n["tech_platforms"] = {p: 1 for p in raw["tech_platforms"]}
 
-    # ── top_incidents — built from motd_highlights (real incident data) ───
-    cases = raw.get("cases", [])
+    cases      = raw.get("cases", [])
     highlights = raw.get("motd_highlights", [])
 
     if cases:
-        # use structured cases if present
         n["top_incidents"] = cases
     elif highlights:
-        # build incidents from MOTD highlights
         n["top_incidents"] = []
         SEV = ["critical", "critical", "high", "high", "medium"]
         for i, h in enumerate(highlights):
@@ -832,29 +899,115 @@ def _normalize(raw: dict) -> dict:
                 "summary":  body[:160],
             })
 
-    # ── scanner items — build from top_articles for fallback ─────────────
     if articles and not raw.get("scanner_items"):
         n["scanner_items"] = [
             f'{a["source"]}: {a["title"][:120]}'
             for a in articles[:5]
         ]
 
+    # pass motd_highlights through so draw_incidents can cross-ref platform/date
+    n["motd_highlights"] = raw.get("motd_highlights", [])
+
     return n
+
+
+def _parse_top_incidents_text(text, highlights=None):
+    """
+    Parse bullet-list TOP_INCIDENTS content into structured incident dicts.
+    Format: • **Alice Rianga (JOOUST student):** Disappeared May 6 from campus...
+    Returns list of {title, summary, platform, date, severity}
+    """
+    import re as _re
+    incidents = []
+
+    # Build highlight lookup (lowercased context for matching)
+    hl_lookup = []
+    for h in (highlights or []):
+        hl_lookup.append({
+            "platform": h.get("platform", ""),
+            "date":     h.get("date", "")[:10],
+            "context":  h.get("context", "").lower(),
+        })
+
+    # Split on bullet markers — keep content after • or - or *
+    bullets = _re.split(r'\n\s*[•\-]\s+|\n\s*\*\s+(?!\*)', "\n" + text)
+    bullets = [b.strip() for b in bullets if b.strip()]
+
+    SEV = ["critical", "critical", "high", "high", "medium"]
+
+    for i, bullet in enumerate(bullets[:4]):
+        # Pattern: **Name:** body  OR  **Name** body  OR  plain Name: body
+        # The colon can sit inside (**Name:**) or outside (**Name**: body)
+        bullet_clean = bullet.strip()
+
+        # Try: **Name...:** body  (colon inside bold, then closing **)
+        m = _re.match(r'\*+([^*]+?):\*+\s*(.*)', bullet_clean, _re.DOTALL)
+        if m:
+            name = m.group(1).strip()
+            desc = m.group(2).strip().lstrip('*').strip()
+        else:
+            # Try: **Name** : body  or  **Name**: body
+            m2 = _re.match(r'\*+([^*]+?)\*+[:\s]+(.*)', bullet_clean, _re.DOTALL)
+            if m2:
+                name = m2.group(1).strip().rstrip(':')
+                desc = m2.group(2).strip().lstrip('*').strip()
+            else:
+                # Plain text — split on first colon or period
+                parts = _re.split(r'[:.] ', bullet_clean, 1)
+                name = parts[0].strip().strip('*').strip()
+                desc = parts[1].strip() if len(parts) > 1 else ''
+
+        # Cross-ref highlights for platform + date
+        # Use core name only (strip parenthetical like "(JOOUST student)")
+        core_name = _re.sub(r'\(.*?\)', '', name).strip()
+        name_words = [w.lower() for w in _re.split(r'\W+', core_name) if len(w) > 3]
+
+        # Best-match: score = unique name words found in highlight context
+        platform, date = "", ""
+        best, best_score = None, 0
+        for hl in hl_lookup:
+            score = sum(1 for w in name_words if w in hl["context"])
+            if score > best_score:
+                best_score, best = score, hl
+        if best and best_score > 0:
+            platform = best["platform"]
+            date     = best["date"]
+
+        incidents.append({
+            "title":    name,
+            "summary":  desc[:240],
+            "platform": platform,
+            "severity": SEV[min(i, len(SEV)-1)],
+            "date":     date,
+        })
+
+    return incidents
 
 def main():
     print("🔄  Fetching Intel Brief…")
-    try: brief=fetch_brief()
-    except Exception as e: print(f"❌  {e}"); sys.exit(1)
-    snap=parse_snap(brief)
-    label=brief.get("period_label","?")
+    try:
+        brief = fetch_brief()
+    except Exception as e:
+        print(f"❌  {e}"); sys.exit(1)
+
+    snap  = parse_snap(brief)
+    label = brief.get("period_label","?")
     print(f"✅  {label}")
 
-    os.makedirs(os.path.dirname(OUTPUT_PATH),exist_ok=True)
-    cv=rl_canvas.Canvas(OUTPUT_PATH,pagesize=A4)
+    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
+
+    cv = rl_canvas.Canvas(OUTPUT_PATH, pagesize=A4)
     cv.setTitle(f"FemSaidia Kenya Intel Brief — {label}")
     cv.setAuthor("FemSaidia Kenya")
-    print("📄  Page 1…"); page1(cv,brief,snap); cv.showPage()
-    print("📄  Page 2…"); page2(cv,brief,snap); cv.showPage()
-    cv.save(); print(f"✅  → {OUTPUT_PATH}")
+    cv.setSubject("Intel Brief — Digital Safety Intelligence")
+
+    print("📄  Page 1…"); page1(cv, brief, snap); cv.showPage()
+    print("📄  Page 2…"); page2(cv, brief, snap); cv.showPage()
+    cv.save()
+    print(f"✅  → {OUTPUT_PATH}")
+
+    # FIX 5 — write inline HTML viewer alongside the PDF
+    viewer_path = write_viewer(OUTPUT_PATH, label)
+    print(f"🌐  → {viewer_path}  (open this in browser for inline view)")
 
 if __name__=="__main__": main()

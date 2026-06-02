@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FemSaidia Kenya Intel Brief — 2026-05-18 – 2026-06-01</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; background: #111827; font-family: Helvetica, Arial, sans-serif; }
+  .bar {
+    height: 44px; background: #111827; border-bottom: 2px solid #C05010;
+    display: flex; align-items: center; gap: 14px; padding: 0 20px;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+  }
+  .bar-logo  { color: #fff; font-size: 12px; font-weight: bold; letter-spacing: .06em; }
+  .bar-sep   { color: #C05010; font-size: 12px; }
+  .bar-label { color: #8892B0; font-size: 11px; flex: 1; }
+  .dl-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #8A1030; color: #fff; border: none; padding: 7px 16px;
+    border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer;
+    text-decoration: none; letter-spacing: .05em; white-space: nowrap;
+    transition: background .15s;
+  }
+  .dl-btn:hover { background: #C05010; }
+  .viewer {
+    position: fixed; top: 44px; left: 0; right: 0; bottom: 0;
+  }
+  .viewer embed,
+  .viewer iframe {
+    width: 100%; height: 100%; border: none; display: block;
+  }
+  /* Fallback message shown only when embed fails */
+  .fallback {
+    display: none; position: absolute; inset: 0;
+    align-items: center; justify-content: center; flex-direction: column;
+    gap: 16px; color: #8892B0; font-size: 14px;
+  }
+</style>
+</head>
+<body>
+<div class="bar">
+  <span class="bar-logo">FEMSAIDIA KENYA</span>
+  <span class="bar-sep">//</span>
+  <span class="bar-label">INTEL BRIEF &nbsp;·&nbsp; 2026-05-18 – 2026-06-01</span>
+  <a class="dl-btn" href="intel-brief-latest.pdf" download="intel-brief-latest.pdf">&#8659;&nbsp;Download PDF</a>
+</div>
+<div class="viewer" id="viewer">
+  <embed id="embed" src="intel-brief-latest.pdf#toolbar=1&navpanes=0&view=FitH"
+         type="application/pdf" width="100%" height="100%"
+         onerror="showFallback()">
+  <div class="fallback" id="fallback">
+    <p>Your browser cannot display the PDF inline.</p>
+    <a class="dl-btn" href="intel-brief-latest.pdf" download="intel-brief-latest.pdf">&#8659;&nbsp;Download PDF</a>
+  </div>
+</div>
+<script>
+function showFallback() {
+  document.getElementById('embed').style.display = 'none';
+  var fb = document.getElementById('fallback');
+  fb.style.display = 'flex';
+}
+// Firefox / Safari fallback detection
+window.addEventListener('load', function() {
+  var em = document.getElementById('embed');
+  // If embed rendered nothing (getSVGDocument null and no contentDocument)
+  try {
+    if (!em.getSVGDocument && !em.contentDocument) showFallback();
+  } catch(e) {}
+});
+</script>
+</body>
+</html>
