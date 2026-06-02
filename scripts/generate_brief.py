@@ -93,7 +93,14 @@ PLT = {
     "bbc":        HexColor("#BB1919"),
     "bbc (media)":HexColor("#BB1919"),
     "community":  HexColor("#7C3AED"),
-    "media":      HexColor("#BB1919"),
+    "media":         HexColor("#BB1919"),
+    "theconversation":HexColor("#5D2E8C"),
+    "conversation":   HexColor("#5D2E8C"),
+    "thestar":        HexColor("#CC0000"),
+    "star":           HexColor("#CC0000"),
+    "nation":         HexColor("#003366"),
+    "standard":       HexColor("#006633"),
+    "reuters":        HexColor("#FF8000"),
 }
 SEV_COL = {"critical":ALERT,"high":ALERT,"medium":WARN,"low":POS}
 
@@ -140,8 +147,9 @@ def wrap_into(c, text, x, y, w, h, font, size, col, lead=None):
     lines = []
     for para in str(text).split("\n"):
         lines.extend(textwrap.wrap(para, cpl) if para.strip() else [""])
+    bottom_clip = max(22, y - h)   # respect card boundary
     for ln in lines:
-        if y < 22: break
+        if y < bottom_clip: break
         c.drawString(x, y, ln); y -= lead
     return y
 
@@ -315,16 +323,17 @@ def draw_incidents(c, x, y, w, h, brief, snap):
     card_bg(c, x, y, w, h)
     slabel(c, x+14, y+h-13, "Recorded Incidents", ALERT)
 
-    incs = snap.get("top_incidents", snap.get("incidents", []))
-
-    # If no structured cases in snap, parse from the content bullet-list
-    if not (isinstance(incs, list) and incs and isinstance(incs[0], dict)):
-        text = brief.get("TOP_INCIDENTS", "")
-        if text:
-            incs = _parse_top_incidents_text(text, snap.get("motd_highlights", []))
-        if not incs:
-            wrap_into(c, text, x+14, y+h-26, w-28, h-30, FR, 7.8, MID, lead=12)
-            return
+    # Priority: rich content text is always more reliable than auto-generated snap
+    incs = []
+    text = brief.get("TOP_INCIDENTS", "")
+    if text and text.strip():
+        incs = _parse_top_incidents_text(text, snap.get("motd_highlights", []))
+    # Fallback to snap data only if text parser produced nothing
+    if not incs:
+        incs = snap.get("top_incidents", snap.get("incidents", []))
+    if not (isinstance(incs, list) and incs):
+        wrap_into(c, text, x+14, y+h-26, w-28, h-30, FR, 7.8, MID, lead=12)
+        return
 
     n_show = min(len(incs), 4)
     row_h  = (h-20) / n_show   # ≈52 pt per row
@@ -368,7 +377,7 @@ def draw_incidents(c, x, y, w, h, brief, snap):
         tlines = textwrap.wrap(title, cpl_t)[:2]
         ty = Z2
         for ln in tlines:
-            if ty < ry+14: break
+            if ty < ry+8: break   # loosened for compact single-page rows
             c.drawString(CX, ty, ln); ty -= 11
 
         # ── ZONE 3 (bottom): summary — 10 pt above row bottom ───────────
@@ -388,9 +397,13 @@ def draw_scanner(c, x, y, w, h, brief, snap):
     slabel(c, x+14, y+h-13, "What the Scanner Caught", WARN)
 
     raw   = brief.get("SCANNER_CAUGHT","")
-    items = [ln.strip().lstrip(">•– ").strip()
-             for ln in raw.replace("\n>","\n").split("\n")
-             if ln.strip().lstrip(">•– ").strip()]
+    import re as _re2
+    def _clean(ln):
+        ln = ln.strip().lstrip(">•–- *").strip()
+        ln = _re2.sub(r'\*{1,2}([^*]+)\*{1,2}', r'\1', ln)  # strip **bold**
+        return ln.strip()
+    items = [_clean(ln) for ln in raw.replace("\n>","\n").split("\n")
+             if _clean(ln)]
     if not items: items = [raw]
     items = items[:3]
 
@@ -552,42 +565,47 @@ def draw_community(c, x, y, w, h, brief, snap):
 
 # ── 8. THE INSIGHT ────────────────────────────────────────────────────────────
 def draw_insight(c, x, y, w, h, brief, snap):
-    card_bg(c, x, y, w, h)
+    """Dark editorial card — visually paired with THE ASK for a unified page 2."""
+    # Dark background matching ASK card
+    rrect(c, x, y, w, h, r=7, fill=HDR)
 
-    # Brand top bar — drawn first so slabel sits cleanly below it
+    # Brand accent bar at top
     c.setFillColor(BRAND)
     c.rect(x, y+h-5, w, 5, fill=1, stroke=0)
     rrect(c, x, y+h-5, w, 5, r=7, fill=BRAND)
 
-    # Slabel — 20pt below card top (clear of 5pt brand bar)
-    slabel(c, x+14, y+h-20, "The Insight", BRAND)
+    # Slabel in white
+    c.setFillColor(WHITE)
+    c.rect(x+14, y+h-19, 14, 1.5, fill=1, stroke=0)
+    c.setFont(FB, 8.5); c.setFillColor(WHITE)
+    c.drawString(x+32, y+h-19, "THE INSIGHT")
 
-    # Separator rule — clearly demarcates header zone from body
-    hrule(c, x+10, y+h-30, w-20, CBORD)
+    # Separator rule in BRAND2
+    c.setFillColor(BRAND2)
+    c.rect(x, y+h-25, w, 1.5, fill=1, stroke=0)
 
-    # Ghost quote — drawn BELOW the separator so it never touches the headline
-    # Reduced to 72pt, positioned so cap-top sits near the rule, not above it
+    # Ghost quote mark — large, very faint white
     c.saveState()
-    c.setFillColor(BRAND); c.setFillAlpha(0.06)
-    c.setFont(FB, 72); c.drawString(x+8, y+h-100, "\u201C")
+    c.setFillColor(WHITE); c.setFillAlpha(0.05)
+    c.setFont(FB, 84); c.drawString(x+10, y+h-100, "\u201C")
     c.restoreState()
 
-    # Pull quote text — starts below separator rule with clear gap
-    txt = brief.get("THE_INSIGHT", "")
-    c.setFont(FI, 10.5); c.setFillColor(BODY)
-    cpl = max(1, int((w-52) / (10.5*0.57)))
-    cy  = y+h-46        # 16pt below separator rule
-    for ln in textwrap.wrap(txt[:480], cpl):
-        if cy < y+22: break
-        c.drawString(x+28, cy, ln); cy -= 16
-
-    # Attribution line
-    c.setFont(FB, 7); c.setFillColor(BRAND2)
-    c.drawString(x+28, y+12, "— FemSaidia Kenya Intelligence Desk")
-
-    # Left red accent bar — spans the body zone only (below separator)
+    # Left red accent bar
     c.setFillColor(BRAND)
-    c.rect(x+14, y+18, 3, h-52, fill=1, stroke=0)
+    c.rect(x+14, y+18, 4, h-50, fill=1, stroke=0)
+
+    # Pull quote — large, white italic, starts below separator
+    txt = brief.get("THE_INSIGHT", "")
+    c.setFont(FI, 9.5); c.setFillColor(WHITE)
+    cpl = max(1, int((w-52) / (9.5*0.57)))
+    cy  = y+h-42
+    for ln in textwrap.wrap(txt[:420], cpl):
+        if cy < y+26: break
+        c.drawString(x+28, cy, ln); cy -= 15
+
+    # Attribution
+    c.setFont(FB, 7.5); c.setFillColor(BRAND2)
+    c.drawString(x+32, y+14, "— FemSaidia Kenya Intelligence Desk")
 
 
 # ── 9. THE ASK ───────────────────────────────────────────────────────────────
@@ -595,11 +613,11 @@ def draw_insight(c, x, y, w, h, brief, snap):
 def draw_ask(c, x, y, w, h, brief, snap):
     rrect(c, x, y, w, h, r=7, fill=HDR)
     # header
-    c.setFont(FB,11); c.setFillColor(WHITE)
+    c.setFont(FB, 8.5); c.setFillColor(WHITE)
     c.drawString(x+16, y+h-18, "THE ASK")
-    sw_ = c.stringWidth("THE ASK",FB,11)
-    c.setFont(FR,8); c.setFillColor(HexColor("#8892B0"))
-    c.drawString(x+16+sw_+8, y+h-17, "— priority actions for network partners & policymakers")
+    sw_ = c.stringWidth("THE ASK", FB, 8.5)
+    c.setFont(FR, 6.5); c.setFillColor(HexColor("#8892B0"))
+    c.drawString(x+16+sw_+6, y+h-17, "— priority actions for network partners & policymakers")
     c.setFillColor(BRAND2); c.rect(x, y+h-22, w, 1.5, fill=1, stroke=0)
 
     ask_items = snap.get("action_items",snap.get("asks",[]))
@@ -616,30 +634,414 @@ def draw_ask(c, x, y, w, h, brief, snap):
         items=items[:6]
     if not items: return
 
-    # numbered items — two columns
-    col_w = (w-36)/2
-    sides = [items[0::2], items[1::2]]
-    for col_i, lst in enumerate(sides):
-        cx2 = x+16 + col_i*(col_w+12)
-        cy2 = y+h-36
-        for j,txt in enumerate(lst):
-            if cy2 < y+10: break
-            num = str(j*2+col_i+1).zfill(2)
-            # index number — FIX 4: FB 14→16
-            c.setFont(FB, 16); c.setFillColor(BRAND2)
-            c.drawString(cx2, cy2, num)
-            nw2 = c.stringWidth(num, FB, 16) + 8
-            # text — FIX 4: FR 9→10.5
-            c.setFont(FR, 10.5); c.setFillColor(HexColor("#F0D0D8"))
-            cpl2 = max(1, int((col_w-nw2-4) / (10.5*0.57)))
-            for ln in textwrap.wrap(txt[:200], cpl2):
-                c.drawString(cx2+nw2, cy2, ln)
-                cy2 -= 15          # increased from 13 to match larger font
-            cy2 -= 9               # item spacer, increased from 7
+    # numbered items — single item gets full width; 2+ get two columns
+    if len(items) == 1:
+        # Full-width single ask — display large and prominent
+        cx2 = x+16; cy2 = y+h-36
+        c.setFont(FB, 18); c.setFillColor(BRAND2)
+        c.drawString(cx2, cy2, "01")
+        nw2 = c.stringWidth("01", FB, 18) + 10
+        c.setFont(FR, 11); c.setFillColor(HexColor("#F0D0D8"))
+        cpl2 = max(1, int((w-36-nw2) / (11*0.57)))
+        for ln in textwrap.wrap(items[0][:400], cpl2):
+            c.drawString(cx2+nw2, cy2, ln); cy2 -= 17
+    else:
+        col_w = (w-36)/2
+        sides = [items[0::2], items[1::2]]
+        for col_i, lst in enumerate(sides):
+            cx2 = x+16 + col_i*(col_w+12)
+            cy2 = y+h-36
+            for j,txt in enumerate(lst):
+                if cy2 < y+10: break
+                num = str(j*2+col_i+1).zfill(2)
+                c.setFont(FB, 16); c.setFillColor(BRAND2)
+                c.drawString(cx2, cy2, num)
+                nw2 = c.stringWidth(num, FB, 16) + 8
+                c.setFont(FR, 10.5); c.setFillColor(HexColor("#F0D0D8"))
+                cpl2 = max(1, int((col_w-nw2-4) / (10.5*0.57)))
+                for ln in textwrap.wrap(txt[:200], cpl2):
+                    c.drawString(cx2+nw2, cy2, ln); cy2 -= 15
+                cy2 -= 9
+
 
 
 # ════════════════════════════════════════════════════════════════════════════
-#  PAGE BUILDERS
+#  SINGLE-PAGE LAYOUT — constants, new draw functions, page builder
+# ════════════════════════════════════════════════════════════════════════════
+
+# Layout constants
+SP_GAP = 10          # tighter inter-row gap
+SP_TTL = 32          # compact title row
+
+_SPC   = H - _HDR - _FTR - SP_TTL - 3*SP_GAP   # ≈ 733.9pt available
+
+SP_KR  = 52          # kicker strip (full width)
+SP_IR  = 178         # incidents + scanner (2-col)
+SP_MR  = 64          # MOTD bars only (full width, compact)
+SP_ER  = _SPC - SP_KR - SP_IR - SP_MR           # insight + ask (2-col) ≈ 440
+
+SP_GUT = 14
+SP_INC = 254         # incidents col
+SP_SCN = CW - SP_INC - SP_GUT                   # scanner col ≈ 283
+SP_INS = 244         # insight col
+SP_ASK = CW - SP_INS - SP_GUT                   # ask col ≈ 293
+
+SP_RX_S = MAR + SP_INC + SP_GUT                 # scanner x
+SP_RX_A = MAR + SP_INS + SP_GUT                 # ask x
+
+
+# ── SP-1. KICKER STRIP (replaces Overview card) ───────────────────────────────
+def draw_kickers(c, x, y, w, h, brief, snap):
+    """Full-width 4-stat strip — index / media / community / gap."""
+    card_bg(c, x, y, w, h)
+
+    mi  = int(float(snap.get("misogyny_index", 76)))
+    ms  = int(float(snap.get("media_score",    76)))
+    cs  = int(float(snap.get("community_score",40)))
+    gap = ms - cs
+
+    kw = (w - 2) / 4
+    stats = [
+        (f"{mi}/100", "Misogyny Index", ALERT,               T_RED),
+        (f"{ms}/100", "Media Score",    WARN,                T_AMB),
+        (f"{cs}/100", "Community",      HexColor("#2563EB"), T_IND),
+        (f"{gap} pt", "Score Gap",      BRAND,               T_PRP),
+    ]
+    for i, (val, lbl, col, bg) in enumerate(stats):
+        bx = x + 1 + i*kw
+        rrect(c, bx+3, y+3, kw-6, h-6, r=5, fill=bg)
+        c.setFont(FB, 20); c.setFillColor(col)
+        c.drawCentredString(bx+kw/2, y+h-24, str(val))
+        c.setFont(FR, 7); c.setFillColor(MUTED)
+        c.drawCentredString(bx+kw/2, y+9, lbl.upper())
+        if i < 3:
+            c.setStrokeColor(CBORD); c.setLineWidth(0.5)
+            c.line(bx+kw, y+6, bx+kw, y+h-6)
+
+
+# ── SP-2. MOTD COMPACT (bars only, no text paragraph) ────────────────────────
+def draw_motd_compact(c, x, y, w, h, brief, snap):
+    """MOTD escalation bars only — pattern read visually, no prose."""
+    card_bg(c, x, y, w, h)
+    slabel(c, x+14, y+h-11, "Misogyny of the Day — Pattern", BRAND2, size=6.5)
+
+    bh, gap_b = 8, 5
+    bw_max = w - 28
+    stages = [
+        ("INTIMATE PARTNER VIOLENCE",  0.28, ALERT,               T_RED),
+        ("PUBLIC SEXUAL SHAMING",       0.60, WARN,               T_AMB),
+        ("POSTHUMOUS VICTIM ERASURE",   0.92, HexColor("#7C3AED"), T_PRP),
+    ]
+    vy = y + 8   # bottom-most bar starts 8pt from card bottom
+
+    for j, (lbl, pct, col, bg) in enumerate(stages):
+        by  = vy + (2-j) * (bh + gap_b)
+        bw2 = round(bw_max * pct)
+        rrect(c, x+14, by, bw_max, bh, r=bh//2, fill=CSEP)
+        rrect(c, x+14, by, bw2,    bh, r=bh//2, fill=col)
+        c.setFont(FB, 5.5)
+        if bw2 > 80:
+            c.setFillColor(WHITE)
+            c.drawString(x+18, by+2.2, lbl)
+        else:
+            c.setFillColor(BODY)
+            c.drawString(x+14+bw2+5, by+2.2, lbl)
+
+
+# ── SP-3. SINGLE-PAGE BUILDER ─────────────────────────────────────────────────
+def page_single(c, brief, snap):
+    """Render entire brief as one A4 page."""
+    chrome(c, brief, 1, total=1)
+
+    # ── Compact title row ─────────────────────────────────────────────────────
+    TOP = H - _HDR - 4
+    issue  = brief.get("issue_number", brief.get("id","—"))
+    period = brief.get("period_label","")
+    c.setFont(FB, 14); c.setFillColor(BODY)
+    c.drawString(MAR, TOP-14, f"Intel Brief  ·  {issue}")
+    c.setFont(FR, 7.5); c.setFillColor(MUTED)
+    c.drawString(MAR, TOP-26, f"{period}  ·  Digital Safety Intelligence")
+
+    threat = str(snap.get("threat_level","HIGH")).upper()
+    tc = {"LOW":POS,"MODERATE":WARN,"ELEVATED":BRAND2,
+          "HIGH":ALERT,"CRITICAL":ALERT}.get(threat, BRAND2)
+    rrect(c, W-MAR-68, TOP-22, 68, 15, r=4, fill=tc)
+    c.setFont(FB, 7); c.setFillColor(WHITE)
+    c.drawCentredString(W-MAR-34, TOP-13, f"THREAT: {threat}")
+
+    hrule(c, MAR, TOP-SP_TTL+4, CW, CBORD)
+
+    cur = H - _HDR - SP_TTL
+
+    # ── Row 1: kicker strip ──────────────────────────────────────────────────
+    draw_kickers(c,       MAR,    cur-SP_KR, CW,     SP_KR, brief, snap)
+    cur -= SP_KR + SP_GAP
+
+    # ── Row 2: incidents (left) + scanner (right) ────────────────────────────
+    draw_incidents(c,     LX,     cur-SP_IR, SP_INC, SP_IR, brief, snap)
+    draw_scanner(c,       SP_RX_S,cur-SP_IR, SP_SCN, SP_IR, brief, snap)
+    cur -= SP_IR + SP_GAP
+
+    # ── Row 3: MOTD compact bars ─────────────────────────────────────────────
+    draw_motd_compact(c,  MAR,    cur-SP_MR, CW,     SP_MR, brief, snap)
+    cur -= SP_MR + SP_GAP
+
+    # ── Row 4: insight (left) + ask (right) ──────────────────────────────────
+    draw_insight(c,       LX,     cur-SP_ER, SP_INS, SP_ER, brief, snap)
+    draw_ask(c,           SP_RX_A,cur-SP_ER, SP_ASK, SP_ER, brief, snap)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  SINGLE-PAGE v2 — constants + draw functions
+# ════════════════════════════════════════════════════════════════════════════
+
+SP2_GAP  = 9
+SP2_TTL  = 36                                            # more room for title row
+_SPC2    = H - _HDR - _FTR - SP2_TTL - 3*SP2_GAP   # ≈ 732.9
+SP2_KR   = 72    # gauge + kickers row
+SP2_IR   = 168   # incidents + scanner row
+SP2_MR   = 80    # MOTD horizontal row — with context text
+SP2_ER   = _SPC2 - SP2_KR - SP2_IR - SP2_MR         # insight + ask ≈ 445
+
+GAUGE_W  = 100   # width of gauge column inside stats row
+SP2_GUT  = 14
+SP2_INC  = 252   # incidents col
+SP2_SCN  = CW - SP2_INC - SP2_GUT                   # scanner col ≈ 285
+SP2_INS  = 244   # insight col
+SP2_ASK  = CW - SP2_INS - SP2_GUT                   # ask col ≈ 293
+SP2_RX_S = MAR + SP2_INC + SP2_GUT
+SP2_RX_A = MAR + SP2_INS + SP2_GUT
+
+
+def _scanner_source(text):
+    """Detect platform from scanner item text → (color, abbreviation)."""
+    t = text.lower()
+    checks = [
+        ("bbc",            PLT["bbc"],            "BBC"),
+        ("conversation",   PLT["conversation"],   "TC"),
+        ("facebook",       PLT["facebook"],       "fb"),
+        ("reuters",        PLT["reuters"],         "R"),
+        ("nation",         PLT["nation"],          "DN"),
+        ("standard",       PLT["standard"],        "Std"),
+        ("the star",       PLT["star"],            "Star"),
+        ("star",           PLT["star"],            "Star"),
+        ("twitter",        PLT["twitter"],         "X"),
+        (" x ",            PLT["x"],               "X"),
+        ("tiktok",         PLT["tiktok"],          "TT"),
+        ("instagram",      PLT["instagram"],       "IG"),
+        ("whatsapp",       PLT["whatsapp"],        "WA"),
+    ]
+    for key, col, abbr in checks:
+        if key in t:
+            return col, abbr
+    return MUTED, "?"
+
+
+# ── SP-A. STATS ROW (compact gauge + 4 kickers with context) ─────────────────
+def draw_stats_row(c, x, y, w, h, brief, snap):
+    card_bg(c, x, y, w, h)
+
+    mi    = float(snap.get("misogyny_index", 75))
+    delta = snap.get("misogyny_delta", 0)
+    ms    = int(float(snap.get("media_score", 76)))
+    cs    = int(float(snap.get("community_score", 40)))
+    gap   = ms - cs
+    nc    = int(snap.get("reports_received", 0))
+
+    # ── compact gauge (left column) ──────────────────────────────────────
+    GW  = GAUGE_W
+    gcx = x + GW/2
+    gcy = y + h*0.45      # lowered so arc clears the label above it
+    r   = min(20, GW//2 - 16)   # smaller radius — was 26, now 20
+    sw  = 6               # thinner stroke — less bleed above arc
+
+    c.setStrokeColor(CSEP); c.setLineWidth(sw)
+    c.arc(gcx-r, gcy-r, gcx+r, gcy+r, 0, 180)
+    for s, e, col in [(0,.3,POS),(.3,.6,WARN),(.6,.8,BRAND2),(.8,1.,ALERT)]:
+        sa, ea = 180-s*180, 180-e*180
+        c.setStrokeColor(col); c.setLineWidth(sw)
+        c.arc(gcx-r, gcy-r, gcx+r, gcy+r, ea, sa-ea)
+
+    pct = max(0.0, min(1.0, mi/100.0))
+    ang = math.radians(180 - pct*180)
+    nx  = gcx + (r-sw*0.3)*math.cos(ang)
+    ny  = gcy + (r-sw*0.3)*math.sin(ang)
+    c.setStrokeColor(BODY); c.setLineWidth(1.5)
+    c.line(gcx, gcy, nx, ny)
+    c.setFillColor(WHITE); c.setStrokeColor(CBORD); c.setLineWidth(0.7)
+    c.circle(gcx, gcy, 3, fill=1, stroke=1)
+
+    c.setFont(FB, 9); c.setFillColor(BRAND)
+    c.drawCentredString(gcx, y+h-10, "MISOGYNY INDEX")
+
+    c.setFont(FB, 16); c.setFillColor(BODY)
+    c.drawCentredString(gcx, gcy-14, str(int(round(mi))))
+    c.setFont(FR, 5); c.setFillColor(MUTED)
+    c.drawCentredString(gcx, gcy-21, "out of 100")
+
+    try:
+        dv  = float(delta)
+        ds  = (f"\u2191{int(abs(dv))} from prev" if dv > 0
+               else f"\u2193{int(abs(dv))} from prev" if dv < 0
+               else "= unchanged")
+        dc  = ALERT if dv > 0 else POS if dv < 0 else MUTED
+    except Exception:
+        ds, dc = "vs prev period", MUTED
+    c.setFont(FB, 5); c.setFillColor(dc)
+    c.drawCentredString(gcx, y+6, ds)
+
+    c.setStrokeColor(CBORD); c.setLineWidth(0.5)
+    c.line(x+GW, y+5, x+GW, y+h-5)
+
+    # ── 4 kickers with context lines (right) ─────────────────────────────
+    kw   = (w - GW - 2) / 4
+    kx0  = x + GW + 1
+
+    media_ctx = f"News {ms}/100 — intl media naming crisis"
+    comm_ctx  = ("Hostile discourse — victim-blaming dominant"
+                 if cs < 45 else "Fractured — community disengaging")
+    gap_ctx   = ("Critical media-community disconnect"
+                 if gap > 30 else "High gap — narrative divergence")
+    tech_ctx  = f"X + Facebook primary vectors"
+
+    stats = [
+        (f"{ms}/100", "Media Score",  WARN,               T_AMB, media_ctx),
+        (f"{cs}/100", "Community",    HexColor("#2563EB"), T_IND, comm_ctx),
+        (f"{gap} pt", "Score Gap",    BRAND,              T_PRP, gap_ctx),
+        (str(nc),     "Tech Cases",   ALERT,              T_RED, tech_ctx),
+    ]
+    for i, (val, lbl, col, bg, ctx) in enumerate(stats):
+        bx = kx0 + i*kw
+        rrect(c, bx+3, y+3, kw-4, h-6, r=4, fill=bg)
+        c.setFont(FB, 14); c.setFillColor(col)
+        c.drawCentredString(bx+kw/2, y+h-21, str(val))
+        c.setFont(FR, 5.5); c.setFillColor(MUTED)
+        c.drawCentredString(bx+kw/2, y+h-29, lbl.upper())
+        c.setFont(FI, 4.8); c.setFillColor(MID)
+        cpl_c = max(1, int((kw-8)/(4.8*0.57)))
+        ctx_y = y+h-37
+        for ln in textwrap.wrap(ctx, cpl_c)[:2]:
+            c.drawCentredString(bx+kw/2, ctx_y, ln); ctx_y -= 6
+        if i < 3:
+            c.setStrokeColor(CBORD); c.setLineWidth(0.4)
+            c.line(bx+kw, y+5, bx+kw, y+h-5)
+
+
+# ── SP-B. SCANNER WITH PLATFORM LOGOS ────────────────────────────────────────
+def draw_scanner_logos(c, x, y, w, h, brief, snap):
+    card_bg(c, x, y, w, h)
+    slabel(c, x+14, y+h-13, "What the Scanner Caught", WARN)
+
+    raw   = brief.get("SCANNER_CAUGHT", "")
+    import re as _re3
+    def _clean(ln):
+        ln = ln.strip().lstrip(">•–- *").strip()
+        ln = _re3.sub(r'\*{1,2}([^*]+)\*{1,2}', r'\1', ln)
+        return ln.strip()
+    items = [_clean(ln) for ln in raw.replace("\n>","\n").split("\n") if _clean(ln)]
+    if not items: items = [raw]
+    items = items[:3]
+
+    LOGO_SZ = 20
+    n       = len(items)
+    row_h   = (h - 20) / n
+
+    for i, itm in enumerate(items):
+        ry  = y + h - 20 - (i+1)*row_h
+        if i > 0: hrule(c, x+12, ry+row_h, w-24, CSEP)
+
+        col, abbr = _scanner_source(itm)
+
+        # Platform logo square
+        lx = x + 14
+        ly = ry + row_h/2 - LOGO_SZ/2
+        rrect(c, lx, ly, LOGO_SZ, LOGO_SZ, r=4, fill=col)
+        c.setFont(FB, 5.5); c.setFillColor(WHITE)
+        c.drawCentredString(lx+LOGO_SZ/2, ly+LOGO_SZ*0.28, abbr)
+
+        # (logo square is self-labelled — no double label below)
+
+        # Item text
+        TX  = x + 14 + LOGO_SZ + 6
+        TW  = w - (TX-x) - 10
+        wrap_into(c, itm[:220], TX, ry+row_h-9, TW, row_h-10, FR, 6.5, MID, lead=10)
+
+
+# ── SP-C. MOTD HORIZONTAL (3 bars side-by-side) ──────────────────────────────
+def draw_motd_horizontal(c, x, y, w, h, brief, snap):
+    """MOTD 3 bars side-by-side + 2-line context text at bottom."""
+    card_bg(c, x, y, w, h)
+    slabel(c, x+14, y+h-11, "Misogyny of the Day — Pattern", BRAND2, size=6)
+
+    stages = [
+        ("Intimate Partner\nViolence",  0.28, ALERT),
+        ("Public Sexual\nShaming",       0.60, WARN),
+        ("Posthumous Victim\nErasure",   0.92, HexColor("#7C3AED")),
+    ]
+    n      = len(stages)
+    bh     = 10
+    col_w  = (w - 28 - (n-1)*6) / n
+    bar_y  = y + 38          # pushed higher — gives text zone room at bottom
+    lbl_y0 = bar_y + bh + 5  # labels sit just above bars
+
+    for j, (lbl, pct, col) in enumerate(stages):
+        cx_bar = x + 14 + j*(col_w+6)
+        # Labels above bar
+        lbl_lines = lbl.split("\n")
+        lbl_y = lbl_y0 + (len(lbl_lines)-1)*6.5
+        for ln in lbl_lines:
+            c.setFont(FB, 5); c.setFillColor(col)
+            c.drawString(cx_bar, lbl_y, ln.upper()); lbl_y -= 6.5
+        # Bar track + fill
+        fw = max(bh, round(col_w*pct))
+        rrect(c, cx_bar, bar_y, col_w, bh, r=bh//2, fill=CSEP)
+        rrect(c, cx_bar, bar_y, fw,    bh, r=bh//2, fill=col)
+
+    # Context text — 2 italic lines from MOTD_PATTERN, clearly separated from bars
+    txt = brief.get("MOTD_PATTERN", "")
+    if txt:
+        hrule(c, x+10, y+34, w-20, CSEP)
+        wrap_into(c, txt[:260], x+14, y+31, w-28, 28, FI, 6.5, MID, lead=9.5)
+
+
+# ── SP-D. PAGE SINGLE v2 ─────────────────────────────────────────────────────
+def page_single_v2(c, brief, snap):
+    chrome(c, brief, 1, total=1)
+
+    TOP    = H - _HDR - 4
+    issue  = brief.get("issue_number", brief.get("id","—"))
+    period = brief.get("period_label","")
+    c.setFont(FB, 13); c.setFillColor(BODY)
+    c.drawString(MAR, TOP-13, f"Intel Brief  ·  {issue}")
+    c.setFont(FR, 7); c.setFillColor(MUTED)
+    c.drawString(MAR, TOP-24, f"{period}  ·  Digital Safety Intelligence")
+
+    threat = str(snap.get("threat_level","HIGH")).upper()
+    tc = {"LOW":POS,"MODERATE":WARN,"ELEVATED":BRAND2,
+          "HIGH":ALERT,"CRITICAL":ALERT}.get(threat, BRAND2)
+    rrect(c, W-MAR-68, TOP-22, 68, 14, r=4, fill=tc)
+    c.setFont(FB, 6.5); c.setFillColor(WHITE)
+    c.drawCentredString(W-MAR-34, TOP-13, f"THREAT: {threat}")
+    hrule(c, MAR, TOP-SP2_TTL+5, CW, CBORD)
+
+    cur = H - _HDR - SP2_TTL
+
+    draw_stats_row(c,      MAR,     cur-SP2_KR, CW,      SP2_KR, brief, snap)
+    cur -= SP2_KR + SP2_GAP
+
+    draw_incidents(c,      LX,      cur-SP2_IR, SP2_INC, SP2_IR, brief, snap)
+    draw_scanner_logos(c,  SP2_RX_S,cur-SP2_IR, SP2_SCN, SP2_IR, brief, snap)
+    cur -= SP2_IR + SP2_GAP
+
+    draw_motd_horizontal(c, MAR,    cur-SP2_MR, CW,      SP2_MR, brief, snap)
+    cur -= SP2_MR + SP2_GAP
+
+    draw_insight(c,        LX,      cur-SP2_ER, SP2_INS, SP2_ER, brief, snap)
+    draw_ask(c,            SP2_RX_A,cur-SP2_ER, SP2_ASK, SP2_ER, brief, snap)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  LEGACY 2-PAGE BUILDERS (kept for reference)
 # ════════════════════════════════════════════════════════════════════════════
 def page1(c, brief, snap):
     chrome(c, brief, 1)
@@ -771,13 +1173,18 @@ window.addEventListener('load', function() {{
 # ════════════════════════════════════════════════════════════════════════════
 #  DATA + MAIN
 # ════════════════════════════════════════════════════════════════════════════
-def fetch_brief():
+def fetch_brief(brief_id=None):
+    if brief_id:
+        params = {"id": f"eq.{brief_id}", "select": "*"}
+        print(f"🔍  Fetching brief {brief_id[:8]}…")
+    else:
+        params = {"order": "generated_at.desc", "limit": "1", "select": "*"}
     r = requests.get(f"{SUPABASE_URL}/rest/v1/intel_briefs",
-        params={"order":"generated_at.desc","limit":"1","select":"*"},
+        params=params,
         headers={"apikey":SUPABASE_KEY,"Authorization":f"Bearer {SUPABASE_KEY}"},
         timeout=15)
     r.raise_for_status(); data=r.json()
-    if not data: raise ValueError("intel_briefs table is empty — insert a brief first")
+    if not data: raise ValueError("No brief found — check the ID or insert a brief first")
     row = data[0]
 
     ps = row.get("period_start","")
@@ -984,9 +1391,15 @@ def _parse_top_incidents_text(text, highlights=None):
     return incidents
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="FemSaidia Intel Brief PDF generator")
+    parser.add_argument("--id", dest="brief_id", default=None,
+                        help="Specific brief UUID to render (default: latest)")
+    args = parser.parse_args()
+
     print("🔄  Fetching Intel Brief…")
     try:
-        brief = fetch_brief()
+        brief = fetch_brief(args.brief_id)
     except Exception as e:
         print(f"❌  {e}"); sys.exit(1)
 
@@ -1001,8 +1414,8 @@ def main():
     cv.setAuthor("FemSaidia Kenya")
     cv.setSubject("Intel Brief — Digital Safety Intelligence")
 
-    print("📄  Page 1…"); page1(cv, brief, snap); cv.showPage()
-    print("📄  Page 2…"); page2(cv, brief, snap); cv.showPage()
+    print("📄  Building single page v2…")
+    page_single_v2(cv, brief, snap); cv.showPage()
     cv.save()
     print(f"✅  → {OUTPUT_PATH}")
 
