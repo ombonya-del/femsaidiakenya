@@ -241,6 +241,7 @@ function DashboardTab({ isMobile = false }){
   const [recentCases,  setRecentCases]  = useState([])
   const [intelStats,   setIntelStats]   = useState({total:0,highMiso:0,techGBV:0,alarming:0})
   const [countyCounts, setCountyCounts] = useState({})
+  const [totalCases,   setTotalCases]   = useState(null)
 
   useEffect(()=>{
     _sb.from('femicide_cases')
@@ -267,6 +268,11 @@ function DashboardTab({ isMobile = false }){
         data.forEach(c=>{ if(c.county) counts[c.county]=(counts[c.county]||0)+1 })
         setCountyCounts(counts)
       })
+
+    // Live total from case tracker
+    _sb.from('femicide_cases')
+      .select('id', { count: 'exact', head: true })
+      .then(({ count }) => { if (count !== null) setTotalCases(count) })
   },[])
 
   return(
@@ -315,7 +321,7 @@ function DashboardTab({ isMobile = false }){
             style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,
               padding:'9px 16px',background:'#FF5C28',color:'#fff',textDecoration:'none',
               letterSpacing:'.04em',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:6}}>
-            🛡 hepa
+            🛡 <span style={{color:"#fff",fontWeight:700}}>h</span>epa
           </a>
           <a href="tel:*384*89056%23"
             style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,
@@ -341,7 +347,7 @@ function DashboardTab({ isMobile = false }){
       }}>
         <div>
           <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:6}}>
-            <div style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,color:'#FF5C28'}}>hepa</div>
+            <div style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,}}><span style={{color:'#fff'}}>h</span><span style={{color:'#FF5C28'}}>epa</span></div>
             <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:'rgba(255,255,255,0.5)',letterSpacing:'.12em',textTransform:'uppercase',fontWeight:700}}>Personal safety tool for women</div>
           </div>
           <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.6)',lineHeight:1.7,maxWidth:560}}>
@@ -352,7 +358,7 @@ function DashboardTab({ isMobile = false }){
         <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
           <a href="https://hepa.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
             style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,padding:'10px 20px',background:'#FF5C28',color:'#fff',textDecoration:'none',letterSpacing:'.04em',whiteSpace:'nowrap'}}>
-            Access hepa →
+            Access <span style={{color:"#fff"}}>h</span>epa →
           </a>
           <a href="https://redflag.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
             style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,padding:'10px 20px',background:'#8A1030',color:'#fff',textDecoration:'none',letterSpacing:'.04em',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:6}}>
@@ -367,7 +373,7 @@ function DashboardTab({ isMobile = false }){
 
       <div style={{display:'grid',gridTemplateColumns:isMobile?'repeat(2,1fr)':'repeat(4,1fr)',gap:2,marginBottom:2,marginTop:2}}>
         {[
-          {v:'600+', l:'Reported cases',        s:'2023–2025 · verified',                   c:A},
+          {v: totalCases != null ? totalCases.toLocaleString() : '600+', l:'Reported cases', s:'Case tracker · live data · verified', c:A},
           {v:'47',   l:'Counties affected',      s:'No county is untouched',                 c:A2},
           {v:'4',    l:'Critical risk counties', s:'Nairobi · Kiambu · Mombasa · Nakuru',    c:A},
           {v:'+312%',l:'Spike in Jan 2024',      s:'#TotalShutdownKE was the turning point', c:A},
