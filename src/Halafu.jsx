@@ -593,7 +593,7 @@ export default function HalaFuTab({ isMobile }) {
             Updated every two weeks. Share with policymakers, funders and researchers.
           </p>
         </div>
-        <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf" target="_blank" rel="noopener noreferrer" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.08)', color:'#F0D0D8', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'10px 18px', textDecoration:'none', border:'1px solid rgba(240,208,216,0.5)', letterSpacing:'.04em', whiteSpace:'nowrap' }}>
+        <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf" target="_blank" rel="noopener noreferrer" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.08)', color:'#fff', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'10px 20px', textDecoration:'none', border:'1.5px solid rgba(255,255,255,0.7)', letterSpacing:'.04em', whiteSpace:'nowrap', background:'rgba(138,16,48,0.5)' }}>
           📄 Download Intel Brief
         </a>
       </div>
@@ -622,7 +622,7 @@ export default function HalaFuTab({ isMobile }) {
                       {b.period_start} — {b.period_end}
                     </p>
                   </div>
-                  <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf" target="_blank" rel="noopener noreferrer" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.08)', color:'#F0D0D8', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'10px 18px', textDecoration:'none', border:'1px solid rgba(240,208,216,0.5)', letterSpacing:'.04em', whiteSpace:'nowrap' }}>
+                  <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf" target="_blank" rel="noopener noreferrer" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.08)', color:'#fff', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'10px 18px', textDecoration:'none', border:'1.5px solid rgba(255,255,255,0.7)', letterSpacing:'.04em', whiteSpace:'nowrap', background:'rgba(138,16,48,0.5)' }}>
                     📄 Download
                   </a>
                 </div>
