@@ -61,7 +61,7 @@ async function pollHandle(handle: string) {
   for (const tweet of tweets) {
     const text = tweet.text || ''
     // For Kibe specifically: lower threshold — all posts are signal
-    const isKibe = handle === 'kibeandy' || handle === 'amerix'
+    const isKibe = handle === 'kibeandy' || handle === 'amerix' || handle === 'amerix'
     if (!isKibe && !KEYWORDS.some(k => text.toLowerCase().includes(k))) continue
     results.relevant++
     const { error } = await supabase.from('sentiment_articles').upsert({
