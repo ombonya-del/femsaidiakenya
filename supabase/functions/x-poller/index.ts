@@ -61,7 +61,7 @@ async function pollHandle(handle: string) {
   for (const tweet of tweets) {
     const text = tweet.text || ''
     // For Kibe specifically: lower threshold — all posts are signal
-    const isKibe = handle === 'kibeandy' || handle === 'amerix' || handle === 'amerix'
+    const isKibe = handle === 'kibeandy' || handle === 'amerix' || handle === 'amerix' || handle === 'amerix'
     if (!isKibe && !KEYWORDS.some(k => text.toLowerCase().includes(k))) continue
     results.relevant++
     const { error } = await supabase.from('sentiment_articles').upsert({
@@ -79,7 +79,11 @@ async function pollHandle(handle: string) {
       is_protest:       false,
       content_category: isKibe ? 'manosphere' : 'gbv',
     }, { onConflict: 'article_url' })
-    if (!error) results.inserted++
+    if (!error) {
+      results.inserted++
+      const motdScore = isKibe ? 8 : 5
+      await maybeInsertMOTD(text, handle, 'https://x.com/' + handle + '/status/' + tweet.id, motdScore)
+    }
   }
   return results
 }
@@ -118,6 +122,44 @@ async function pollKeyword(searchQuery: string) {
     if (!error) results.inserted++
   }
   return results
+}
+
+
+// ── AUTO-MOTD: queue high-misogyny tweets for admin review ───────────────────
+async function maybeInsertMOTD(tweet: string, handle: string, tweetUrl: string, score: number) {
+  const isManosphere = ['kibeandy','amerix'].includes(handle)
+  if (score < 8 && !isManosphere) return
+  // Skip if already queued
+  const { data: ex } = await supabase
+    .from('misogyny_highlights').select('id')
+    .eq('handle', '@' + handle)
+    .eq('content', tweet.slice(0, 300)).limit(1)
+  if (ex && ex.length > 0) return
+  // Generate analytical context with Claude Haiku
+  let context = 'Auto-scraped from @' + handle + '. Score: ' + score + '/10. Pending admin review.'
+  try {
+    const KEY = Deno.env.get('ANTHROPIC_API_KEY') || ''
+    const prompt = 'In 1-2 sentences, explain why this tweet is misogynistic and how it connects to femicide risk in Kenya. Be analytical not emotional. Tweet by @' + handle + ': "' + tweet.slice(0, 250) + '"'
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': KEY, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 120, messages: [{ role: 'user', content: prompt }] })
+    })
+    const d = await r.json()
+    if (d.content && d.content[0] && d.content[0].text) context = d.content[0].text.trim()
+  } catch (_) {}
+  await supabase.from('misogyny_highlights').insert({
+    platform: 'x',
+    handle: '@' + handle,
+    content: tweet.slice(0, 500),
+    context,
+    source_url: tweetUrl,
+    highlight_date: new Date().toISOString().split('T')[0],
+    active: false,
+    auto_scraped: true,
+    misogyny_score: score,
+  })
+  console.log('Auto-MOTD queued from @' + handle + ' score:' + score + ' — pending admin approval')
 }
 
 Deno.serve(async (req: Request) => {
