@@ -124,8 +124,11 @@ async function classifyArticles(articles: any[]): Promise<any[]> {
 
 Each object: "index"(1-based), "gbv_relevance"(0-10), "misogyny_score"(0-10), "sentiment"("alarming"|"negative"|"neutral"|"positive"), "tech_facilitated"(bool), "tech_platforms"(array), "content_category"("femicide"|"gbv"|"manosphere"|"protest"|"campus"|"policy"|"general"), "is_kibe_related"(bool), "is_protest"(bool).
 
-IMPORTANT: Andrew Kibe / 28 Commandments / Lambistic content scores misogyny_score 7-10 even without direct violence — it is the ideological pipeline to femicide.
-Protest / march content: is_protest=true, gbv_relevance 7-8.
+IMPORTANT SCORING RULES:
+1. Andrew Kibe / 28 Commandments / Lambistic / Manosphere Messiahs: misogyny_score 7-10 even without direct violence — this is the ideological pipeline to femicide. Set is_kibe_related=true for ANY article that: mentions Andrew Kibe by name, references "28 Commandments", references "Lambistic" or "Kibe's Den", or discusses the BBC Manosphere Messiahs documentary. This includes news articles REPORTING ON or CRITIQUING Kibe — not just content promoting him.
+2. Protest / march / rally / vigil about femicide or GBV: is_protest=true, gbv_relevance 7-8.
+3. Campus murders / university student femicide (JOOUST, RVIST, any Kenyan university): content_category="campus", gbv_relevance 8-10.
+4. Court cases, convictions, acquittals for femicide: content_category="policy", gbv_relevance 7-9.
 
 ARTICLES:
 ${list}
