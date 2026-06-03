@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { AlertTriangle, Shield, Users, MessageSquare, ChevronDown, ChevronUp,
-         Send, X, Plus, Heart } from 'lucide-react'
+         Send, X, Plus, Heart, ExternalLink } from 'lucide-react'
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
