@@ -347,7 +347,7 @@ function DashboardTab({ isMobile = false }){
       }}>
         <div>
           <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:6}}>
-            <div style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,}}><span style={{color:'#fff'}}>h</span><span style={{color:'#FF5C28'}}>epa</span></div>
+            <div style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,}}><span style={{letterSpacing:0}}><span style={{color:"#fff"}}>h</span><span style={{color:"#FF5C28"}}>epa</span></span></div>
             <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:'rgba(255,255,255,0.5)',letterSpacing:'.12em',textTransform:'uppercase',fontWeight:700}}>Personal safety tool for women</div>
           </div>
           <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.6)',lineHeight:1.7,maxWidth:560}}>
