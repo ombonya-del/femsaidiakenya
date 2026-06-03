@@ -392,26 +392,29 @@ function NormCard({norm}) {
             {norm.created_at&&` · ${new Date(norm.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}`}
           </div>
         </div>
-        <div style={{display:'flex',alignItems:'center',gap:4,flexShrink:0,fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT}}>
-          <Heart size={12}/> {norm.helpful_count||0}
+        <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
+          {typeof window!=='undefined'&&localStorage.getItem('norm_token_'+norm.id)&&<button onClick={e=>{e.stopPropagation();if(window._editNorm)window._editNorm(norm)}} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,color:A,background:'none',border:'1px solid '+A,cursor:'pointer',padding:'2px 8px'}}>Edit</button>}
+          <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,display:'flex',alignItems:'center',gap:4}}><Heart size={12}/> {norm.helpful_count||0}</div>
         </div>
       </div>
       <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:15,color:TXT,lineHeight:1.8,margin:0}}>
         {isLong&&!expanded?`${norm.story?.slice(0,200)}…`:norm.story}
       </p>
       {isLong&&<button onClick={()=>setExpanded(!expanded)} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:A,background:'none',border:'none',cursor:'pointer',marginTop:6,padding:0}}>{expanded?'Show less':'Read full story'}</button>}
+      {norm.media_url&&<div style={{marginTop:10}}>{['mp4','webm','mov'].some(e=>norm.media_url.toLowerCase().endsWith('.'+e))?<video src={norm.media_url} controls style={{width:'100%',maxHeight:240,borderRadius:4,background:'#000'}}/>:<img src={norm.media_url} alt="" style={{width:'100%',maxHeight:240,objectFit:'cover',borderRadius:4,cursor:'pointer'}} onClick={()=>window.open(norm.media_url,'_blank')}/>}</div>}
+      {norm.link_url&&<a href={norm.link_url} target="_blank" rel="noopener noreferrer" style={{display:'inline-flex',alignItems:'center',gap:4,marginTop:6,fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:A,textDecoration:'none'}}><ExternalLink size={11}/> Source</a>}
     </div>
   )
 }
 
 function NormSubmitForm({onClose, onSubmit}) {
-  const [form, setForm]     = useState({title:'',story:'',submitted_by:'',context:''})
+  const [form, setForm]     = useState({title:'',story:'',submitted_by:'',context:'',link_url:''})
   const [sending, setSending] = useState(false)
   const [done, setDone]     = useState(false)
   const submit = async () => {
     if(!form.title.trim()||!form.story.trim()) return
     setSending(true)
-    const {error} = await supabase.from('safety_norms').insert({title:form.title.trim(),story:form.story.trim(),submitted_by:form.submitted_by.trim()||'Anonymous',context:form.context.trim()||'General',helpful_count:0,status:'published'})
+    const {error} = await supabase.from('safety_norms').insert({title:form.title.trim(),story:form.story.trim(),submitted_by:form.submitted_by.trim()||'Anonymous',context:form.context.trim()||'General',link_url:form.link_url.trim()||null,helpful_count:0,status:'published'}).select('id,edit_token').single().then(({data})=>{if(data?.id&&data?.edit_token)localStorage.setItem('norm_token_'+data.id,data.edit_token)})
     setSending(false)
     if(!error){setDone(true);setTimeout(()=>{onSubmit();onClose()},1500)}
   }
@@ -436,6 +439,10 @@ function NormSubmitForm({onClose, onSubmit}) {
                   )}
                 </div>
               ))}
+              <div style={{marginBottom:12}}>
+                <label style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:MUT,display:'block',marginBottom:4}}>Link or source URL (optional)</label>
+                <input value={form.link_url} onChange={e=>setForm({...form,link_url:e.target.value})} placeholder="News article, social post, video link..." style={{width:'100%',padding:'8px 12px',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,background:'rgba(255,255,255,0.6)',border:`1px solid ${BD}`,color:TXT,outline:'none',boxSizing:'border-box'}}/>
+              </div>
               <button onClick={submit} disabled={sending||!form.title||!form.story} style={{display:'inline-flex',alignItems:'center',gap:6,fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,padding:'10px 20px',background:A,color:'#fff',border:'none',cursor:form.title&&form.story?'pointer':'not-allowed',opacity:form.title&&form.story?1:0.5}}>
                 <Send size={13}/> {sending?'Sharing…':'Share this norm'}
               </button>

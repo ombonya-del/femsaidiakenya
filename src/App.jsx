@@ -242,7 +242,6 @@ function DashboardTab({ isMobile = false }){
   const [intelStats,   setIntelStats]   = useState({total:0,highMiso:0,techGBV:0,alarming:0})
   const [countyCounts, setCountyCounts] = useState({})
   const [totalCases,   setTotalCases]   = useState(null)
-  const [totalCases,   setTotalCases]   = useState(null)
 
   useEffect(()=>{
     _sb.from('femicide_cases')

@@ -573,9 +573,9 @@ export default function HalaFuTab({ isMobile }) {
               letterSpacing:'.04em', whiteSpace:'nowrap' }}>
             📄 Download Halafu? brief
           </a>
-          <button onClick={() => setShowPDF(true)}
+          <button onClick={() => setShowPDF(true)}>
             📊 Download Intel Brief
-          </a>
+          </button>
         </div>
       </div>
 
@@ -595,9 +595,9 @@ export default function HalaFuTab({ isMobile }) {
             Updated every two weeks. Share with policymakers, funders and researchers.
           </p>
         </div>
-        <button onClick={() => setShowPDF(true)}
+        <button onClick={() => setShowPDF(true)}>
           📥 Download latest brief
-        </a>
+        </button>
       </div>
 
       {/* Brief archive */}
@@ -624,9 +624,9 @@ export default function HalaFuTab({ isMobile }) {
                       {b.period_start} — {b.period_end}
                     </p>
                   </div>
-                  <button onClick={() => setShowPDF(true)}
+                  <button onClick={() => setShowPDF(true)}>
                     📥 Download
-                  </a>
+                  </button>
                 </div>
               ))}
             </div>
@@ -696,7 +696,6 @@ export default function HalaFuTab({ isMobile }) {
           Submit a project <ArrowRight size={13}/>
         </a>
       </div>
-    </div>
       {/* ── PDF Viewer Modal ─────────────────────────────────────────── */}
       {showPDF && (
         <div style={{
@@ -748,5 +747,6 @@ export default function HalaFuTab({ isMobile }) {
           </a>
         </div>
       )}
+    </div>
   )
 }
