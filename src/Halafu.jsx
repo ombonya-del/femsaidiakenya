@@ -514,6 +514,7 @@ function ProjectCard({ p, isMobile }) {
 export default function HalaFuTab({ isMobile }) {
   const [lane, setLane] = useState('all')
   const [briefs, setBriefs] = useState([])
+  const [showPDF, setShowPDF] = useState(false)
   const [showPrevBriefs, setShowPrevBriefs] = useState(false)
   const filtered = lane === 'all' ? PROJECTS : PROJECTS.filter(p => p.lane === lane)
 
@@ -573,7 +574,7 @@ export default function HalaFuTab({ isMobile }) {
             📄 Download Halafu? brief
           </a>
           <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf" target="_blank" rel="noopener noreferrer" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.08)', color:'#D4B0B8', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:600, padding:'10px 18px', textDecoration:'none', border:'1px solid rgba(255,255,255,0.15)', letterSpacing:'.04em', whiteSpace:'nowrap' }}>
-            📊 Download Intel Brief
+            📄 Download Intel Brief
           </a>
         </div>
       </div>
@@ -695,6 +696,26 @@ export default function HalaFuTab({ isMobile }) {
           Submit a project <ArrowRight size={13}/>
         </a>
       </div>
+      {/* ── PDF Viewer Modal ─────────────────────────────────────────── */}
+      {showPDF && (
+        <div style={{
+          position:'fixed', inset:0, zIndex:9999,
+          background:'rgba(0,0,0,0.85)',
+          display:'flex', flexDirection:'column',
+          alignItems:'center', justifyContent:'center',
+          padding:'16px',
+        }}>
+          {/* close bar */}
+          <div style={{
+            width:'100%', maxWidth:'860px',
+            display:'flex', justifyContent:'space-between',
+            alignItems:'center', marginBottom:'10px',
+          }}>
+            <span style={{color:'#F0D0D8', fontWeight:700, fontSize:'14px', letterSpacing:'.08em'}}>
+              INTEL BRIEF
+            </span>
+            <button
+              onClick={() => setShowPDF(false)}
               style={{
                 background:'#8A1030', color:'#fff', border:'none',
                 borderRadius:'6px', padding:'6px 16px',
