@@ -13,7 +13,15 @@ const HANDLES = [
   'NanjalaOK','FemSaidiaKenya','WanjikuRevolt','AkiliDada',
   'AmnestyKenya','KenyaHumanRights',
   // NEW — manosphere tracking (monitor, not endorse)
-  'kibeandy',       // Andrew Kibe — track his posts for MOTD signals
+  'kibeandy',       // Andrew Kibe — manosphere pipeline
+  'amerix',          // Amerix — red pill masculinity influencer, same pipeline as Kibe
+  'kenyagossips',    // Kenya Gossips — high reach, surfaces GBV incidents
+  'primemediakenya', // Prime Media Kenya — mainstream news
+  'EndFemicideKE',   // End Femicide KE — advocacy
+  'TreasonousBabe',  // Feminist/advocacy voice
+  'C_NyaKundiH',     // Advocacy
+  'kijana_misa',     // Youth voice
+  'hivileo1',        // Kenya commentary
 ]
 
 // ── KEYWORD SEARCHES — hashtags + topic queries ───────────────────────────────
@@ -53,7 +61,7 @@ async function pollHandle(handle: string) {
   for (const tweet of tweets) {
     const text = tweet.text || ''
     // For Kibe specifically: lower threshold — all posts are signal
-    const isKibe = handle === 'kibeandy'
+    const isKibe = handle === 'kibeandy' || handle === 'amerix'
     if (!isKibe && !KEYWORDS.some(k => text.toLowerCase().includes(k))) continue
     results.relevant++
     const { error } = await supabase.from('sentiment_articles').upsert({
