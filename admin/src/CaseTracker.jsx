@@ -94,6 +94,36 @@ function JusticeFunnel({ cases, mobile }) {
 }
 
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────────
+
+// ── WE REMEMBER TOGGLE ────────────────────────────────────────────────────────
+function WeRememberToggle({ caseId, current, onToggle }) {
+  const [busy, setBusy] = useState(false)
+  const isOn = current !== false
+
+  const toggle = async (e) => {
+    e.stopPropagation()
+    setBusy(true)
+    const { error } = await supabase.from('femicide_cases').update({ we_remember: !isOn }).eq('id', caseId)
+    setBusy(false)
+    if (!error) onToggle(caseId, !isOn)
+  }
+
+  return (
+    <button onClick={toggle} disabled={busy} title={isOn?'Shown in We Remember — click to hide':'Hidden — click to show'}
+      style={{
+        display:'inline-flex', alignItems:'center', gap:4,
+        padding:'3px 9px', borderRadius:12, cursor:busy?'wait':'pointer',
+        border:`1px solid ${isOn?'#60A050':'#B89AAA'}`,
+        background:isOn?'#C8D8C0':'#EEE0E8',
+        fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+        color:isOn?'#1A4810':'#7A4A60', whiteSpace:'nowrap',
+        opacity:busy?0.5:1,
+      }}>
+      {isOn ? '● We Remember' : '○ Hidden'}
+    </button>
+  )
+}
+
 export default function CaseTrackerTab() {
   const mobile = window.innerWidth < 768
 
@@ -105,6 +135,8 @@ export default function CaseTrackerTab() {
   const [yearFilter, setYearFilter]     = useState('all')
   const [techFilter, setTechFilter]     = useState('all')
   const [search, setSearch]             = useState('')
+
+  const handleWeRemember = (id, val) => setCases(cs => cs.map(c => c.id===id ? {...c,we_remember:val} : c))
 
   useEffect(() => { load() }, [])
 
@@ -302,7 +334,10 @@ export default function CaseTrackerTab() {
                             {conf.label}
                           </span>
                           <div style={{ fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif", textAlign:'right' }}>{dateStr}</div>
-                          {isOpen ? <ChevronUp size={14} color={MUT}/> : <ChevronDown size={14} color={MUT}/>}
+                          <div onClick={e=>e.stopPropagation()} style={{marginTop:2}}>
+            <WeRememberToggle caseId={c.id} current={c.we_remember} onToggle={handleWeRemember}/>
+          </div>
+          {isOpen ? <ChevronUp size={14} color={MUT}/> : <ChevronDown size={14} color={MUT}/>}
                         </div>
                       </div>
                     </div>

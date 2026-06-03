@@ -194,11 +194,14 @@ async function updateMisogynyIndex() {
 Deno.serve(async (req: Request) => {
   if (req.method==='GET') return new Response(JSON.stringify({status:'ok'}),{headers:{'Content-Type':'application/json'}})
   try {
+    // Fetch all feeds in parallel batches of 5 (avoids timeout)
     const allArticles: any[] = []
-    for (const feed of FEEDS) {
-      const items = await fetchFeed(feed)
-      allArticles.push(...items)
-      await new Promise(r=>setTimeout(r,2000))
+    const BATCH = 5
+    for (let i = 0; i < FEEDS.length; i += BATCH) {
+      const batch = FEEDS.slice(i, i + BATCH)
+      const results = await Promise.all(batch.map(feed => fetchFeed(feed)))
+      results.forEach(items => allArticles.push(...items))
+      if (i + BATCH < FEEDS.length) await new Promise(r=>setTimeout(r,500))
     }
 
     const seen=new Set<string>()
@@ -221,7 +224,7 @@ Deno.serve(async (req: Request) => {
     for (let i=0;i<limited.length;i+=5) {
       const results=await classifyArticles(limited.slice(i,i+5))
       classified.push(...results)
-      if (i+5<limited.length) await new Promise(r=>setTimeout(r,1000))
+      if (i+5<limited.length) await new Promise(r=>setTimeout(r,300))
     }
 
     const toInsert=classified.filter(a=>a.gbv_relevance>=4||a.is_kibe_related||a.is_protest).map(a=>({
