@@ -2544,6 +2544,174 @@ const TABS = TAB_GROUPS.flatMap(g => g.tabs)
 
 // ── Manual MOTD creation ──────────────────────────────────────────────────────
 function ManualMOTD({ supabase, onSaved }) {
+  const [open, setOpen]           = useState(false)
+  const [content, setContent]     = useState('')
+  const [context, setContext]     = useState('')
+  const [platform, setPlatform]   = useState('X')
+  const [handle, setHandle]       = useState('')
+  const [sourceUrl, setSourceUrl] = useState('')
+  const [mediaUrl, setMediaUrl]   = useState('')
+  const [mediaType, setMediaType] = useState('')
+  const [saving, setSaving]       = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [editId, setEditId]       = useState(null)
+  const [highlights, setHighlights] = useState([])
+
+  const A = '#8A1030', MUT = '#7A4A60', TXT = '#180410', BD = '#B89AAA', CRD = '#C4AABB'
+  const labelSt = { fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT, display:'block', marginBottom:4 }
+  const inputSt = { width:'100%', padding:'6px 8px', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, border:`1px solid ${BD}`, background:'#fff', color:TXT, boxSizing:'border-box' }
+
+  const loadHighlights = async () => {
+    const { data } = await supabase.from('misogyny_highlights').select('*').order('highlight_date',{ascending:false}).limit(20)
+    setHighlights(data || [])
+  }
+
+  const reset = () => {
+    setContent(''); setContext(''); setPlatform('X'); setHandle('')
+    setSourceUrl(''); setMediaUrl(''); setMediaType(''); setEditId(null)
+  }
+
+  const uploadMedia = async (file) => {
+    if (!file) return
+    setUploading(true)
+    const name = `motd-${Date.now()}.${file.name.split('.').pop()}`
+    const { error } = await supabase.storage.from('public-assets').upload(name, file, { upsert:true })
+    if (!error) {
+      const { data:pub } = supabase.storage.from('public-assets').getPublicUrl(name)
+      setMediaUrl(pub.publicUrl)
+      setMediaType(file.type.startsWith('video') ? 'video' : 'image')
+    }
+    setUploading(false)
+  }
+
+  const save = async (publish) => {
+    if (!content.trim()) return
+    setSaving(true)
+    const row = { platform, handle: handle||'manual', content: content.trim(),
+      context: context.trim()||'Manually submitted.', active: publish,
+      highlight_date: new Date().toISOString().split('T')[0],
+      auto_scraped: false, misogyny_score: 8,
+      source_url: sourceUrl.trim()||null, media_url: mediaUrl||null, media_type: mediaType||null }
+    if (editId) await supabase.from('misogyny_highlights').update(row).eq('id', editId)
+    else await supabase.from('misogyny_highlights').insert(row)
+    reset(); setSaving(false); if (onSaved) onSaved(); loadHighlights()
+  }
+
+  const startEdit = (h) => {
+    setEditId(h.id); setContent(h.content||''); setContext(h.context||'')
+    setPlatform(h.platform||'X'); setHandle(h.handle||'')
+    setSourceUrl(h.source_url||''); setMediaUrl(h.media_url||'')
+    setMediaType(h.media_type||''); setOpen(true)
+  }
+
+  const toggleActive = async (h) => {
+    await supabase.from('misogyny_highlights').update({active:!h.active}).eq('id',h.id)
+    loadHighlights(); if (onSaved) onSaved()
+  }
+
+  const del = async (id) => {
+    if (!window.confirm('Delete?')) return
+    await supabase.from('misogyny_highlights').delete().eq('id',id)
+    loadHighlights(); if (onSaved) onSaved()
+  }
+
+  if (!open) return (
+    <div style={{marginBottom:12}}>
+      <div style={{display:'flex',gap:8,marginBottom:8}}>
+        <button onClick={()=>{setOpen(true);reset();loadHighlights()}}
+          style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,padding:'8px 16px',background:A,color:'#F0D0D8',border:'none',cursor:'pointer'}}>
+          + Create MOTD manually
+        </button>
+        <button onClick={loadHighlights}
+          style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,padding:'8px 12px',background:'transparent',color:MUT,border:`1px solid ${BD}`,cursor:'pointer'}}>
+          Manage highlights
+        </button>
+      </div>
+      {highlights.length > 0 && highlights.map(h=>(
+        <div key={h.id} style={{display:'flex',alignItems:'center',gap:6,padding:'7px 10px',marginBottom:4,
+          background:h.active?'#E8F5E9':'#F5E8EC',border:`1px solid ${BD}`}}>
+          <span style={{fontSize:9,fontWeight:700,padding:'2px 5px',background:h.active?'#1A5A2A':'#CA8A04',color:'#fff',flexShrink:0}}>
+            {h.active?'LIVE':'DRAFT'}
+          </span>
+          <span style={{flex:1,fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:TXT,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+            [{h.platform}] {(h.content||'').slice(0,70)}
+          </span>
+          <button onClick={()=>startEdit(h)} style={{fontSize:10,padding:'2px 7px',background:CRD,color:TXT,border:`1px solid ${BD}`,cursor:'pointer'}}>Edit</button>
+          <button onClick={()=>toggleActive(h)} style={{fontSize:10,padding:'2px 7px',background:h.active?'#CA8A04':'#1A5A2A',color:'#fff',border:'none',cursor:'pointer'}}>
+            {h.active?'Unpublish':'Publish'}
+          </button>
+          <button onClick={()=>del(h.id)} style={{fontSize:10,padding:'2px 7px',background:A,color:'#fff',border:'none',cursor:'pointer'}}>Del</button>
+        </div>
+      ))}
+    </div>
+  )
+
+  return (
+    <div style={{background:'#F5E8EC',border:`1px solid ${A}`,padding:16,marginBottom:16,borderLeft:`4px solid ${A}`}}>
+      <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,color:A,marginBottom:12}}>
+        {editId ? 'Edit MOTD entry' : 'Create Misogyny of the Day entry'}
+      </div>
+      <div style={{marginBottom:8}}>
+        <label style={labelSt}>CONTENT *</label>
+        <textarea value={content} onChange={e=>setContent(e.target.value)} rows={3}
+          style={{...inputSt,resize:'vertical'}} placeholder="Paste the tweet, post or quote..."/>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
+        <div>
+          <label style={labelSt}>PLATFORM</label>
+          <select value={platform} onChange={e=>setPlatform(e.target.value)} style={inputSt}>
+            {['X','Facebook','TikTok','YouTube','Instagram','Radio','TV','manual'].map(p=><option key={p}>{p}</option>)}
+          </select>
+        </div>
+        <div>
+          <label style={labelSt}>HANDLE / SOURCE</label>
+          <input value={handle} onChange={e=>setHandle(e.target.value)} style={inputSt} placeholder="@handle or source"/>
+        </div>
+        <div style={{gridColumn:'span 2'}}>
+          <label style={labelSt}>SOURCE URL</label>
+          <input value={sourceUrl} onChange={e=>setSourceUrl(e.target.value)} style={inputSt} placeholder="https://..."/>
+        </div>
+      </div>
+      <div style={{marginBottom:8}}>
+        <label style={labelSt}>CONTEXT / ANALYTICAL NOTE</label>
+        <textarea value={context} onChange={e=>setContext(e.target.value)} rows={2}
+          style={{...inputSt,resize:'vertical'}} placeholder="Why is this misogynistic? How does it connect to femicide risk?"/>
+      </div>
+      <div style={{marginBottom:12}}>
+        <label style={labelSt}>MEDIA (photo / video / screenshot)</label>
+        <input type="file" accept="image/*,video/*" onChange={e=>uploadMedia(e.target.files[0])}
+          style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,display:'block',marginBottom:4}}/>
+        {uploading && <span style={{fontSize:11,color:MUT}}>Uploading...</span>}
+        {mediaUrl && (
+          <div style={{display:'flex',alignItems:'center',gap:8,marginTop:6}}>
+            {mediaType==='video'
+              ? <video src={mediaUrl} style={{maxWidth:160,maxHeight:100}} controls/>
+              : <img src={mediaUrl} style={{maxWidth:160,maxHeight:100,objectFit:'cover'}} alt="preview"/>}
+            <button onClick={()=>{setMediaUrl('');setMediaType('')}}
+              style={{fontSize:10,background:'none',border:`1px solid ${BD}`,padding:'2px 6px',cursor:'pointer',color:MUT}}>Remove</button>
+          </div>
+        )}
+        {!mediaUrl && <input value={mediaUrl} onChange={e=>setMediaUrl(e.target.value)}
+          style={{...inputSt,marginTop:4}} placeholder="Or paste media URL: https://..."/>}
+      </div>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+        <button onClick={()=>save(false)} disabled={saving||uploading}
+          style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,padding:'8px 16px',background:'#E8D0C0',color:TXT,border:`1px solid ${BD}`,cursor:'pointer'}}>
+          Save as draft
+        </button>
+        <button onClick={()=>save(true)} disabled={saving||uploading}
+          style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,padding:'8px 16px',background:A,color:'#F0D0D8',border:'none',cursor:'pointer'}}>
+          {editId?'Update + publish':'Publish immediately'}
+        </button>
+        <button onClick={()=>{reset();setOpen(false)}}
+          style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,padding:'8px 12px',background:'transparent',color:MUT,border:`1px solid ${BD}`,cursor:'pointer'}}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  )
+}
+) {
   const [open, setOpen]     = useState(false)
   const [content, setContent]  = useState('')
   const [context, setContext]  = useState('')
