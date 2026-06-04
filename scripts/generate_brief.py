@@ -2105,7 +2105,7 @@ def _dv_p1_right(c, brief, snap):
     from reportlab.lib.utils import simpleSplit
     c.clipPath(c.beginPath(), stroke=0, fill=0)
     p_clip=c.beginPath(); p_clip.rect(x, cur-an_content, w, an_content); c.clipPath(p_clip, stroke=0, fill=1)
-    _dv_wrap(c, mi_txt[:600], x+8, cur, w-16, an_content-28, FR, 7.5, HexColor('#180410'), 12)
+    _dv_wrap(c, mi_txt[:600], x+8, cur, w-16, an_content-30, FR, 7.5, HexColor('#180410'), 12)
     c.restoreState()
     # Mini misogyny score bars — fills gap before bottom stats
     ms3  = int(float(snap.get('media_score',0) or 0))

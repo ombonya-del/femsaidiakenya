@@ -3,6 +3,12 @@ import { createClient } from '@supabase/supabase-js'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { ExternalLink, Smartphone, RefreshCw } from 'lucide-react'
 
+const stripHtml = (str) => str
+  ? str.replace(/<[^>]*>/g, '').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&')
+       .replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').trim()
+  : ''
+
+
 const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
@@ -231,7 +237,7 @@ export default function TechTrackerTab() {
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:10 }}>
                   {a.thumbnail_url && !mobile && (
                     <a href={a.article_url} target="_blank" rel="noopener noreferrer" style={{ flexShrink:0, display:'block', position:'relative' }}>
-                      <img src={a.thumbnail_url} alt={a.article_title} style={{ width:110, height:62, objectFit:'cover', display:'block' }}/>
+                      <img src={a.thumbnail_url} alt={stripHtml(a.article_title)} style={{ width:110, height:62, objectFit:'cover', display:'block' }}/>
                       {a.content_type==='video' && (
                         <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.35)' }}>
                           <span style={{ fontSize:18, color:'#fff' }}>▶</span>
@@ -251,7 +257,7 @@ export default function TechTrackerTab() {
                         {a.sentiment}
                       </span>
                     </div>
-                    <div style={{ fontWeight:700, fontSize: mobile ? 13 : 14, color:TXT, marginBottom:5, fontFamily:"'Nunito Sans',sans-serif", wordBreak:'break-word' }}>{a.article_title}</div>
+                    <div style={{ fontWeight:700, fontSize: mobile ? 13 : 14, color:TXT, marginBottom:5, fontFamily:"'Nunito Sans',sans-serif", wordBreak:'break-word' }}>{stripHtml(a.article_title)}</div>
                     {a.tech_details && (
                       <div style={{ background:'#DCC8B8', border:`1px solid #A07040`, padding:'6px 10px', marginBottom:6, fontSize:11, color:'#5A2808', fontFamily:"'Nunito Sans',sans-serif", lineHeight:1.6, wordBreak:'break-word' }}>
                         <strong>Tech involvement:</strong> {(() => {
@@ -263,7 +269,7 @@ export default function TechTrackerTab() {
                         })()}
                       </div>
                     )}
-                    <p style={{ fontSize:12, color:MUT, lineHeight:1.7, fontFamily:"'Nunito Sans',sans-serif" }}>{a.article_snippet}</p>
+                    <p style={{ fontSize:12, color:MUT, lineHeight:1.7, fontFamily:"'Nunito Sans',sans-serif" }}>{stripHtml(a.article_snippet)}</p>
                     <a href={a.article_url} target="_blank" rel="noopener noreferrer"
                       style={{ color:A, display:'inline-flex', alignItems:'center', gap:3, fontSize:11, fontFamily:"'Nunito Sans',sans-serif", fontWeight:600, textDecoration:'none', marginTop:6 }}>
                       Read <ExternalLink size={10}/>
