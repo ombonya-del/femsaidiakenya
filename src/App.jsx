@@ -103,7 +103,7 @@ const NAV_GROUPS = [
     id:    'data',
     label: 'Intel',
     icon:  <TrendingUp size={19}/>,
-    tabs:  ['data', 'silencing-women', 'tech-tracker', 'sentiment', 'cases'],
+    tabs:  ['data', 'silencing-women', 'tech-tracker', 'sentiment', 'cases', 'remember'],
   },
   {
     id:    'safety',
@@ -143,6 +143,7 @@ const TAB_SHORT = {
   'petition':        'Petition',
   'report':          'Report',
   'cases':           'Cases',
+  'remember':         'Remember',
   'partners':        'Partners',
 }
 
@@ -1450,6 +1451,145 @@ function BottomNav({ groups, activeGroup, onGroupTap }) {
 }
 
 // ── APP ROOT ──────────────────────────────────────────────────────────────────
+
+function WeRememberTab() {
+  const [cases, setCases]   = useState([])
+  const [loading, setLoading] = useState(true)
+  const [count, setCount]   = useState(0)
+  const isMobile = window.innerWidth < 768
+
+  const A   = '#8A1030', A2 = '#C05010'
+  const TXT = '#180410', MUT = '#7A4A60'
+  const BD  = '#B89AAA', CRD = '#C4AABB'
+
+  useEffect(() => {
+    const load = async () => {
+      const { data, count: c } = await supabase
+        .from('femicide_cases')
+        .select('id,victim_name,victim_age_range,county,incident_date,we_remember_note,incident_type', { count:'exact' })
+        .eq('we_remember', true)
+        .eq('published', true)
+        .order('incident_date', { ascending: false })
+      setCases(data || [])
+      setCount(c || 0)
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  const fmt = (d) => {
+    if (!d) return ''
+    try { return new Date(d).toLocaleDateString('en-KE', { year:'numeric', month:'long' }) }
+    catch { return d }
+  }
+
+  return (
+    <div className="fade-up" style={{ width:'100%' }}>
+      {/* Header */}
+      <div style={{ background: '#180410', padding: isMobile ? '32px 20px' : '48px 40px',
+        marginBottom:2, textAlign:'center', position:'relative', overflow:'hidden' }}>
+        <div style={{ position:'absolute', inset:0, background:
+          'radial-gradient(ellipse at center, rgba(138,16,48,0.3) 0%, transparent 70%)' }}/>
+        <div style={{ position:'relative', zIndex:1 }}>
+          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+            color:A, letterSpacing:'.15em', textTransform:'uppercase', marginBottom:12 }}>
+            We Remember
+          </p>
+          <h1 className="serif" style={{ fontSize: isMobile ? 28 : 42, fontWeight:700,
+            color:'#F0D0D8', lineHeight:1.2, marginBottom:16 }}>
+            Every name is a life.<br/>Every life matters.
+          </h1>
+          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:14, color:'rgba(240,208,216,0.7)',
+            maxWidth:560, margin:'0 auto 20px', lineHeight:1.8 }}>
+            These are the women and girls whose cases are documented in FemSaidia Kenya's database.
+            They are not statistics. We say their names.
+          </p>
+          <div style={{ display:'inline-flex', alignItems:'center', gap:8,
+            background:'rgba(138,16,48,0.3)', border:'1px solid rgba(138,16,48,0.5)',
+            padding:'10px 20px' }}>
+            <span style={{ fontFamily:"'Lora',serif", fontSize:28, fontWeight:700, color:A }}>
+              {count}
+            </span>
+            <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12,
+              color:'rgba(240,208,216,0.8)', lineHeight:1.4 }}>
+              names documented<br/>in our database
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Candle strip */}
+      <div style={{ background:'#1A0810', padding:'12px 0', textAlign:'center',
+        fontSize:20, letterSpacing:8, marginBottom:2 }}>
+        🕯️🕯️🕯️🕯️🕯️🕯️🕯️🕯️🕯️🕯️
+      </div>
+
+      {/* Memorial wall */}
+      {loading ? (
+        <div style={{ textAlign:'center', padding:48 }}>
+          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:13, color:MUT }}>
+            Loading...
+          </p>
+        </div>
+      ) : (
+        <div style={{ display:'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)',
+          gap:2, marginBottom:2 }}>
+          {cases.map((c, i) => (
+            <div key={c.id} style={{ background: i%2===0 ? '#fdf8f9' : '#fff5f7',
+              border:`1px solid ${BD}`, borderTop:`3px solid ${A}`,
+              padding: isMobile ? '20px 16px' : '24px 20px',
+              position:'relative' }}>
+              {/* Number */}
+              <div style={{ position:'absolute', top:12, right:14,
+                fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
+                color:'rgba(138,16,48,0.3)', fontWeight:700 }}>
+                #{String(i+1).padStart(3,'0')}
+              </div>
+              {/* Candle */}
+              <div style={{ fontSize:18, marginBottom:8 }}>🕯️</div>
+              {/* Name */}
+              <div className="serif" style={{ fontSize:18, fontWeight:700,
+                color:TXT, marginBottom:4, lineHeight:1.3 }}>
+                {c.victim_name || 'Name withheld'}
+              </div>
+              {/* Meta */}
+              <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                color:MUT, marginBottom: c.we_remember_note ? 10 : 0 }}>
+                {[c.county, fmt(c.incident_date)].filter(Boolean).join(' · ')}
+                {c.victim_age_range && c.victim_age_range !== 'unknown' &&
+                  <span> · {c.victim_age_range}</span>}
+              </div>
+              {/* Note */}
+              {c.we_remember_note && (
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12,
+                  color:'#5A2030', lineHeight:1.7, fontStyle:'italic',
+                  borderLeft:`3px solid ${A}`, paddingLeft:10, margin:0 }}>
+                  "{c.we_remember_note}"
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Footer callout */}
+      <div style={{ background:'#180410', padding:'28px 24px', textAlign:'center' }}>
+        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12,
+          color:'rgba(240,208,216,0.7)', lineHeight:1.8, maxWidth:600, margin:'0 auto 16px' }}>
+          If you know of a femicide case not in our database, or wish to add a remembrance note,
+          contact us at <a href="mailto:halafu@femsaidiakenya.org"
+            style={{ color:A, fontWeight:700 }}>halafu@femsaidiakenya.org</a>
+        </p>
+        <p style={{ fontFamily:"'Lora',serif", fontSize:14, fontStyle:'italic',
+          color:'rgba(240,208,216,0.5)' }}>
+          Say their names. Remember their lives. Demand justice.
+        </p>
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState(() => {
     try { return localStorage.getItem('femsaidia_tab') || 'dashboard' } catch { return 'dashboard' }
