@@ -2358,9 +2358,13 @@ def _dv_p2_right(c, brief, snap):
         c.setFont(FR, 4.5)
         c.setFillColor(ALERT if val>=60 else MUTED)
         label_y = by0 + bh + 3
-        if bh > 8: c.drawCentredString(bxb+bar_w/2, label_y, str(val))
+        pass  # labels drawn in fixed column below
         c.setFont(FR, 4); c.setFillColor(MUTED)
         c.drawCentredString(bxb+bar_w/2, by0-7, lbls[i])
+        # Value label at fixed y above highest bar (no overlap)
+        c.setFont(FR, 4.5); c.setFillColor(ALERT if val>=60 else MUTED)
+        if i == 0 or abs(val - hist[i-1]) >= 3:  # only show if changed enough
+            c.drawCentredString(bxb+bar_w/2, by0+bh+3, str(val))
         pts.append((bxb+bar_w/2, by0+bh))
     c.setStrokeColor(BRAND); c.setLineWidth(0.8)
     for i in range(len(pts)-1): c.line(pts[i][0], pts[i][1], pts[i+1][0], pts[i+1][1])
