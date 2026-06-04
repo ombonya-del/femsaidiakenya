@@ -2098,8 +2098,8 @@ def _dv_p1_right(c, brief, snap):
     # ANALYSIS — fills remaining
     cur = _dv_band(c, x, cur, w, "Misogyny Index \u00b7 Analysis", BRAND)
     an_content = an_h - 14
-    c.setFillColor(HexColor('#fff5f7')); c.rect(x, cur-an_content, w, an_content, fill=1, stroke=0)
-    _dv_lbar(c, x, cur-an_content, an_content, BRAND)
+    c.setFillColor(WHITE); c.rect(x, cur-an_content, w, an_content, fill=1, stroke=0)
+    _dv_lbar(c, x, cur-an_content, an_content, CSEP)
     mi_txt = brief.get('MISOGYNY_INDEX','').strip() or brief.get('OVERVIEW','')
     c.saveState()
     from reportlab.lib.utils import simpleSplit
@@ -2120,11 +2120,11 @@ def _dv_p1_right(c, brief, snap):
         c.setFont(FR, 5); c.setFillColor(MUTED)
         c.drawString(x+8, by4+3, lbl4)
         c.setFillColor(HexColor('#e8eaed'))
-        c.rect(x+60, by4, bw3, 8, fill=1, stroke=0)
+        c.rect(x+60, by4, min(bw3, w-72), 8, fill=1, stroke=0)
         c.setFillColor(col4)
         c.rect(x+60, by4, max(4,int(bw3*val4/100)), 8, fill=1, stroke=0)
         c.setFont(FB, 5.5); c.setFillColor(col4)
-        c.drawString(x+60+int(bw3*val4/100)+3, by4+1, str(val4))
+        lbl_x=min(x+w-20, x+60+int(bw3*val4/100)+3); c.drawString(lbl_x, by4+1, str(val4))
     # Stats at very bottom
     arts = snap.get('articles_count', 683)
     kibe = snap.get('kibe_count', 52)
