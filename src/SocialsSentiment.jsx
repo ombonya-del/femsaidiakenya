@@ -300,6 +300,7 @@ export default function SocialsSentimentTab() {
   const [showAll,    setShowAll]    = useState(false)
   const [showAllHighlights, setShowAllHighlights] = useState(false)
   const [activeBreak, setActiveBreak] = useState(null) // clicked breakdown metric
+  const [showAllPulse, setShowAllPulse] = useState(false)
 
   const today       = index[index.length - 1]
   const yesterday   = index[index.length - 2]
