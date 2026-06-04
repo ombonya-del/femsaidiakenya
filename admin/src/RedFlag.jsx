@@ -187,8 +187,10 @@ function ProfileModal({p, onClose}) {
 function ArchetypeCard({a, getContent}) {
   const [open, setOpen] = useState(false)
   const [tab, setTab]   = useState('redflags')
-  const redFlags   = (getContent ? getContent(a.id,'redflags',null) : null) || a.redFlags || []
-  const protective = (getContent ? getContent(a.id,'protective',null) : null) || a.protective || []
+  const _rf = getContent ? getContent(a.id,'redflags',null) : null
+  const redFlags = (_rf && _rf.length > 0) ? _rf : (a.redFlags || [])
+  const _pr = getContent ? getContent(a.id,'protective',null) : null
+  const protective = (_pr && _pr.length > 0) ? _pr : (a.protective || [])
   return (
     <div style={{border:`2px solid ${a.color}`,marginBottom:16,background:CRD}}>
       <div onClick={()=>setOpen(!open)} style={{background:a.color,padding:'16px 20px',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
