@@ -330,7 +330,7 @@ export default function SocialsSentimentTab() {
 
   // ── INTELLIGENCE BREAKDOWN METRICS ─────────────────────────────────────────
   const intelligenceFeed = articles.filter(a => a.platform === 'news' || a.platform === 'youtube' || a.content_type === 'article' || a.content_type === 'video' || !a.platform)
-  const pulseFeed        = articles.filter(a => a.platform === 'x' || a.content_type === 'social_post' || a.platform === 'tiktok' || a.platform === 'youtube')
+  const pulseFeed        = articles.filter(a => a.platform === 'x' || a.content_type === 'social_post' || a.platform === 'tiktok' || (a.platform === 'youtube') || (a.platform === 'news' && (a.is_protest || a.is_kibe_related || ['march','podcast','video','community'].includes(a.content_category))))
 
   const total       = articles.length
   const highMiso    = articles.filter(a => a.misogyny_score >= 7)
@@ -849,7 +849,7 @@ export default function SocialsSentimentTab() {
                 {pulseFeed.length === 0 ? (
                   <div style={{ background:CRD, border:`1px solid ${BD}`, padding:20, textAlign:'center' }}>
                     <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT, fontStyle:'italic', marginBottom:8 }}>
-                      No community posts yet — IFTTT pipeline activates when accounts tweet.
+                      Community intelligence — marches, podcasts, video interviews, femicide discourse. Updated every 6 hours.
                     </p>
                     <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT }}>
                       Monitoring {10} X handles + 8 keyword searches

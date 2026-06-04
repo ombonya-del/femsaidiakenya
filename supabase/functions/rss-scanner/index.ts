@@ -242,7 +242,7 @@ Deno.serve(async (req: Request) => {
       .filter(a => a.gbv_relevance >= 4 || a.is_kibe_related || a.is_protest)
       .map(a => ({
         source_name:a.source, channel_name:a.source, source_url:a.url, article_url:a.url,
-        article_title:a.title, article_snippet:(a.snippet||'').slice(0,500),
+        article_title:stripHtml(a.title), article_snippet:stripHtml((a.snippet||'').slice(0,500)),
         content_type:a.content_type||'article', thumbnail_url:null,
         published_at:a.pubDate?new Date(a.pubDate).toISOString():null,
         gbv_relevance:a.gbv_relevance, misogyny_score:a.misogyny_score,
