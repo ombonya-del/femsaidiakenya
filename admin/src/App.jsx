@@ -2546,12 +2546,12 @@ const TABS = TAB_GROUPS.flatMap(g => g.tabs)
 
 // ── Manual MOTD creation ──────────────────────────────────────────────────────
 function ManualMOTD({ supabase, onCreated }) {
-  const [open, setOpen]     = React.useState(false)
-  const [content, setContent]  = React.useState('')
-  const [context, setContext]  = React.useState('')
-  const [platform, setPlatform] = React.useState('manual')
-  const [handle, setHandle]  = React.useState('')
-  const [saving, setSaving]  = React.useState(false)
+  const [open, setOpen]     = useState(false)
+  const [content, setContent]  = useState('')
+  const [context, setContext]  = useState('')
+  const [platform, setPlatform] = useState('manual')
+  const [handle, setHandle]  = useState('')
+  const [saving, setSaving]  = useState(false)
 
   const save = async (publish) => {
     if (!content.trim()) return
