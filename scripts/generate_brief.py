@@ -2101,7 +2101,12 @@ def _dv_p1_right(c, brief, snap):
     c.setFillColor(HexColor('#fff5f7')); c.rect(x, cur-an_content, w, an_content, fill=1, stroke=0)
     _dv_lbar(c, x, cur-an_content, an_content, BRAND)
     mi_txt = brief.get('MISOGYNY_INDEX','').strip() or brief.get('OVERVIEW','')
-    _dv_wrap(c, mi_txt, x+8, cur, w-16, an_content-22, FR, 8.5, HexColor('#180410'), 13)
+    c.saveState()
+    from reportlab.lib.utils import simpleSplit
+    c.clipPath(c.beginPath(), stroke=0, fill=0)
+    p_clip=c.beginPath(); p_clip.rect(x, cur-an_content, w, an_content); c.clipPath(p_clip, stroke=0, fill=1)
+    _dv_wrap(c, mi_txt[:600], x+8, cur, w-16, an_content-28, FR, 7.5, HexColor('#180410'), 12)
+    c.restoreState()
     # Mini misogyny score bars — fills gap before bottom stats
     ms3  = int(float(snap.get('media_score',0) or 0))
     cs3  = int(float(snap.get('community_score',0) or 0))
@@ -2167,7 +2172,7 @@ def _dv_p2_left(c, brief, snap):  # snap needed for index visual
         mi2 = float(snap.get('misogyny_index',0) or 0)
         bw2 = w - 32
         c.setFont(FR, 5.5); c.setFillColor(MUTED)
-        c.drawString(x+14, gap_top, f"MISOGYNY INDEX SNAPSHOT  \u00b7  Score: {int(mi2)}/100  \u00b7  Gap: {ms2-cs2}pt  \u00b7  Alert threshold: 60")
+        c.drawString(x+8, gap_top, f'ARTICLE BREAKDOWN  ·  {int(snap.get("articles_count",683))} articles indexed')
         for k,(lbl3,val3,col3) in enumerate([
                 ("Media",ms2,ALERT),("Community",cs2,HexColor('#2563EB'))]):
             by3 = gap_top - 14 - k*16
@@ -2274,6 +2279,7 @@ def _dv_p2_right(c, brief, snap):
     sq_c  = [BRAND, BRAND, HexColor('#C05010'), HexColor('#C05010'),
              HexColor('#1A3F6F'), HexColor('#1A3F6F')]
     for j, txt3 in enumerate(items):
+        txt3 = txt3.replace("**","").replace("__","").strip()
         top3 = cur - j*per
         ry3  = cur - (j+1)*per
         sc   = sq_c[j % len(sq_c)]
@@ -2283,14 +2289,27 @@ def _dv_p2_right(c, brief, snap):
         c.drawCentredString(x+12, top3-7, str(j+1).zfill(2))
         # Text — bold first line, regular remainder
         cpl2  = max(1, int((w-28)/(9*.57)))
-        lines = textwrap.wrap(txt3[:220], cpl2)
-        c.setFont(FB, 9); c.setFillColor(HexColor('#180410'))
-        c.drawString(x+22, top3-11, lines[0] if lines else '')
-        c.setFont(FR, 8); c.setFillColor(HexColor('#444'))
-        ty3 = top3-22
-        for ln in lines[1:]:
+        # Split at first colon — institution/title (bold) vs action (regular)
+        if ':' in txt3:
+            ask_title, ask_desc = txt3.split(':', 1)
+        else:
+            ask_title, ask_desc = txt3[:55], txt3[55:]
+        ask_title = ask_title.strip()
+        ask_desc  = ask_desc.strip()
+        # Title — smaller font so institution names fit on fewer lines
+        cpl_t = max(1, int((w-28)/(7.5*.57)))
+        title_lines = textwrap.wrap(ask_title[:80], cpl_t)
+        ty3 = top3-12
+        c.setFont(FB, 7.5); c.setFillColor(HexColor('#180410'))
+        for tln in title_lines[:2]:
             if ty3 < ry3+6: break
-            c.drawString(x+22, ty3, ln); ty3 -= 11
+            c.drawString(x+22, ty3, tln); ty3 -= 11
+        # Description — regular weight
+        cpl_d = max(1, int((w-28)/(7*.57)))
+        c.setFont(FR, 7); c.setFillColor(HexColor('#444'))
+        for dln in textwrap.wrap(ask_desc[:180], cpl_d):
+            if ty3 < ry3+5: break
+            c.drawString(x+22, ty3, dln); ty3 -= 10
         if j < n-1: _dv_rule(c, x, ry3, w)
     cur = _DV_P2_TOP - ask_h
 
@@ -2333,7 +2352,8 @@ def _dv_p2_right(c, brief, snap):
         c.setFillColor(fill); c.rect(bxb, by0, bar_w, bh, fill=1, stroke=0)
         c.setFont(FR, 4.5)
         c.setFillColor(ALERT if val>=60 else MUTED)
-        c.drawCentredString(bxb+bar_w/2, by0+bh+2, str(val))
+        label_y = by0 + bh + 3
+        if bh > 8: c.drawCentredString(bxb+bar_w/2, label_y, str(val))
         c.setFont(FR, 4); c.setFillColor(MUTED)
         c.drawCentredString(bxb+bar_w/2, by0-7, lbls[i])
         pts.append((bxb+bar_w/2, by0+bh))

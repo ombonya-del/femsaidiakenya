@@ -130,11 +130,11 @@ export default function TechTrackerTab() {
             <p style={{ color:MUT, fontSize:12, fontFamily:"'Nunito Sans',sans-serif" }}>No data yet — scanner will populate this.</p>
           ) : (
             <ResponsiveContainer width="100%" height={mobile ? 180 : 250}>
-              <BarChart data={platformData} margin={{ left:8, right:20, top:4, bottom:0 }}>
+              <BarChart data={platformData} margin={{ left:0, right:20, top:4, bottom:0 }}>
                 <XAxis dataKey="name"
                   tick={{ fontFamily:"'Nunito Sans',sans-serif", fontSize: mobile ? 9 : 11, fill:MUT }}
                   tickLine={false} axisLine={{ stroke:BD }}/>
-                <YAxis hide={true}/>
+                <YAxis hide={true} width={0}/>
                 <Tooltip content={<ChartTip/>}/>
                 <Bar dataKey="count" name="Mentions" radius={[2,2,0,0]} label={{ position:'top', fontSize:10, fill:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>
                   {platformData.map((entry, i) => (
