@@ -319,8 +319,8 @@ function DashboardTab({ isMobile = false }){
         <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
           <a href="https://hepa.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
             style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,
-              padding:'9px 16px',background:'#FF5C28',color:'#fff',textDecoration:'none',
-              letterSpacing:'.04em',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:6}}>
+              padding:'9px 16px',background:'#0A2D1A',color:'#fff',textDecoration:'none',
+              letterSpacing:'.04em',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:6,border:'1px solid #FF5C28'}}>
             🛡 <span style={{letterSpacing:0,display:"inline-flex",alignItems:"center"}}><span style={{color:"#fff",fontWeight:700}}>h</span><span style={{color:"#FF5C28"}}>epa</span></span>
           </a>
           <a href="tel:*384*89056%23"
@@ -328,7 +328,7 @@ function DashboardTab({ isMobile = false }){
               padding:'9px 16px',background:'rgba(255,255,255,0.15)',color:'#fff',textDecoration:'none',
               letterSpacing:'.04em',whiteSpace:'nowrap',border:'1px solid rgba(255,255,255,0.3)',
               display:'inline-flex',alignItems:'center',gap:6}}>
-            📞 *384*89056#
+            📞 <strong>Salmin</strong> · *384*89056#
           </a>
           <a href="https://redflag.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
             style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,
@@ -357,7 +357,7 @@ function DashboardTab({ isMobile = false }){
         </div>
         <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
           <a href="https://hepa.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
-            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,padding:'10px 20px',background:'#FF5C28',color:'#fff',textDecoration:'none',letterSpacing:'.04em',whiteSpace:'nowrap'}}>
+            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,padding:'10px 20px',background:'#0A2D1A',color:'#fff',textDecoration:'none',border:'1px solid #FF5C28',letterSpacing:'.04em',whiteSpace:'nowrap'}}>
             Access <span style={{letterSpacing:0,display:"inline-flex",alignItems:"center"}}><span style={{color:"#fff",fontWeight:700}}>h</span><span style={{color:"#FF5C28"}}>epa</span></span> →
           </a>
           <a href="https://redflag.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
@@ -366,7 +366,7 @@ function DashboardTab({ isMobile = false }){
           </a>
           <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.5)',padding:'10px 0',display:'flex',alignItems:'center',gap:6}}>
             <span style={{fontSize:16}}>📞</span>
-            Dial <strong style={{color:'#FF5C28'}}>Salmin</strong> <a href="tel:*384*89056%23" style={{color:'#FF5C28',fontWeight:700,textDecoration:'none'}}>*384*89056#</a>
+            <a href="tel:*384*89056%23" style={{display:'inline-flex',alignItems:'center',gap:8,background:'#0A2D1A',border:'1px solid #FF5C28',padding:'8px 14px',textDecoration:'none'}}><span style={{fontSize:16}}>📞</span><strong style={{color:'#FF5C28'}}>Salmin</strong><span style={{color:'rgba(255,255,255,0.8)',fontFamily:"'Nunito Sans',sans-serif",fontSize:12}}>*384*89056#</span></a>
           </div>
         </div>
       </div>
