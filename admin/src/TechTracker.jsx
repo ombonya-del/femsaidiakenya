@@ -4,10 +4,6 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import { ExternalLink, Smartphone, RefreshCw } from 'lucide-react'
 
 const stripHtml = (v) => !v ? '' : String(v).replace(/<[^>]*>/g, '').replace(/&[a-z#0-9]+;/gi, ' ').trim()
-  ? str.replace(/<[^>]*>/g, '').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&')
-       .replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').trim()
-  : ''
-
 
 const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
