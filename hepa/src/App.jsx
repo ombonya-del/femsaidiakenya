@@ -555,7 +555,7 @@ function SetupScreen({ onSave, initial }) {
   return (
     <div style={{minHeight:'100vh',background:'#0A2D1A',overflowY:'auto',WebkitOverflowScrolling:'touch'}}>
       <div style={{padding:'40px 24px 20px',paddingTop:'calc(env(safe-area-inset-top,0px) + 40px)'}}>
-        <div style={{fontFamily:"'Lora',serif",fontSize:32,fontWeight:700,marginBottom:6}}><span style={{letterSpacing:0,display:'inline-flex',alignItems:'center'}}><span style={{letterSpacing:0,display:'inline-flex',alignItems:'center'}}><span style={{color:'#fff'}}>h</span><span style={{color:'#FF5C28'}}>epa</span></span></span></div>
+        <div style={{fontFamily:"'Lora',serif",fontSize:32,fontWeight:700,marginBottom:6}}><span style={{letterSpacing:0,display:'inline-flex',alignItems:'center'}}><span style={{letterSpacing:0,display:'inline-flex',alignItems:'center'}}><span className='logo-h'>h</span><span className='logo-epa'>epa</span></span></span></div>
         <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.7}}>
           Set up takes 60 seconds. Your information never leaves your phone.
         </div>
@@ -719,7 +719,7 @@ export default function App() {
 
   if (screen === 'reveal') return (
     <div className="hepa-reveal">
-      <div style={{fontFamily:"'Lora',serif",fontSize:48,fontWeight:700,animation:'fadeIn .4s .3s both'}}><span style={{letterSpacing:0,display:'inline-flex',alignItems:'center'}}><span style={{letterSpacing:0,display:'inline-flex',alignItems:'center'}}><span style={{color:'#fff'}}>h</span><span style={{color:'#FF5C28'}}>epa</span></span></span></div>
+      <div style={{fontFamily:"'Lora',serif",fontSize:48,fontWeight:700,animation:'fadeIn .4s .3s both'}}><span style={{letterSpacing:0,display:'inline-flex',alignItems:'center'}}><span style={{letterSpacing:0,display:'inline-flex',alignItems:'center'}}><span className='logo-h'>h</span><span className='logo-epa'>epa</span></span></span></div>
     </div>
   )
 
@@ -761,7 +761,7 @@ export default function App() {
     <div className="hepa-root">
       {/* Header */}
       <div className="hepa-header">
-        <div className="hepa-logo"><span style={{letterSpacing:0,display:"inline-flex",alignItems:"center"}}><span style={{color:"#fff",fontWeight:700}}>h</span><span style={{color:"#FF5C28"}}>epa</span></span><span className="logo-tagline" style={{marginLeft:8,fontSize:11}}>Get away · Stay safe</span></div>
+        <div className="hepa-logo"><span style={{letterSpacing:0,display:"inline-flex",alignItems:"center",color:"inherit"}}><span className="logo-h" style={{fontWeight:700}}>h</span><span className="logo-epa">epa</span></span><span className="logo-tagline" style={{marginLeft:8,fontSize:11}}>Get away · Stay safe</span></div>
         <button className="hepa-calc-btn" onClick={()=>setScreen('calc')}>
           🔢 Calculator
         </button>

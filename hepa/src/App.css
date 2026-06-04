@@ -160,6 +160,9 @@ body {
 
 .hepa-logo .logo-tagline { color: rgba(255,255,255,0.5); font-size: 11px; font-family: 'Nunito Sans', sans-serif; font-weight: 600; letter-spacing: 0.15em; display: block; text-transform: uppercase; margin-top: 2px; }
 
+
+.hepa-logo .logo-h   { color: #fff !important; }
+.hepa-logo .logo-epa { color: #FF5C28 !important; }
 .hepa-calc-btn {
   background: rgba(255,255,255,0.08);
   border: none;
