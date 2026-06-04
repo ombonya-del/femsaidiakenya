@@ -321,7 +321,7 @@ function DashboardTab({ isMobile = false }){
             style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,
               padding:'9px 16px',background:'#FF5C28',color:'#fff',textDecoration:'none',
               letterSpacing:'.04em',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:6}}>
-            🛡 <span style={{color:"#fff",fontWeight:700}}>h</span>epa
+            🛡 <span style={{letterSpacing:0,display:"inline-flex",alignItems:"center"}}><span style={{color:"#fff",fontWeight:700}}>h</span><span style={{color:"#FF5C28"}}>epa</span></span>
           </a>
           <a href="tel:*384*89056%23"
             style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,
@@ -358,7 +358,7 @@ function DashboardTab({ isMobile = false }){
         <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
           <a href="https://hepa.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
             style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,padding:'10px 20px',background:'#FF5C28',color:'#fff',textDecoration:'none',letterSpacing:'.04em',whiteSpace:'nowrap'}}>
-            Access <span style={{color:"#fff"}}>h</span>epa →
+            Access <span style={{letterSpacing:0,display:"inline-flex",alignItems:"center"}}><span style={{color:"#fff",fontWeight:700}}>h</span><span style={{color:"#FF5C28"}}>epa</span></span> →
           </a>
           <a href="https://redflag.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
             style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,padding:'10px 20px',background:'#8A1030',color:'#fff',textDecoration:'none',letterSpacing:'.04em',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:6}}>
