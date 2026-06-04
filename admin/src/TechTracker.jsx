@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { ExternalLink, Smartphone, RefreshCw } from 'lucide-react'
 
-const stripHtml = (v) => !v ? '' : String(v).replace(/<[^>]*>/g, '').replace(/&[a-z#0-9]+;/gi, ' ').replace(/  +/g, ' ').trim()
+const stripHtml = (v) => !v ? '' : String(v).replace(/<[^>]*>/g, '').replace(/&[a-z#0-9]+;/gi, ' ').trim()
   ? str.replace(/<[^>]*>/g, '').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&')
        .replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').trim()
   : ''
