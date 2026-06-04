@@ -38,7 +38,7 @@ export default function SurvivalGuideTab() {
             style={{textDecoration:'none',background:'#1A0818',border:'1px solid #3A1828',padding:'14px 16px',display:'flex',flexDirection:'column',gap:6}}>
             <div style={{display:'flex',alignItems:'center',gap:8}}>
               <span style={{fontSize:20}}>🛡</span>
-              <span style={{fontFamily:"'Lora',serif",fontSize:16,fontWeight:700,color:'#F0D0D8'}}>hepa</span>
+              <span style={{fontFamily:"'Lora',serif",fontSize:16,fontWeight:700,letterSpacing:0}}><span style={{color:'#fff'}}>h</span><span style={{color:'#FF5C28'}}>epa</span></span>
             </div>
             <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:'#B89AAA',lineHeight:1.5}}>
               Disguised as a calculator. Hold <strong style={{color:'#FF9500'}}>=</strong> for 3 seconds to access safety tools.

@@ -761,8 +761,8 @@ export default function App() {
     <div className="hepa-root">
       {/* Header */}
       <div className="hepa-header">
-        <div className="hepa-logo"><span style={{letterSpacing:0}}><span style={{letterSpacing:0}}><span style={{letterSpacing:0,display:'inline-flex',alignItems:'center'}}><span style={{color:'#fff'}}>h</span><span style={{color:'#FF5C28'}}>epa</span></span></span></span><span>Get away · Stay safe</span>
-        </div>
+        <div className="hepa-logo">
+          <span style={{letterSpacing:0,display:"inline-flex",alignItems:"center"}}><span style={{color:"#fff",fontWeight:700,fontFamily:"'Lora',serif",fontSize:22}}>h</span><span style={{color:"#FF5C28",fontFamily:"'Lora',serif",fontSize:22}}>epa</span></span>
         <button className="hepa-calc-btn" onClick={()=>setScreen('calc')}>
           🔢 Calculator
         </button>

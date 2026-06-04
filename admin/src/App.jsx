@@ -2099,10 +2099,6 @@ function HighlightsTab() {
           <h2 style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,color:TXT,marginBottom:4}}>Misogyny of the Day</h2>
           <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT}}>Curate posts that illustrate the pipeline from toxic rhetoric to violence. Appears at the top of Socials and Sentiment.</p>
         </div>
-        <button onClick={()=>setAdding(!adding)}
-          style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,padding:'8px 16px',background:A,color:'#fff',border:'none',cursor:'pointer',flexShrink:0}}>
-          {adding?'Cancel':'+ Add highlight'}
-        </button>
       </div>
 
       {/* Manual MOTD creation form */}

@@ -260,7 +260,7 @@ export default function TechTrackerTab() {
                           try {
                             const d = typeof a.tech_details === 'string' && a.tech_details.trim().startsWith('{')
                               ? JSON.parse(a.tech_details) : null
-                            return d ? (d.involvement || d.method || d.description || a.tech_details) : a.tech_details
+                            return d ? (d.involvement || d.method || d.description || String(a.tech_details)) : stripHtml(String(a.tech_details))
                           } catch(e) { return a.tech_details }
                         })()}
                       </div>
