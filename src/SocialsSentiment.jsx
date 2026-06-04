@@ -849,8 +849,7 @@ export default function SocialsSentimentTab() {
                   </div>
                   <span style={{ marginLeft:'auto', fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT }}>{pulseFeed.length} posts</span>
                 </div>
-                {pulseFeed.length > 12 && <button onClick={()=>setShowAllPulse(v=>!v)} style={{width:'100%',padding:'10px',marginBottom:8,fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,background:'rgba(138,16,48,0.08)',border:'1px solid rgba(138,16,48,0.2)',color:'#8A1030',cursor:'pointer'}}>{showAllPulse ? `Show less` : `Show all ${pulseFeed.length} posts`}</button>}
-    {pulseFeed.length === 0 ? (
+                {pulseFeed.length === 0 ? (
                   <div style={{ background:CRD, border:`1px solid ${BD}`, padding:20, textAlign:'center' }}>
                     <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT, fontStyle:'italic', marginBottom:8 }}>
                       Community intelligence — marches, podcasts, video interviews, femicide discourse. Updated every 6 hours.
@@ -890,7 +889,8 @@ export default function SocialsSentimentTab() {
                     ))}
                   </div>
                 )}
-              </div>
+
+                {pulseFeed.length > 12 && <button onClick={()=>setShowAllPulse(v=>!v)} style={{width:'100%',padding:'10px',marginTop:8,fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,background:'rgba(138,16,48,0.08)',border:'1px solid rgba(138,16,48,0.2)',color:'#8A1030',cursor:'pointer'}}>{showAllPulse ? 'Show less' : `Show all ${pulseFeed.length} posts`}</button>}              </div>
 
             </div>
           </div>

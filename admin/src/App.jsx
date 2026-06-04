@@ -2097,7 +2097,6 @@ function HighlightsTab() {
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20}}>
         <div>
           <h2 style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,color:TXT,marginBottom:4}}>Misogyny of the Day</h2>
-        <ManualMOTD supabase={supabase} onCreated={()=>window.location.reload()}/>
           <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT}}>Curate posts that illustrate the pipeline from toxic rhetoric to violence. Appears at the top of Socials and Sentiment.</p>
         </div>
         <button onClick={()=>setAdding(!adding)}
@@ -2105,6 +2104,9 @@ function HighlightsTab() {
           {adding?'Cancel':'+ Add highlight'}
         </button>
       </div>
+
+      {/* Manual MOTD creation form */}
+      <ManualMOTD supabase={supabase} onSaved={load}/>
 
       {adding && (
         <div style={{background:CRD,border:`1px solid ${BD}`,padding:16,marginBottom:16}}>
@@ -2545,12 +2547,13 @@ const TABS = TAB_GROUPS.flatMap(g => g.tabs)
 // ── ROOT APP ──────────────────────────────────────────────────────────────────
 
 // ── Manual MOTD creation ──────────────────────────────────────────────────────
-function ManualMOTD({ supabase, onCreated }) {
+function ManualMOTD({ supabase, onSaved }) {
   const [open, setOpen]     = useState(false)
   const [content, setContent]  = useState('')
   const [context, setContext]  = useState('')
   const [platform, setPlatform] = useState('manual')
   const [handle, setHandle]  = useState('')
+  const [sourceUrl, setSourceUrl] = useState('')
   const [saving, setSaving]  = useState(false)
 
   const save = async (publish) => {
@@ -2563,9 +2566,10 @@ function ManualMOTD({ supabase, onCreated }) {
       highlight_date: new Date().toISOString().split('T')[0],
       active: publish,
       auto_scraped: false,
+      source_url: sourceUrl.trim() || null,
       misogyny_score: 8,
     })
-    if (!error) { setContent(''); setContext(''); setHandle(''); setOpen(false); onCreated() }
+    if (!error) { setContent(''); setContext(''); setHandle(''); setOpen(false); onSaved ? onSaved() : null }
     setSaving(false)
   }
 
@@ -2603,6 +2607,12 @@ function ManualMOTD({ supabase, onCreated }) {
           <input value={handle} onChange={e=>setHandle(e.target.value)}
             style={{width:'100%',padding:'6px 8px',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,border:`1px solid #C4AABB`}}
             placeholder="@handle or source name"/>
+        </div>
+        <div style={{gridColumn:'span 2'}}>
+          <label style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:'#7A4A60',display:'block',marginBottom:4}}>SOURCE URL (optional)</label>
+          <input value={sourceUrl} onChange={e=>setSourceUrl(e.target.value)}
+            style={{width:'100%',padding:'6px 8px',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,border:'1px solid #C4AABB'}}
+            placeholder="https://x.com/... or article URL"/>
         </div>
       </div>
       <div style={{marginBottom:12}}>
