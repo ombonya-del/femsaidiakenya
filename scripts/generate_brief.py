@@ -2167,24 +2167,29 @@ def _dv_p2_left(c, brief, snap):  # snap needed for index visual
     gap_top = cy - 8   # where text ended
     gap_bot = cur-ins_content+20
     if gap_top > gap_bot + 30:
-        ms2 = int(float(snap.get('media_score',0) or 0))
-        cs2 = int(float(snap.get('community_score',0) or 0))
-        mi2 = float(snap.get('misogyny_index',0) or 0)
-        bw2 = w - 32
-        c.setFont(FR, 5.5); c.setFillColor(MUTED)
-        c.drawString(x+8, gap_top, f'ARTICLE BREAKDOWN  ·  {int(snap.get("articles_count",683))} articles indexed')
-        for k,(lbl3,val3,col3) in enumerate([
-                ("Media",ms2,ALERT),("Community",cs2,HexColor('#2563EB'))]):
-            by3 = gap_top - 14 - k*16
-            if by3 < gap_bot: break
+        arts_s = int(snap.get("articles_count", 683) or 683)
+        kibe_s = int(snap.get("kibe_count", 52) or 52)
+        prot_s = int(snap.get("protest_count", 57) or 57)
+        gen_s  = max(1, arts_s - kibe_s - prot_s)
+        c.setFont(FB, 5.5); c.setFillColor(BRAND)
+        c.drawString(x+8, gap_top, f"ARTICLE BREAKDOWN  \u00b7  {arts_s} articles  \u00b7  {kibe_s} manosphere  \u00b7  {prot_s} protest")
+        bw_s = w - 40
+        for k3,(lbl_s,val_s,col_s) in enumerate([
+                ("Manosphere/Kibe", kibe_s, ALERT),
+                ("Protest/March",   prot_s, HexColor("#2563EB")),
+                ("General GBV",     gen_s,  HexColor("#059669"))]):
+            by_s = gap_top - 18 - k3*17
+            if by_s < gap_bot: break
+            pct_s = int(val_s*100/max(arts_s,1))
+            fw_s  = max(4, int((bw_s-70)*val_s/max(arts_s,1)))
             c.setFont(FR, 5); c.setFillColor(MUTED)
-            c.drawString(x+14, by3+4, lbl3)
-            c.setFillColor(HexColor('#e8eaed'))
-            c.rect(x+60, by3, bw2, 9, fill=1, stroke=0)
-            c.setFillColor(col3)
-            c.rect(x+60, by3, max(4,int(bw2*val3/100)), 9, fill=1, stroke=0)
-            c.setFont(FB, 5.5); c.setFillColor(col3)
-            c.drawString(x+60+int(bw2*val3/100)+3, by3+2, str(val3))
+            c.drawString(x+8, by_s+3, f"{lbl_s}  ({val_s})")
+            c.setFillColor(HexColor("#e2e8f0"))
+            c.rect(x+106, by_s, bw_s-70, 9, fill=1, stroke=0)
+            c.setFillColor(col_s)
+            c.rect(x+106, by_s, fw_s, 9, fill=1, stroke=0)
+            c.setFont(FB, 5.5); c.setFillColor(col_s)
+            c.drawString(x+106+fw_s+3, by_s+2, f"{pct_s}%")
     cur = _DV_P2_TOP - ins_h
 
     # PIPELINE SECTION: index snapshot top + pipeline nodes bottom
