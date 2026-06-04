@@ -124,6 +124,8 @@ function WeRememberToggle({ caseId, current, onToggle }) {
   )
 }
 
+const safePlatforms = (arr) => Array.isArray(arr) ? arr : typeof arr === 'string' ? arr.replace(/[{}\'\"]/g,'').split(',').map(s=>s.trim()).filter(Boolean) : []
+
 export default function CaseTrackerTab() {
   const mobile = window.innerWidth < 768
 
@@ -323,7 +325,7 @@ export default function CaseTrackerTab() {
                           {c.tech_facilitated && (
                             <div style={{ marginTop:4 }}>
                               <span style={{ fontSize:10, background:'#8A4010', color:'#fff', padding:'2px 6px', fontFamily:"'Nunito Sans',sans-serif", fontWeight:700, whiteSpace:'nowrap', display:'inline-block', maxWidth:'100%', overflow:'hidden', textOverflow:'ellipsis' }}>
-                                Tech: {c.tech_platforms?.join(', ')}
+                                Tech: {safePlatforms(c.tech_platforms).join(', ')}
                               </span>
                             </div>
                           )}
@@ -359,7 +361,7 @@ export default function CaseTrackerTab() {
                             {c.location ? `${c.location}, ` : ''}{c.county}
                             {c.tech_facilitated && (
                               <span style={{ marginLeft:6, fontSize:10, background:'#8A4010', color:'#fff', padding:'1px 5px', fontFamily:"'Nunito Sans',sans-serif", fontWeight:700, whiteSpace:'nowrap' }}>
-                                Tech: {c.tech_platforms?.join(', ')}
+                                Tech: {safePlatforms(c.tech_platforms).join(', ')}
                               </span>
                             )}
                           </div>
@@ -395,7 +397,7 @@ export default function CaseTrackerTab() {
                             {dateStr}<br/>
                             {c.location && <>{c.location}, </>}{c.county}<br/>
                             Perpetrator: {c.perpetrator_relationship?.replace(/_/g,' ') || 'Unknown'}<br/>
-                            {c.tech_facilitated && `Tech: ${c.tech_platforms?.join(', ')}`}
+                            {c.tech_facilitated && `Tech: ${safePlatforms(c.tech_platforms).join(', ')}`}
                           </p>
                         </div>
                         <div>

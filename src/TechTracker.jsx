@@ -118,7 +118,7 @@ export default function TechTrackerTab() {
       </div>
 
       {/* Charts — stacked on mobile */}
-      <div style={{ display:'grid', gridTemplateColumns: mobile ? '1fr' : '2fr 1fr', gap:2, marginBottom:2 }}>
+      <div style={{ display:'grid', gridTemplateColumns: '1fr', gap:2, marginBottom:2 }}>
 
         {/* Platform bar chart */}
         <div className="card" style={{ padding:24 }}>
@@ -130,15 +130,13 @@ export default function TechTrackerTab() {
             <p style={{ color:MUT, fontSize:12, fontFamily:"'Nunito Sans',sans-serif" }}>No data yet — scanner will populate this.</p>
           ) : (
             <ResponsiveContainer width="100%" height={mobile ? 180 : 250}>
-              <BarChart data={platformData} margin={{ left:0, right:16, top:0, bottom:0 }}>
+              <BarChart data={platformData} margin={{ left:8, right:20, top:4, bottom:0 }}>
                 <XAxis dataKey="name"
                   tick={{ fontFamily:"'Nunito Sans',sans-serif", fontSize: mobile ? 9 : 11, fill:MUT }}
                   tickLine={false} axisLine={{ stroke:BD }}/>
-                <YAxis
-                  tick={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fill:MUT }}
-                  tickLine={false} axisLine={false}/>
+                <YAxis hide={true}/>
                 <Tooltip content={<ChartTip/>}/>
-                <Bar dataKey="count" name="Mentions" radius={0}>
+                <Bar dataKey="count" name="Mentions" radius={[2,2,0,0]} label={{ position:'top', fontSize:10, fill:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>
                   {platformData.map((entry, i) => (
                     <Cell key={i} fill={PLATFORM_COLORS[entry.name] || A}/>
                   ))}
@@ -148,24 +146,31 @@ export default function TechTrackerTab() {
           )}
         </div>
 
-        {/* Platform legend */}
+        {/* Platform breakdown — horizontal bar chart */}
         <div className="card" style={{ padding:24 }}>
-          <div className="section-head"><span>Platforms detected</span></div>
+          <div className="section-head">
+            <span>Platforms detected · share of incidents</span>
+            <span style={{ color:A }}>%</span>
+          </div>
           {platformData.length === 0 ? (
             <p style={{ color:MUT, fontSize:12, fontFamily:"'Nunito Sans',sans-serif" }}>No platforms detected yet.</p>
           ) : (
-            platformData.map((p, i) => (
-              <div key={i} style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
-                <div style={{ width:10, height:10, borderRadius:'50%', background:PLATFORM_COLORS[p.name] || A, flexShrink:0 }}/>
-                <div style={{ flex:1 }}>
-                  <div style={{ fontSize:13, fontWeight:700, color:TXT, fontFamily:"'Nunito Sans',sans-serif" }}>{p.name}</div>
-                  <div style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>{p.count} mention{p.count!==1?'s':''}</div>
-                </div>
-                <div style={{ fontSize:13, fontWeight:700, color:A, fontFamily:"'Nunito Sans',sans-serif" }}>
-                  {articles.length ? Math.round((p.count/articles.length)*100) : 0}%
-                </div>
-              </div>
-            ))
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              {platformData.map((p, i) => {
+                const pct = articles.length ? Math.round((p.count/articles.length)*100) : 0
+                return (
+                  <div key={i}>
+                    <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
+                      <span style={{ fontSize:12, fontWeight:700, color:TXT, fontFamily:"'Nunito Sans',sans-serif" }}>{p.name}</span>
+                      <span style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>{p.count} · {pct}%</span>
+                    </div>
+                    <div style={{ height:10, background:'#E8D8E0', borderRadius:2, overflow:'hidden' }}>
+                      <div style={{ width:`${pct}%`, height:'100%', background:PLATFORM_COLORS[p.name] || A, borderRadius:2, transition:'width 0.6s ease' }}/>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           )}
         </div>
       </div>
@@ -249,7 +254,13 @@ export default function TechTrackerTab() {
                     <div style={{ fontWeight:700, fontSize: mobile ? 13 : 14, color:TXT, marginBottom:5, fontFamily:"'Nunito Sans',sans-serif", wordBreak:'break-word' }}>{a.article_title}</div>
                     {a.tech_details && (
                       <div style={{ background:'#DCC8B8', border:`1px solid #A07040`, padding:'6px 10px', marginBottom:6, fontSize:11, color:'#5A2808', fontFamily:"'Nunito Sans',sans-serif", lineHeight:1.6, wordBreak:'break-word' }}>
-                        <strong>Tech involvement:</strong> {a.tech_details}
+                        <strong>Tech involvement:</strong> {(() => {
+                          try {
+                            const d = typeof a.tech_details === 'string' && a.tech_details.trim().startsWith('{')
+                              ? JSON.parse(a.tech_details) : null
+                            return d ? (d.involvement || d.method || d.description || a.tech_details) : a.tech_details
+                          } catch(e) { return a.tech_details }
+                        })()}
                       </div>
                     )}
                     <p style={{ fontSize:12, color:MUT, lineHeight:1.7, fontFamily:"'Nunito Sans',sans-serif" }}>{a.article_snippet}</p>
