@@ -2157,8 +2157,8 @@ def _dv_p2_left(c, brief, snap):  # snap needed for index visual
     c.setFont(FI, 9.5); c.setFillColor(HexColor('#180410'))
     cpl = max(1, int((w-24)/(9.5*.57)))
     cy  = cur-14
-    for ln in textwrap.wrap(txt[:820], cpl):
-        if cy < cur-ins_content+16: break
+    for ln in textwrap.wrap(txt[:1200], cpl):
+        if cy < cur-ins_content+72: break
         c.drawString(x+14, cy, ln); cy -= 13
     c.setFont(FB, 7); c.setFillColor(BRAND)
     c.drawString(x+14, cur-ins_content+6, '\u2014 FemSaidia Kenya Intelligence Desk')
@@ -2166,7 +2166,7 @@ def _dv_p2_left(c, brief, snap):  # snap needed for index visual
     # Mini index visual — fills any remaining space below the text
     gap_top = cy - 8   # where text ended
     gap_bot = cur-ins_content+20
-    if gap_top > gap_bot + 16:
+    if gap_top > gap_bot + 10:
         arts_s = int(snap.get("articles_count", 683) or 683)
         kibe_s = int(snap.get("kibe_count", 52) or 52)
         prot_s = int(snap.get("protest_count", 57) or 57)
