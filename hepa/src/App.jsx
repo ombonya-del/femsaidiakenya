@@ -596,7 +596,7 @@ function SetupScreen({ onSave, initial }) {
           </p>
         </div>
 
-        <button className="hepa-btn" onClick={save} style={{marginTop:24}}>Save and open hepa →</button>
+        <button className="hepa-btn" onClick={save} style={{marginTop:24}}>Save and open <span style={{color:"#fff",fontWeight:700}}>h</span><span style={{color:"#0A2D1A",fontWeight:700}}>epa</span> →</button>
         <div style={{height:60}}/>
       </div>
     </div>
@@ -761,7 +761,7 @@ export default function App() {
     <div className="hepa-root">
       {/* Header */}
       <div className="hepa-header">
-        <div className="hepa-logo"><span style={{letterSpacing:0,display:"inline-flex",alignItems:"center"}}><span style={{color:"#fff",fontWeight:700}}>h</span><span style={{color:"#FF5C28"}}>epa</span></span><span style={{marginLeft:8,fontSize:11,opacity:0.7}}>Get away · Stay safe</span></div>
+        <div className="hepa-logo"><span style={{letterSpacing:0,display:"inline-flex",alignItems:"center"}}><span style={{color:"#fff",fontWeight:700}}>h</span><span style={{color:"#FF5C28"}}>epa</span></span><span className="logo-tagline" style={{marginLeft:8,fontSize:11}}>Get away · Stay safe</span></div>
         <button className="hepa-calc-btn" onClick={()=>setScreen('calc')}>
           🔢 Calculator
         </button>

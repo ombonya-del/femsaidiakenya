@@ -1,3 +1,5 @@
+const stripHtml = (v) => !v ? '' : String(v).replace(/<[^>]*>/g, '').replace(/&[a-z#0-9]+;/gi, ' ').trim()
+
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
@@ -467,7 +469,7 @@ export default function SocialsSentimentTab() {
                           <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT }}>{a.source_name}</span>
                         </div>
                         <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:TXT, lineHeight:1.5, margin:0 }}>
-                          {a.article_title}
+                          {stripHtml(a.article_title || "")}
                         </p>
                         {a.summary && (
                           <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT,
@@ -878,7 +880,7 @@ export default function SocialsSentimentTab() {
                           )}
                         </div>
                         <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:TXT, lineHeight:1.6, marginBottom:6 }}>
-                          {a.article_title || a.article_snippet}
+                          {stripHtml(a.article_title || a.article_snippet || "")}
                         </p>
                         {a.summary && (
                           <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT, lineHeight:1.5, fontStyle:'italic' }}>
