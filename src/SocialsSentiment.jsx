@@ -330,7 +330,9 @@ export default function SocialsSentimentTab() {
 
   // ── INTELLIGENCE BREAKDOWN METRICS ─────────────────────────────────────────
   const intelligenceFeed = articles.filter(a => a.platform === 'news' || a.platform === 'youtube' || a.content_type === 'article' || a.content_type === 'video' || !a.platform)
-  const pulseFeed        = articles.filter(a => a.platform === 'x' || a.content_type === 'social_post' || a.platform === 'tiktok' || (a.platform === 'youtube') || (a.platform === 'news' && (a.is_protest || a.is_kibe_related || ['march','podcast','video','community'].includes(a.content_category))))
+  const pulseFeed        = articles
+    .filter(a => a.platform === 'x' || a.content_type === 'social_post' || a.platform === 'tiktok' || (a.platform === 'youtube') || (a.platform === 'news' && (a.is_protest || a.is_kibe_related || ['march','podcast','video','community'].includes(a.content_category))))
+    .sort((a,b) => new Date(b.scanned_at) - new Date(a.scanned_at))
 
   const total       = articles.length
   const highMiso    = articles.filter(a => a.misogyny_score >= 7)
@@ -846,7 +848,8 @@ export default function SocialsSentimentTab() {
                   </div>
                   <span style={{ marginLeft:'auto', fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT }}>{pulseFeed.length} posts</span>
                 </div>
-                {pulseFeed.length === 0 ? (
+                {pulseFeed.length > 12 && <button onClick={()=>setShowAllPulse(v=>!v)} style={{width:'100%',padding:'10px',marginBottom:8,fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,background:'rgba(138,16,48,0.08)',border:'1px solid rgba(138,16,48,0.2)',color:'#8A1030',cursor:'pointer'}}>{showAllPulse ? `Show less` : `Show all ${pulseFeed.length} posts`}</button>}
+    {pulseFeed.length === 0 ? (
                   <div style={{ background:CRD, border:`1px solid ${BD}`, padding:20, textAlign:'center' }}>
                     <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT, fontStyle:'italic', marginBottom:8 }}>
                       Community intelligence — marches, podcasts, video interviews, femicide discourse. Updated every 6 hours.
@@ -857,7 +860,7 @@ export default function SocialsSentimentTab() {
                   </div>
                 ) : (
                   <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
-                    {pulseFeed.map((a,i) => (
+                    {(showAllPulse ? pulseFeed : pulseFeed.slice(0,12)).map((a,i) => (
                       <div key={a.id||i} onClick={() => setModal(a)}
                         style={{ background:CRD, border:`1px solid ${BD}`, padding:'12px 14px', cursor:'pointer' }}>
                         <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:6 }}>

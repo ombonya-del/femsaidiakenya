@@ -366,7 +366,7 @@ function DashboardTab({ isMobile = false }){
           </a>
           <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.5)',padding:'10px 0',display:'flex',alignItems:'center',gap:6}}>
             <span style={{fontSize:16}}>📞</span>
-            Dial <a href="tel:*384*89056%23" style={{color:'#FF5C28',fontWeight:700,textDecoration:'none'}}>*384*89056#</a>
+            Dial <strong style={{color:'#FF5C28'}}>Salmin</strong> <a href="tel:*384*89056%23" style={{color:'#FF5C28',fontWeight:700,textDecoration:'none'}}>*384*89056#</a>
           </div>
         </div>
       </div>

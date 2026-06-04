@@ -2097,6 +2097,7 @@ function HighlightsTab() {
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20}}>
         <div>
           <h2 style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,color:TXT,marginBottom:4}}>Misogyny of the Day</h2>
+        <ManualMOTD supabase={supabase} onCreated={()=>window.location.reload()}/>
           <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT}}>Curate posts that illustrate the pipeline from toxic rhetoric to violence. Appears at the top of Socials and Sentiment.</p>
         </div>
         <button onClick={()=>setAdding(!adding)}
@@ -2542,6 +2543,97 @@ const TAB_GROUPS = [
 const TABS = TAB_GROUPS.flatMap(g => g.tabs)
 
 // ── ROOT APP ──────────────────────────────────────────────────────────────────
+
+// ── Manual MOTD creation ──────────────────────────────────────────────────────
+function ManualMOTD({ supabase, onCreated }) {
+  const [open, setOpen]     = React.useState(false)
+  const [content, setContent]  = React.useState('')
+  const [context, setContext]  = React.useState('')
+  const [platform, setPlatform] = React.useState('manual')
+  const [handle, setHandle]  = React.useState('')
+  const [saving, setSaving]  = React.useState(false)
+
+  const save = async (publish) => {
+    if (!content.trim()) return
+    setSaving(true)
+    const { error } = await supabase.from('misogyny_highlights').insert({
+      platform, handle: handle || 'manual',
+      content: content.trim(),
+      context: context.trim() || 'Manually submitted MOTD.',
+      highlight_date: new Date().toISOString().split('T')[0],
+      active: publish,
+      auto_scraped: false,
+      misogyny_score: 8,
+    })
+    if (!error) { setContent(''); setContext(''); setHandle(''); setOpen(false); onCreated() }
+    setSaving(false)
+  }
+
+  const A = '#8A1030', MUT = '#7A4A60', TXT = '#180410'
+  if (!open) return (
+    <button onClick={()=>setOpen(true)} style={{display:'inline-flex',alignItems:'center',gap:6,
+      fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,padding:'8px 16px',
+      background:A,color:'#F0D0D8',border:'none',cursor:'pointer',marginBottom:12}}>
+      + Create MOTD manually
+    </button>
+  )
+  return (
+    <div style={{background:'#F5E8EC',border:`1px solid ${A}`,padding:16,marginBottom:16,borderLeft:`4px solid ${A}`}}>
+      <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,color:A,marginBottom:12}}>
+        Create Misogyny of the Day entry
+      </div>
+      <div style={{marginBottom:8}}>
+        <label style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT,display:'block',marginBottom:4}}>CONTENT (the post/quote)</label>
+        <textarea value={content} onChange={e=>setContent(e.target.value)} rows={3}
+          style={{width:'100%',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,padding:'8px 10px',
+            border:`1px solid #C4AABB`,background:'#fff',color:TXT,resize:'vertical',boxSizing:'border-box'}}
+          placeholder="Paste the tweet, post or quote here..."/>
+      </div>
+      <div style={{marginBottom:8,display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+        <div>
+          <label style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT,display:'block',marginBottom:4}}>PLATFORM</label>
+          <select value={platform} onChange={e=>setPlatform(e.target.value)}
+            style={{width:'100%',padding:'6px 8px',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,border:`1px solid #C4AABB`}}>
+            {['X','Facebook','TikTok','YouTube','Instagram','Radio','TV','manual'].map(p=>
+              <option key={p} value={p}>{p}</option>)}
+          </select>
+        </div>
+        <div>
+          <label style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT,display:'block',marginBottom:4}}>HANDLE / SOURCE</label>
+          <input value={handle} onChange={e=>setHandle(e.target.value)}
+            style={{width:'100%',padding:'6px 8px',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,border:`1px solid #C4AABB`}}
+            placeholder="@handle or source name"/>
+        </div>
+      </div>
+      <div style={{marginBottom:12}}>
+        <label style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT,display:'block',marginBottom:4}}>CONTEXT (analytical note)</label>
+        <textarea value={context} onChange={e=>setContext(e.target.value)} rows={2}
+          style={{width:'100%',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,padding:'8px 10px',
+            border:`1px solid #C4AABB`,background:'#fff',color:TXT,resize:'vertical',boxSizing:'border-box'}}
+          placeholder="Why is this misogynistic? How does it connect to femicide risk?"/>
+      </div>
+      <div style={{display:'flex',gap:8}}>
+        <button onClick={()=>save(false)} disabled={saving}
+          style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,padding:'8px 16px',
+            background:'#E8D0C0',color:TXT,border:`1px solid #C4AABB`,cursor:'pointer'}}>
+          Save as draft (review first)
+        </button>
+        <button onClick={()=>save(true)} disabled={saving}
+          style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,padding:'8px 16px',
+            background:A,color:'#F0D0D8',border:'none',cursor:'pointer'}}>
+          Publish immediately
+        </button>
+        <button onClick={()=>setOpen(false)}
+          style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,padding:'8px 12px',
+            background:'transparent',color:MUT,border:`1px solid #C4AABB`,cursor:'pointer'}}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  )
+}
+
+
 export default function App() {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
