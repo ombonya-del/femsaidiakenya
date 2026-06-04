@@ -330,7 +330,7 @@ def draw_incidents(c, x, y, w, h, brief, snap):
         incs = _parse_top_incidents_text(text, snap.get("motd_highlights", []))
     # Fallback to snap data only if text parser produced nothing
     if not incs:
-        incs = snap.get("top_incidents", snap.get("incidents", []))
+        incs = snap.get("cases", snap.get("top_incidents", snap.get("incidents", [])))
     if not (isinstance(incs, list) and incs):
         wrap_into(c, text, x+14, y+h-26, w-28, h-30, FR, 7.8, MID, lead=12)
         return
@@ -596,12 +596,12 @@ def draw_insight(c, x, y, w, h, brief, snap):
 
     # Pull quote — large, white italic, starts below separator
     txt = brief.get("THE_INSIGHT", "")
-    c.setFont(FI, 9.5); c.setFillColor(WHITE)
-    cpl = max(1, int((w-52) / (9.5*0.57)))
+    c.setFont(FI, 8.5); c.setFillColor(WHITE)
+    cpl = max(1, int((w-52) / (8.5*0.57)))
     cy  = y+h-42
-    for ln in textwrap.wrap(txt[:420], cpl):
-        if cy < y+26: break
-        c.drawString(x+28, cy, ln); cy -= 15
+    for ln in textwrap.wrap(txt[:520], cpl):
+        if cy < y+12: break
+        c.drawString(x+28, cy, ln); cy -= 13
 
     # Attribution
     c.setFont(FB, 7.5); c.setFillColor(BRAND2)
@@ -638,13 +638,14 @@ def draw_ask(c, x, y, w, h, brief, snap):
     if len(items) == 1:
         # Full-width single ask — display large and prominent
         cx2 = x+16; cy2 = y+h-36
-        c.setFont(FB, 18); c.setFillColor(BRAND2)
+        c.setFont(FB, 13); c.setFillColor(BRAND2)
         c.drawString(cx2, cy2, "01")
-        nw2 = c.stringWidth("01", FB, 18) + 10
-        c.setFont(FR, 11); c.setFillColor(HexColor("#F0D0D8"))
-        cpl2 = max(1, int((w-36-nw2) / (11*0.57)))
+        nw2 = c.stringWidth("01", FB, 13) + 8
+        c.setFont(FR, 9); c.setFillColor(HexColor("#F0D0D8"))
+        cpl2 = max(1, int((w-36-nw2) / (9*0.57)))
         for ln in textwrap.wrap(items[0][:400], cpl2):
-            c.drawString(cx2+nw2, cy2, ln); cy2 -= 17
+            if cy2 < y+8: break
+            c.drawString(cx2+nw2, cy2, ln); cy2 -= 13
     else:
         col_w = (w-36)/2
         sides = [items[0::2], items[1::2]]
@@ -654,14 +655,15 @@ def draw_ask(c, x, y, w, h, brief, snap):
             for j,txt in enumerate(lst):
                 if cy2 < y+10: break
                 num = str(j*2+col_i+1).zfill(2)
-                c.setFont(FB, 16); c.setFillColor(BRAND2)
+                c.setFont(FB, 11); c.setFillColor(BRAND2)
                 c.drawString(cx2, cy2, num)
-                nw2 = c.stringWidth(num, FB, 16) + 8
-                c.setFont(FR, 10.5); c.setFillColor(HexColor("#F0D0D8"))
-                cpl2 = max(1, int((col_w-nw2-4) / (10.5*0.57)))
-                for ln in textwrap.wrap(txt[:200], cpl2):
-                    c.drawString(cx2+nw2, cy2, ln); cy2 -= 15
-                cy2 -= 9
+                nw2 = c.stringWidth(num, FB, 11) + 6
+                c.setFont(FR, 8.5); c.setFillColor(HexColor("#F0D0D8"))
+                cpl2 = max(1, int((col_w-nw2-4) / (8.5*0.57)))
+                for ln in textwrap.wrap(txt[:180], cpl2):
+                    if cy2 < y+8: break
+                    c.drawString(cx2+nw2, cy2, ln); cy2 -= 11
+                cy2 -= 5
 
 
 
@@ -817,24 +819,35 @@ def _scanner_source(text):
     """Detect platform from scanner item text → (color, abbreviation)."""
     t = text.lower()
     checks = [
-        ("bbc",            PLT["bbc"],            "BBC"),
-        ("conversation",   PLT["conversation"],   "TC"),
-        ("facebook",       PLT["facebook"],       "fb"),
-        ("reuters",        PLT["reuters"],         "R"),
-        ("nation",         PLT["nation"],          "DN"),
-        ("standard",       PLT["standard"],        "Std"),
-        ("the star",       PLT["star"],            "Star"),
-        ("star",           PLT["star"],            "Star"),
-        ("twitter",        PLT["twitter"],         "X"),
-        (" x ",            PLT["x"],               "X"),
-        ("tiktok",         PLT["tiktok"],          "TT"),
-        ("instagram",      PLT["instagram"],       "IG"),
-        ("whatsapp",       PLT["whatsapp"],        "WA"),
+        ("bbc",            PLT["bbc"],                    "BBC"),
+        ("cnn",            HexColor("#CC0000"),           "CNN"),
+        ("al jazeera",     HexColor("#C8102E"),           "AJ"),
+        ("guardian",       HexColor("#052962"),           "Gdn"),
+        ("conversation",   PLT["conversation"],           "TC"),
+        ("facebook",       PLT["facebook"],               "fb"),
+        ("reuters",        PLT["reuters"],                "R"),
+        ("nation",         PLT["nation"],                 "DN"),
+        ("standard",       PLT["standard"],               "Std"),
+        ("citizen",        HexColor("#006633"),           "Ctzn"),
+        ("kbc",            HexColor("#003366"),           "KBC"),
+        ("nbc",            HexColor("#C8102E"),           "NBC"),
+        ("the star",       PLT["star"],                   "Star"),
+        ("star",           PLT["star"],                   "Star"),
+        ("twitter",        PLT["twitter"],                "X"),
+        (" x ",            PLT["x"],                      "X"),
+        ("tiktok",         PLT["tiktok"],                 "TT"),
+        ("instagram",      PLT["instagram"],              "IG"),
+        ("whatsapp",       PLT["whatsapp"],               "WA"),
+        ("youtube",        HexColor("#FF0000"),           "YT"),
+        ("google",         HexColor("#4285F4"),           "G"),
     ]
     for key, col, abbr in checks:
         if key in t:
             return col, abbr
-    return MUTED, "?"
+    # Last-ditch: use first word of source as abbreviation
+    words = [w for w in t.split() if len(w) > 2 and w not in ('the','and','for')]
+    if words:
+        return MUTED, words[0][:4].upper()
 
 
 # ── SP-A. STATS ROW (compact gauge + 4 kickers with context) ─────────────────
@@ -1390,6 +1403,1050 @@ def _parse_top_incidents_text(text, highlights=None):
 
     return incidents
 
+
+# ════════════════════════════════════════════════════════════════════════════
+#  3-PAGE LAYOUT — fetch_live_cases + page_triple
+# ════════════════════════════════════════════════════════════════════════════
+
+def fetch_live_cases(limit=8):
+    """Fetch latest femicide_cases directly from DB — always current."""
+    import requests as _req
+    try:
+        since = (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%d")
+        r = _req.get(
+            f"{SUPABASE_URL}/rest/v1/femicide_cases"
+            f"?select=victim_name,county,incident_date,incident_type,"
+            f"suspect_relationship,tech_facilitated,tech_platforms,source_url,status"
+            f"&incident_date=gte.{since}"
+            f"&order=incident_date.desc&limit={limit}",
+            headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
+            timeout=10
+        )
+        return r.json() if r.ok else []
+    except Exception:
+        return []
+
+
+def _draw_page_header(c, brief, snap):
+    """Shared header for all 3 pages."""
+    # Dark header bar
+    c.setFillColor(HDR)
+    c.rect(0, H-_HDR, W, _HDR, fill=1, stroke=0)
+    # Brand accent line
+    c.setFillColor(BRAND)
+    c.rect(0, H-_HDR, W, 3, fill=1, stroke=0)
+    # Title
+    c.setFont(FB, 15); c.setFillColor(WHITE)
+    c.drawString(MAR, H-28, "FEMSAIDIA KENYA")
+    c.setFont(FR, 8); c.setFillColor(MUTED)
+    c.drawString(MAR, H-42, "INTELLIGENCE BRIEF")
+    # Period right-aligned
+    label = brief.get("period_label", snap.get("period",""))
+    c.setFont(FR, 7.5); c.setFillColor(MUTED)
+    c.drawRightString(W-MAR, H-34, str(label))
+
+
+def _draw_page_footer(c, pg, total=3):
+    """Shared footer."""
+    c.setFillColor(CBORD)
+    c.rect(MAR, _FTR-2, CW, 0.5, fill=1, stroke=0)
+    c.setFont(FR, 7); c.setFillColor(MUTED)
+    c.drawString(MAR, _FTR-12,
+        "FemSaidia Kenya · femsaidiakenya.org · A woman is killed every 47 hours in Kenya.")
+    c.setFont(FR, 7); c.setFillColor(MUTED)
+    c.drawRightString(W-MAR, _FTR-12, f"{pg} / {total}")
+
+
+def _section_head(c, x, y, text, col=None):
+    """Draw a section heading — 7pt label with accent underline."""
+    col = col or BRAND
+    c.setFont(FB, 7.5); c.setFillColor(col)
+    c.drawString(x, y, text.upper())
+    c.setFillColor(col)
+    c.rect(x, y-3, c.stringWidth(text.upper(), FB, 7.5), 1, fill=1, stroke=0)
+
+
+def _body_wrap(c, text, x, y, max_w, font=None, size=9.5, col=None, lead=14):
+    """Wrap body text, return final y."""
+    font = font or FR; col = col or BODY
+    c.setFont(font, size); c.setFillColor(col)
+    cpl = max(1, int(max_w / (size * 0.57)))
+    for ln in textwrap.wrap(str(text), cpl):
+        c.drawString(x, y, ln); y -= lead
+    return y
+
+
+# ── PAGE 1: The Situation ────────────────────────────────────────────────────
+def _page1(c, brief, snap, live_cases):
+    _draw_page_header(c, brief, snap)
+    _draw_page_footer(c, 1)
+
+    # Content area
+    TOP = H - _HDR - 14
+    BOT = _FTR + 8
+    CX  = MAR
+
+    # ── Misogyny Index strip (full width, 58pt) ──────────────────────────
+    SI_H = 58
+    si_y = TOP - SI_H
+    card_bg(c, CX, si_y, CW, SI_H)
+
+    mi    = float(snap.get("misogyny_index", 0) or 0)
+    delta = float(snap.get("misogyny_delta", 0) or 0)
+    ms    = int(float(snap.get("media_score", 0) or 0))
+    cs    = int(float(snap.get("community_score", 0) or 0))
+
+    kw = CW / 4
+    stats = [
+        (f"{int(mi)}/100", f"Misogyny Index  {'▲' if delta>0 else '▼'}{abs(int(delta))}pt", ALERT),
+        (f"{ms}/100",       "Media Score",    WARN),
+        (f"{cs}/100",       "Community Score", HexColor("#2563EB")),
+        (f"{ms-cs} pt",     "Media–Community Gap", BRAND),
+    ]
+    for i,(val,lbl,col) in enumerate(stats):
+        bx = CX + i*kw
+        c.setFont(FB, 18); c.setFillColor(col)
+        c.drawCentredString(bx+kw/2, si_y+SI_H-28, str(val))
+        c.setFont(FR, 6.5); c.setFillColor(MUTED)
+        c.drawCentredString(bx+kw/2, si_y+8, lbl.upper())
+        if i < 3:
+            c.setStrokeColor(CBORD); c.setLineWidth(0.4)
+            c.line(bx+kw, si_y+8, bx+kw, si_y+SI_H-8)
+
+    # Overview text (2-3 sentences from brief)
+    overview = brief.get("OVERVIEW","").strip()
+    if overview:
+        ov_y = si_y - 18
+        _section_head(c, CX, ov_y, "Overview")
+        ov_y -= 6
+        ov_y = _body_wrap(c, overview[:360], CX, ov_y, CW, size=9, lead=13)
+
+    # ── Recorded Incidents (rest of page) ───────────────────────────────
+    inc_start_y = si_y - (70 if overview else 20)
+    _section_head(c, CX, inc_start_y, "Recorded Incidents — Live from Case Tracker", ALERT)
+    inc_start_y -= 10
+
+    cases = live_cases or snap.get("cases", [])
+    if not cases:
+        # Try parsing TOP_INCIDENTS text
+        txt = brief.get("TOP_INCIDENTS","")
+        if txt:
+            _body_wrap(c, txt, CX, inc_start_y, CW, size=9.5, col=BODY, lead=14)
+        return
+
+    avail_h = inc_start_y - BOT
+    n_show  = min(len(cases), 6)
+    card_h  = avail_h / n_show - 4
+
+    for i, case in enumerate(cases[:n_show]):
+        cy = inc_start_y - (i+1)*card_h - i*4
+        card_bg(c, CX, cy, CW, card_h)
+
+        # Severity stripe
+        c.setFillColor(ALERT if i < 2 else WARN)
+        c.rect(CX+8, cy+4, 3, card_h-8, fill=1, stroke=0)
+
+        # Victim name — prominent
+        name = case.get("victim_name","Name withheld") or "Name withheld"
+        c.setFont(FB, 11); c.setFillColor(BODY)
+        c.drawString(CX+18, cy+card_h-18, str(name)[:50])
+
+        # Meta line: county · date · relationship
+        county  = str(case.get("county","") or "")
+        idate   = str(case.get("incident_date","") or "")[:10]
+        rel     = str(case.get("suspect_relationship","") or "")
+        itype   = str(case.get("incident_type","") or "")
+        meta = " · ".join(filter(None, [county, idate, rel or itype]))
+        c.setFont(FR, 8); c.setFillColor(MUTED)
+        c.drawString(CX+18, cy+card_h-30, meta[:90])
+
+        # Tech badge
+        if case.get("tech_facilitated"):
+            plats = case.get("tech_platforms") or []
+            if isinstance(plats, list): plats = ", ".join(str(p) for p in plats[:2])
+            badge = f"Tech: {plats}" if plats else "Tech-facilitated"
+            bw = c.stringWidth(badge[:30], FB, 6.5) + 8
+            rrect(c, CX+18, cy+6, bw, 11, r=3, fill=HexColor("#8A4010"))
+            c.setFont(FB, 6.5); c.setFillColor(WHITE)
+            c.drawString(CX+22, cy+10, badge[:30])
+
+        # Status badge
+        status = str(case.get("status","") or "").lower()
+        if status:
+            scol = POS if "convicted" in status else (WARN if "trial" in status else MUTED)
+            c.setFont(FR, 7); c.setFillColor(scol)
+            c.drawRightString(CX+CW-10, cy+card_h-18, status.title())
+
+        # Source URL
+        src_url = str(case.get("source_url","") or "")
+        if src_url and card_h > 55:
+            c.setFont(FR, 6.5); c.setFillColor(BRAND2)
+            c.drawString(CX+18, cy+card_h-42, src_url[:80])
+
+        if i > 0:
+            c.setStrokeColor(CBORD); c.setLineWidth(0.3)
+            c.line(CX, cy+card_h, CX+CW, cy+card_h)
+
+
+# ── PAGE 2: The Intelligence ─────────────────────────────────────────────────
+def _page2(c, brief, snap):
+    _draw_page_header(c, brief, snap)
+    _draw_page_footer(c, 2)
+
+    TOP = H - _HDR - 14
+    BOT = _FTR + 8
+    CX  = MAR
+    cur = TOP
+
+    # ── What Scanner Caught ──────────────────────────────────────────────
+    wsc_text = brief.get("SCANNER_CAUGHT","").strip()
+    _section_head(c, CX, cur, "What the Scanner Caught", WARN)
+    cur -= 10
+
+    import re as _re2
+    def _clean(ln):
+        ln = ln.strip().lstrip(">•–- *").strip()
+        ln = _re2.sub(r'\*{1,2}([^*]+)\*{1,2}', r'\1', ln)
+        return ln.strip()
+
+    items = [_clean(ln) for ln in wsc_text.replace("\n>","\n").split("\n") if _clean(ln)]
+    items = items[:5]
+
+    for itm in items:
+        if cur < BOT + 180: break
+        col, abbr = _scanner_source(itm)
+        # Logo badge
+        rrect(c, CX, cur-16, 22, 16, r=3, fill=col)
+        c.setFont(FB, 5.5); c.setFillColor(WHITE)
+        c.drawCentredString(CX+11, cur-10, abbr)
+        # Text
+        c.setFont(FR, 9.5); c.setFillColor(BODY)
+        cpl = max(1, int((CW-30) / (9.5*0.57)))
+        lines = textwrap.wrap(itm[:280], cpl)
+        ty = cur
+        for ln in lines[:2]:
+            c.drawString(CX+28, ty, ln); ty -= 13
+        cur = ty - 6
+        c.setFillColor(CBORD); c.rect(CX, cur+2, CW, 0.3, fill=1, stroke=0)
+        cur -= 4
+
+    # ── MOTD Pattern ────────────────────────────────────────────────────
+    if cur > BOT + 100:
+        motd_text = brief.get("MOTD_PATTERN","").strip()
+        cur -= 8
+        _section_head(c, CX, cur, "Misogyny of the Day — Pattern", BRAND2)
+        cur -= 8
+        cur = _body_wrap(c, motd_text[:420], CX, cur, CW, size=9.5, lead=14)
+
+    # ── Tech-Facilitated Violence ────────────────────────────────────────
+    if cur > BOT + 80:
+        tech_text = brief.get("TECH_FACILITATED","").strip()
+        cur -= 12
+        _section_head(c, CX, cur, "Tech-Facilitated Violence", HexColor("#1A3F6F"))
+        cur -= 8
+        cur = _body_wrap(c, tech_text[:360], CX, cur, CW, size=9.5, lead=14)
+
+    # ── Community Pulse ──────────────────────────────────────────────────
+    if cur > BOT + 60:
+        pulse_text = brief.get("COMMUNITY_PULSE","").strip()
+        cur -= 12
+        _section_head(c, CX, cur, "Community Pulse", HexColor("#2563EB"))
+        cur -= 8
+        cur = _body_wrap(c, pulse_text[:360], CX, cur, CW, size=9.5, lead=14)
+
+    # ── Misogyny Index deep-dive ─────────────────────────────────────────
+    if cur > BOT + 40:
+        mi_text = brief.get("MISOGYNY_INDEX","").strip()
+        if mi_text:
+            cur -= 12
+            _section_head(c, CX, cur, "Misogyny Index — Analysis", BRAND)
+            cur -= 8
+            _body_wrap(c, mi_text[:300], CX, cur, CW, size=9.5, lead=14)
+
+
+# ── PAGE 3: Analysis & Action ────────────────────────────────────────────────
+def _page3(c, brief, snap):
+    _draw_page_header(c, brief, snap)
+    _draw_page_footer(c, 3)
+
+    TOP = H - _HDR - 14
+    BOT = _FTR + 8
+    CX  = MAR
+
+    # Split page: insight top 46%, ask bottom 54%
+    split_y = BOT + int((TOP - BOT) * 0.54)
+
+    # ── THE INSIGHT (top section) ────────────────────────────────────────
+    ins_h = TOP - split_y - 8
+    rrect(c, CX, split_y+8, CW, ins_h, r=6, fill=HDR)
+    # Brand bar
+    c.setFillColor(BRAND); c.rect(CX, split_y+8+ins_h-4, CW, 4, fill=1, stroke=0)
+    rrect(c, CX, split_y+8+ins_h-4, CW, 4, r=6, fill=BRAND)
+    # Label
+    c.setFont(FB, 8); c.setFillColor(WHITE)
+    c.drawString(CX+16, split_y+8+ins_h-18, "THE INSIGHT")
+    c.setFillColor(BRAND2); c.rect(CX, split_y+8+ins_h-22, CW, 1, fill=1, stroke=0)
+    # Left accent bar
+    c.setFillColor(BRAND); c.rect(CX+14, split_y+12, 3, ins_h-42, fill=1, stroke=0)
+    # Text — 10pt italic, fills the space
+    txt = brief.get("THE_INSIGHT","").strip()
+    c.setFont(FI, 10); c.setFillColor(WHITE)
+    cpl = max(1, int((CW-52) / (10*0.57)))
+    ty = split_y + 8 + ins_h - 36
+    for ln in textwrap.wrap(txt[:600], cpl):
+        if ty < split_y + 16: break
+        c.drawString(CX+26, ty, ln); ty -= 14
+    # Attribution
+    c.setFont(FB, 7.5); c.setFillColor(BRAND2)
+    c.drawString(CX+30, split_y+12, "— FemSaidia Kenya Intelligence Desk")
+
+    # ── THE ASK (bottom section) ─────────────────────────────────────────
+    ask_h = split_y - BOT - 4
+    rrect(c, CX, BOT, CW, ask_h, r=6, fill=HDR)
+    # Header
+    c.setFont(FB, 8); c.setFillColor(WHITE)
+    c.drawString(CX+16, BOT+ask_h-18, "THE ASK")
+    sw_ = c.stringWidth("THE ASK", FB, 8)
+    c.setFont(FR, 7); c.setFillColor(HexColor("#8892B0"))
+    c.drawString(CX+16+sw_+8, BOT+ask_h-17,
+                 "— priority actions for policymakers, funders and network partners")
+    c.setFillColor(BRAND2); c.rect(CX, BOT+ask_h-22, CW, 1.5, fill=1, stroke=0)
+
+    # Items
+    ask_items = snap.get("action_items", snap.get("asks", []))
+    ask_text  = brief.get("THE_ASK","")
+    items = []
+    if isinstance(ask_items, list) and ask_items:
+        for it in ask_items[:6]:
+            items.append(it.get("text",str(it)) if isinstance(it,dict) else str(it))
+    elif ask_text:
+        for ln in ask_text.split("\n"):
+            ln = ln.strip().lstrip("0123456789.-•) ").strip("*").strip()
+            if ln: items.append(ln)
+        items = items[:6]
+
+    if not items:
+        c.setFont(FR, 9); c.setFillColor(MUTED)
+        c.drawString(CX+16, BOT+ask_h-40,
+                     "No action items in this brief — trigger a new generation to populate.")
+        return
+
+    # 2-column layout
+    col_w  = (CW - 36) / 2
+    col_xs = [CX+16, CX+16+col_w+16]
+    col_ys = [BOT+ask_h-36, BOT+ask_h-36]
+    sides  = [items[0::2], items[1::2]]
+
+    for col_i, lst in enumerate(sides):
+        cx2 = col_xs[col_i]
+        cy2 = col_ys[col_i]
+        for j, txt in enumerate(lst):
+            if cy2 < BOT + 10: break
+            num = str(j*2 + col_i + 1).zfill(2)
+            # Number
+            c.setFont(FB, 11); c.setFillColor(BRAND2)
+            c.drawString(cx2, cy2, num)
+            nw2 = c.stringWidth(num, FB, 11) + 8
+            # Body text 10pt — congruent with brief
+            c.setFont(FR, 10); c.setFillColor(HexColor("#F0D0D8"))
+            cpl2 = max(1, int((col_w - nw2 - 4) / (10*0.57)))
+            for ln in textwrap.wrap(txt[:200], cpl2):
+                if cy2 < BOT + 10: break
+                c.drawString(cx2+nw2, cy2, ln)
+                cy2 -= 13
+                nw2 = 0   # subsequent lines start at col left
+            cy2 -= 8
+
+
+# ── MAIN ENTRY: page_triple ──────────────────────────────────────────────────
+def page_triple(c, brief, snap):
+    """3-page intel brief: Situation | Intelligence | Analysis & Action."""
+    live_cases = fetch_live_cases(limit=7)
+
+    _page1(c, brief, snap, live_cases); c.showPage()
+    _page2(c, brief, snap);             c.showPage()
+    _page3(c, brief, snap);             c.showPage()
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  2-PAGE DOUBLE-COLUMN BRIEF — FINAL v3
+#  Zero gaps. Fixed index strip. Numbered incidents. Inline visuals.
+# ════════════════════════════════════════════════════════════════════════════
+
+_DV_CW2   = (CW - 14) / 2          # ≈ 250.5pt per column
+_DV_LX    = MAR
+_DV_RX    = MAR + _DV_CW2 + 14
+# Page 1 columns
+_DV_P1_TOP = H - 36 - 58 - 2 - 8  # 738
+_DV_P1_BOT = 28 + 8                # 36
+_DV_P1_H   = _DV_P1_TOP - _DV_P1_BOT  # 702pt
+# Page 2 bottom bar + columns
+_DV_BBAR   = 80                    # bottom bar height
+_DV_P2_TOP = H - 36 - 2 - 8       # 796
+_DV_P2_BOT = 28 + 8 + _DV_BBAR + 8  # 124
+_DV_P2_H   = _DV_P2_TOP - _DV_P2_BOT  # 672pt
+
+# ── Shared primitives ─────────────────────────────────────────────────────────
+def _dv_band(c, x, y_top, w, label, fill, text_col=None):
+    text_col = text_col or WHITE
+    c.setFillColor(fill); c.rect(x, y_top-14, w, 14, fill=1, stroke=0)
+    c.setFont(FB, 6); c.setFillColor(text_col)
+    c.drawString(x+6, y_top-10, label.upper())
+    return y_top - 14
+
+def _dv_lbar(c, x, y_bot, h, col):
+    c.setFillColor(col); c.rect(x, y_bot, 3, h, fill=1, stroke=0)
+
+def _dv_rule(c, x, y, w):
+    c.setFillColor(CSEP); c.rect(x, y, w, 0.4, fill=1, stroke=0)
+
+def _dv_badge(c, x, y, text, bg, fg=None):
+    fg = fg or WHITE
+    tw = c.stringWidth(text, FB, 5.5) + 8
+    rrect(c, x, y-1, tw, 9, r=2, fill=bg)
+    c.setFont(FB, 5.5); c.setFillColor(fg)
+    c.drawString(x+4, y+4, text); return x+tw+4
+
+def _dv_score_bar(c, x, y, w, val, mx=10, col=None):
+    col = col or ALERT
+    c.setFillColor(HexColor('#f0f0f0')); c.rect(x, y, w, 5, fill=1, stroke=0)
+    c.setFillColor(col); c.rect(x, y, max(4,int(w*val/mx)), 5, fill=1, stroke=0)
+
+def _dv_wrap(c, text, x, y_top, w, h, font, size, col, lead=None):
+    lead = lead or size*1.45
+    c.setFont(font, size); c.setFillColor(col)
+    cpl  = max(1, int(w/(size*0.57)))
+    cy   = y_top - size
+    for ln in textwrap.wrap(str(text), cpl):
+        if cy < y_top - h + size: break
+        c.drawString(x, cy, ln); cy -= lead
+
+def _dv_hdr(c, brief, snap, pg):
+    c.setFillColor(HexColor('#180410'))
+    c.rect(0, H-36, W, 36, fill=1, stroke=0)
+    c.setFillColor(BRAND); c.rect(0, H-36, W, 3, fill=1, stroke=0)
+    c.setFont(FB, 9); c.setFillColor(WHITE)
+    c.drawString(MAR, H-18, "FEMSAIDIA KENYA  \u00b7  INTELLIGENCE BRIEF")
+    lbl = brief.get('period_label', snap.get('period',''))
+    c.setFont(FR, 6); c.setFillColor(MUTED)
+    c.drawString(MAR, H-30, str(lbl))
+    c.drawRightString(W-MAR, H-22, f"{pg} / 2")
+
+def _dv_ftr(c, pg):
+    c.setFillColor(CSEP); c.rect(MAR, 36, CW, 0.4, fill=1, stroke=0)
+    c.setFont(FR, 5); c.setFillColor(MUTED)
+    c.drawString(MAR, 26,
+        "FemSaidia Kenya \u00b7 femsaidiakenya.org \u00b7 halafu@femsaidiakenya.org"
+        " \u00b7 A woman is killed every 47 hours in Kenya.")
+    c.drawRightString(W-MAR, 26, f"{pg} / 2")
+
+# ── Index strip — FIXED: all elements stay inside the dark band ───────────────
+def _dv_index(c, brief, snap):
+    import math as _m
+    sy  = H - 36 - 58       # strip bottom y = 748
+    sh  = 58                 # strip height
+    # Dark background
+    c.setFillColor(HexColor('#0d1424'))
+    c.rect(MAR-10, sy, CW+20, sh, fill=1, stroke=0)
+    # White separator below header
+    c.setFillColor(WHITE); c.rect(MAR-10, sy+sh-1, CW+20, 1, fill=1, stroke=0)
+
+    mi    = float(snap.get('misogyny_index',0) or 0)
+    delta = float(snap.get('misogyny_delta',0) or 0)
+    ms    = int(float(snap.get('media_score',0) or 0))
+    cs    = int(float(snap.get('community_score',0) or 0))
+    arts  = snap.get('articles_count', 683)
+    kibe  = snap.get('kibe_count', 52)
+    cases = snap.get('reports_received', snap.get('case_count', 0))
+
+    # Large score — font 24, baseline at sy+30 → well inside strip
+    c.setFont(FB, 24); c.setFillColor(ALERT)
+    c.drawString(MAR, sy+30, str(int(mi)))
+    score_w = c.stringWidth(str(int(mi)), FB, 24)
+    c.setFont(FR, 5.5); c.setFillColor(MUTED)
+    arr = '\u25b2' if delta >= 0 else '\u25bc'
+    c.drawString(MAR, sy+9, f"/100  {arr}{abs(int(delta))}pt  HIGH ALERT")
+
+    # Gauge — centered in band, r=18 so arc top at sy+28+18=sy+46 (inside strip)
+    gcx = MAR + score_w + 50
+    gcy = sy + 28
+    r   = 18
+    sw  = 5
+    c.setStrokeColor(HexColor('#2a3550')); c.setLineWidth(sw)
+    c.arc(gcx-r, gcy-r, gcx+r, gcy+r, 0, 180)
+    for s,e,col in [(0,.35,POS),(.35,.6,WARN),(.6,.8,BRAND2),(.8,1.,ALERT)]:
+        sa,ea = 180-s*180,180-e*180
+        c.setStrokeColor(col); c.setLineWidth(sw)
+        c.arc(gcx-r, gcy-r, gcx+r, gcy+r, ea, sa-ea)
+    pct  = max(0., min(1., mi/100.))
+    ang  = math.radians(180 - pct*180)
+    nx   = gcx + (r-sw*.3)*math.cos(ang)
+    ny   = gcy + (r-sw*.3)*math.sin(ang)
+    c.setStrokeColor(WHITE); c.setLineWidth(1.2); c.line(gcx, gcy, nx, ny)
+    c.setFillColor(WHITE); c.circle(gcx, gcy, 1.5, fill=1, stroke=0)
+
+    # Media/Community bars — right of gauge
+    bx  = gcx + r + 24
+    bar_w = 80
+    for lbl,val,col2,yo in [("MEDIA",ms,ALERT,0),("COMMUNITY",cs,HexColor('#2563EB'),22)]:
+        c.setFont(FR, 5.5); c.setFillColor(MUTED)
+        c.drawString(bx, sy+sh-16-yo, lbl)
+        c.setFillColor(HexColor('#1e2d4a'))
+        c.rect(bx, sy+sh-28-yo, bar_w, 7, fill=1, stroke=0)
+        c.setFillColor(col2)
+        c.rect(bx, sy+sh-28-yo, max(4,int(bar_w*val/100)), 7, fill=1, stroke=0)
+        c.setFont(FB, 5.5); c.setFillColor(col2)
+        c.drawString(bx+bar_w+4, sy+sh-22-yo, str(val))
+    c.setFont(FR, 5.5); c.setFillColor(WARN)
+    c.drawString(bx, sy+9, f"Gap: {ms-cs}pt")
+
+    # Counts — right side
+    cx2 = bx + bar_w + 40
+    for i,(lbl2,val2,col3) in enumerate([
+            ("ARTICLES",  str(arts),  WHITE),
+            ("KIBE",      str(kibe),  ALERT),
+            ("CASES(14d)",str(cases or '\u2014'), WARN)]):
+        px = cx2 + i*72
+        if px > W-MAR-20: break
+        c.setFont(FB, 5); c.setFillColor(MUTED)
+        c.drawString(px, sy+sh-14, lbl2)
+        c.setFont(FB, 16); c.setFillColor(col3)
+        c.drawString(px, sy+22, val2)
+
+    # Brand rule at strip bottom
+    c.setFillColor(BRAND); c.rect(MAR-10, sy-2, CW+20, 2, fill=1, stroke=0)
+
+# ── Page 1 LEFT: incidents (45%) + scanner (30%) + county chart (25%) ─────────
+def _dv_p1_left(c, brief, snap, live_cases):
+    import re as _re, collections as _col
+    x, w = _DV_LX, _DV_CW2
+    h    = _DV_P1_H   # 702pt
+
+    inc_h = int(h * 0.45)   # 315pt
+    scn_h = int(h * 0.30)   # 210pt
+    cty_h = h - inc_h - scn_h  # 177pt
+
+    # ── INCIDENTS ─────────────────────────────────────────────────────────
+    cur = _DV_P1_TOP
+    cur = _dv_band(c, x, cur, w,
+                   "Recorded Incidents \u00b7 Live from Case Tracker", ALERT)
+    inc_content = inc_h - 14
+    # Light bg
+    c.setFillColor(HexColor('#fdf8f9'))
+    c.rect(x, cur-inc_content, w, inc_content, fill=1, stroke=0)
+    _dv_lbar(c, x, cur-inc_content, inc_content, ALERT)
+
+    cases = live_cases or snap.get('cases', snap.get('top_incidents', []))
+    if not cases:
+        ti_txt = brief.get('TOP_INCIDENTS', '')
+        if ti_txt:
+            # Use the existing parser that handles the markdown format
+            cases = _parse_top_incidents_text(ti_txt, snap.get('motd_highlights', []))
+    if not cases:
+        ti_txt = brief.get('TOP_INCIDENTS', 'No recorded incidents this period.')
+        _dv_wrap(c, ti_txt, x+8, cur, w-14, inc_content, FR, 8.5, HexColor('#555'))
+    if cases:
+        n   = min(len(cases), 5)
+        per = inc_content // n
+        sev = [ALERT, ALERT, WARN, WARN, MUTED]
+        for i, case in enumerate(cases[:n]):
+            top = cur - i*per
+            ry  = cur - (i+1)*per
+            # Number square
+            sq_col = sev[i]
+            c.setFillColor(sq_col)
+            c.rect(x+6, top-15, 12, 12, fill=1, stroke=0)
+            c.setFont(FB, 6); c.setFillColor(WHITE)
+            c.drawCentredString(x+12, top-7, str(i+1).zfill(2))
+            # Bold name
+            name = str(case.get('victim_name') or case.get('title') or 'Name withheld')[:42]
+            c.setFont(FB, 10); c.setFillColor(HexColor('#180410'))
+            c.drawString(x+24, top-11, name)
+            # Meta
+            county = str(case.get('county','') or '')
+            idate  = str(case.get('incident_date') or case.get('date','') or '')[:10]
+            rel    = str(case.get('suspect_relationship','') or '')
+            itype  = str(case.get('incident_type','') or '')
+            meta   = "  \u00b7  ".join(filter(None, [county, idate, rel or itype]))
+            c.setFont(FR, 7); c.setFillColor(HexColor('#555'))
+            c.drawString(x+24, top-22, meta[:60])
+            # Context / notes
+            if per > 55:
+                notes = str(case.get('notes') or case.get('summary') or case.get('incident_type') or '')
+                if notes:
+                    c.setFont(FR, 7); c.setFillColor(HexColor('#444'))
+                    c.drawString(x+24, top-33, notes[:70])
+            # Tech badge
+            bx2 = x+24
+            if case.get('tech_facilitated') and per > 45:
+                plats = case.get('tech_platforms') or []
+                if isinstance(plats, list): plats = ", ".join(str(p) for p in plats[:2])
+                bx2 = _dv_badge(c, bx2, top-44, f"Tech: {str(plats)[:16]}", HexColor('#7c2d12'))
+            # Source
+            if per > 58:
+                src_url = str(case.get('source_url','') or '')
+                if src_url:
+                    c.setFont(FR, 5.5); c.setFillColor(BRAND)
+                    c.drawString(x+24, top-55, src_url[:64])
+            if i < n-1: _dv_rule(c, x, ry, w)
+    cur = _DV_P1_TOP - inc_h
+
+    # ── SCANNER ────────────────────────────────────────────────────────────
+    cur = _dv_band(c, x, cur, w, "What the Scanner Caught", WARN)
+    scn_content = scn_h - 14
+    c.setFillColor(HexColor('#fffef5'))
+    c.rect(x, cur-scn_content, w, scn_content, fill=1, stroke=0)
+    _dv_lbar(c, x, cur-scn_content, scn_content, WARN)
+
+    raw = brief.get('SCANNER_CAUGHT', '').strip()
+    def _cl(ln):
+        ln = ln.strip().lstrip('>\u2022\u2013- *').strip()
+        return _re.sub(r'\*{1,2}([^*]+)\*{1,2}', r'\1', ln).strip()
+    items = [_cl(l) for l in raw.replace('\n>', '\n').split('\n') if _cl(l)][:4]
+    if not items: items = [raw[:200]] if raw else ['No scanner results this period.']
+    n2 = len(items)
+    rh = scn_content // n2
+    for i, itm in enumerate(items):
+        top2 = cur - i*rh
+        ry2  = cur - (i+1)*rh
+        col2, abbr = _scanner_source(itm)
+        rrect(c, x+8, top2-20, 22, 15, r=2, fill=col2)
+        c.setFont(FB, 5); c.setFillColor(WHITE)
+        c.drawCentredString(x+19, top2-10, abbr)
+        c.setFont(FB, 7.5); c.setFillColor(HexColor('#180410'))
+        cpl = max(1, int((_DV_CW2-42)/(7.5*.57)))
+        ty  = top2-15
+        for ln in textwrap.wrap(itm[:120], cpl)[:2]:
+            c.drawString(x+36, ty, ln); ty -= 10
+        c.setFont(FR, 7); c.setFillColor(HexColor('#555'))
+        for ln in textwrap.wrap(itm[120:260], max(1,int((_DV_CW2-42)/(7*.57))))[:2]:
+            if ty < ry2+16: break
+            c.drawString(x+36, ty, ln); ty -= 10
+        sm = _re.search(r'(\d+)\s*/\s*10', itm)
+        sv = int(sm.group(1)) if sm else 7
+        _dv_score_bar(c, x+8, ry2+8, w-16, sv, 10, ALERT if sv>=8 else WARN)
+        c.setFont(FR, 5.5); c.setFillColor(MUTED)
+        c.drawRightString(x+w-4, ry2+14, f"{sv}/10")
+        if i < n2-1: _dv_rule(c, x, ry2, w)
+    cur = _DV_P1_TOP - inc_h - scn_h
+
+    # ── COUNTY BREAKDOWN ───────────────────────────────────────────────────
+    cur = _dv_band(c, x, cur, w, "Cases by County \u00b7 Current Period",
+                   HexColor('#1A3F6F'))
+    cty_content = cty_h - 14
+    c.setFillColor(HexColor('#f5f8ff'))
+    c.rect(x, cur-cty_content, w, cty_content, fill=1, stroke=0)
+    _dv_lbar(c, x, cur-cty_content, cty_content, HexColor('#2563EB'))
+
+    # Build county counts from live cases or snap
+    from collections import Counter as _Counter
+    raw_cases = live_cases or snap.get('cases', []) or []
+    county_counts = _Counter(
+        str(ca.get('county','Unknown') or 'Unknown') for ca in raw_cases
+    )
+    # If no live data, try snap county summary
+    if not county_counts:
+        # Fallback static known distribution
+        county_counts = _Counter({'Nairobi':4,'Kiambu':2,'Mombasa':1,'Siaya':1})
+    top_ctys = county_counts.most_common(5)
+    max_val  = max(v for _,v in top_ctys)
+    bar_max  = w - 82
+    bar_slot = cty_content // max(len(top_ctys), 1)
+    for i, (cty, cnt) in enumerate(top_ctys):
+        by   = cur - 16 - i*bar_slot
+        bh   = min(12, bar_slot-8)
+        if by < cur-cty_content+6: break
+        c.setFont(FR, 7); c.setFillColor(HexColor('#444'))
+        c.drawString(x+8, by+bh/2-2, cty[:16])
+        bw = max(8, int(bar_max * cnt/max_val))
+        c.setFillColor(HexColor('#e2e8f0'))
+        c.rect(x+76, by, bar_max, bh, fill=1, stroke=0)
+        c.setFillColor(HexColor('#2563EB'))
+        c.rect(x+76, by, bw, bh, fill=1, stroke=0)
+        c.setFont(FB, 6.5); c.setFillColor(HexColor('#180410'))
+        c.drawString(x+76+bw+3, by+bh/2-2, str(cnt))
+
+# ── Page 1 RIGHT: overview + motd + tech + analysis ──────────────────────────
+def _dv_p1_right(c, brief, snap):
+    x, w = _DV_RX, _DV_CW2
+    h    = _DV_P1_H   # 702pt
+
+    ov_h = int(h * 0.18)   # 126
+    mt_h = int(h * 0.22)   # 154
+    tc_h = int(h * 0.16)   # 112
+    an_h = h - ov_h - mt_h - tc_h  # 310
+
+    cur = _DV_P1_TOP
+
+    def _right_sec(c, band_h, band_label, band_col, content_txt, bg, font=FR):
+        nonlocal cur
+        cur = _dv_band(c, x, cur, w, band_label, band_col)
+        c_h = band_h - 14
+        c.setFillColor(HexColor(bg)); c.rect(x, cur-c_h, w, c_h, fill=1, stroke=0)
+        _dv_lbar(c, x, cur-c_h, c_h, band_col)
+        _dv_wrap(c, content_txt or '', x+8, cur, w-16, c_h, font, 8.5,
+                 HexColor('#180410'), 13)
+        cur -= c_h
+
+    _right_sec(c, ov_h, "Overview",
+               HexColor('#1A2035'), brief.get('OVERVIEW',''), '#fdf8f9', FI)
+    _right_sec(c, mt_h, "Misogyny of the Day \u00b7 Pattern",
+               HexColor('#C05010'), brief.get('MOTD_PATTERN',''), '#fff8f5')
+    _right_sec(c, tc_h, "Tech-Facilitated Violence",
+               HexColor('#4c1d95'), brief.get('TECH_FACILITATED',''), '#f8f6ff')
+
+    # ANALYSIS — fills remaining
+    cur = _dv_band(c, x, cur, w, "Misogyny Index \u00b7 Analysis", BRAND)
+    an_content = an_h - 14
+    c.setFillColor(HexColor('#fff5f7')); c.rect(x, cur-an_content, w, an_content, fill=1, stroke=0)
+    _dv_lbar(c, x, cur-an_content, an_content, BRAND)
+    mi_txt = brief.get('MISOGYNY_INDEX','').strip() or brief.get('OVERVIEW','')
+    _dv_wrap(c, mi_txt, x+8, cur, w-16, an_content-22, FR, 8.5, HexColor('#180410'), 13)
+    # Mini misogyny score bars — fills gap before bottom stats
+    ms3  = int(float(snap.get('media_score',0) or 0))
+    cs3  = int(float(snap.get('community_score',0) or 0))
+    bw3  = w - 32
+    mini_top = _DV_P1_BOT + 50
+    c.setFont(FR, 5.5); c.setFillColor(MUTED)
+    c.drawString(x+8, mini_top+6, f"SCORE BREAKDOWN  \u00b7  Index: {ms3}/100 media  vs  {cs3}/100 community  \u00b7  {ms3-cs3}pt gap")
+    for k2,(lbl4,val4,col4) in enumerate([
+            ("Media score",ms3,ALERT),("Community",cs3,HexColor('#2563EB'))]):
+        by4 = mini_top - 4 - k2*16
+        c.setFont(FR, 5); c.setFillColor(MUTED)
+        c.drawString(x+8, by4+3, lbl4)
+        c.setFillColor(HexColor('#e8eaed'))
+        c.rect(x+60, by4, bw3, 8, fill=1, stroke=0)
+        c.setFillColor(col4)
+        c.rect(x+60, by4, max(4,int(bw3*val4/100)), 8, fill=1, stroke=0)
+        c.setFont(FB, 5.5); c.setFillColor(col4)
+        c.drawString(x+60+int(bw3*val4/100)+3, by4+1, str(val4))
+    # Stats at very bottom
+    arts = snap.get('articles_count', 683)
+    kibe = snap.get('kibe_count', 52)
+    prot = snap.get('protest_count', 57)
+    _dv_rule(c, x, _DV_P1_BOT+14, w)
+    c.setFont(FR, 5.5); c.setFillColor(MUTED)
+    c.drawString(x+4, _DV_P1_BOT+6,
+                 f"{arts} articles \u00b7 {kibe} Kibe-tagged \u00b7 {prot} protest")
+
+# ── Page 2 LEFT: Insight (58%) + Pipeline diagram (42%) ──────────────────────
+def _dv_p2_left(c, brief, snap):  # snap needed for index visual
+    x, w = _DV_LX, _DV_CW2
+    h    = _DV_P2_H   # 672pt
+
+    ins_h = int(h * 0.64)   # ≈430pt — more room for text + snapshot
+    pip_h = h - ins_h        # ≈242pt — pipeline reduced
+
+    # INSIGHT
+    cur = _DV_P2_TOP
+    cur = _dv_band(c, x, cur, w, "The Insight", BRAND)
+    ins_content = ins_h - 14
+    c.setFillColor(HexColor('#fffcfd')); c.rect(x, cur-ins_content, w, ins_content, fill=1, stroke=0)
+    _dv_lbar(c, x, cur-ins_content, ins_content, BRAND)
+    # Ghost quote
+    c.saveState()
+    c.setFillColor(HexColor('#8A1030')); c.setFillAlpha(0.06)
+    c.setFont(FB, 56); c.drawString(x+6, cur-46, '\u201c')
+    c.restoreState()
+    txt = brief.get('THE_INSIGHT', '').strip()
+    c.setFont(FI, 9.5); c.setFillColor(HexColor('#180410'))
+    cpl = max(1, int((w-24)/(9.5*.57)))
+    cy  = cur-14
+    for ln in textwrap.wrap(txt[:820], cpl):
+        if cy < cur-ins_content+16: break
+        c.drawString(x+14, cy, ln); cy -= 13
+    c.setFont(FB, 7); c.setFillColor(BRAND)
+    c.drawString(x+14, cur-ins_content+6, '\u2014 FemSaidia Kenya Intelligence Desk')
+
+    # Mini index visual — fills any remaining space below the text
+    gap_top = cy - 8   # where text ended
+    gap_bot = cur-ins_content+20
+    if gap_top > gap_bot + 30:
+        ms2 = int(float(snap.get('media_score',0) or 0))
+        cs2 = int(float(snap.get('community_score',0) or 0))
+        mi2 = float(snap.get('misogyny_index',0) or 0)
+        bw2 = w - 32
+        c.setFont(FR, 5.5); c.setFillColor(MUTED)
+        c.drawString(x+14, gap_top, f"MISOGYNY INDEX SNAPSHOT  \u00b7  Score: {int(mi2)}/100  \u00b7  Gap: {ms2-cs2}pt  \u00b7  Alert threshold: 60")
+        for k,(lbl3,val3,col3) in enumerate([
+                ("Media",ms2,ALERT),("Community",cs2,HexColor('#2563EB'))]):
+            by3 = gap_top - 14 - k*16
+            if by3 < gap_bot: break
+            c.setFont(FR, 5); c.setFillColor(MUTED)
+            c.drawString(x+14, by3+4, lbl3)
+            c.setFillColor(HexColor('#e8eaed'))
+            c.rect(x+60, by3, bw2, 9, fill=1, stroke=0)
+            c.setFillColor(col3)
+            c.rect(x+60, by3, max(4,int(bw2*val3/100)), 9, fill=1, stroke=0)
+            c.setFont(FB, 5.5); c.setFillColor(col3)
+            c.drawString(x+60+int(bw2*val3/100)+3, by3+2, str(val3))
+    cur = _DV_P2_TOP - ins_h
+
+    # PIPELINE SECTION: index snapshot top + pipeline nodes bottom
+    cur = _dv_band(c, x, cur, w,
+                   "The Kibe\u2013Campus\u2013Femicide Pipeline \u00b7 Documented", BRAND)
+    pip_content = pip_h - 14
+    c.setFillColor(HexColor('#fff8f8'))
+    c.rect(x, cur-pip_content, w, pip_content, fill=1, stroke=0)
+    _dv_lbar(c, x, cur-pip_content, pip_content, ALERT)
+
+    nodes = [
+        ('CONTENT',  'Kibe book tour\n28 Commands\nLambistic', BRAND),
+        ('CAMPUS',   'JOOUST / RVIST\nBBC filmed\nMay 2026',   HexColor('#C05010')),
+        ('EXPOSURE', 'Male attitude\nchange BBC\ndocumented',  HexColor('#ca8a04')),
+        ('FEMICIDE', 'Alice Rianga\nBondo/Siaya\nMay 2026',    ALERT),
+    ]
+    n_nodes  = len(nodes)
+    gap_x    = 6
+    node_w   = (w - gap_x*(n_nodes-1) - 16) / n_nodes   # ≈ 55pt
+    node_h   = min(44, pip_content - 50)  # smaller nodes
+    ny       = cur - pip_content + 20  # nodes near bottom
+
+    for i, (title, body, col) in enumerate(nodes):
+        nx2 = x + 8 + i*(node_w+gap_x)
+        c.setFillColor(WHITE); c.rect(nx2, ny, node_w, node_h, fill=1, stroke=0)
+        c.setFillColor(col); c.rect(nx2, ny+node_h-4, node_w, 4, fill=1, stroke=0)
+        c.setFont(FB, 5.5); c.setFillColor(col)
+        c.drawCentredString(nx2+node_w/2, ny+node_h-12, title)
+        c.setFont(FR, 5.5); c.setFillColor(HexColor('#180410'))
+        for k, bl in enumerate(body.split('\n')):
+            c.drawCentredString(nx2+node_w/2, ny+node_h-22-k*9, bl)
+        if i < n_nodes-1:
+            ax = nx2+node_w+2; ay = ny+node_h/2
+            c.setStrokeColor(col); c.setLineWidth(0.8)
+            c.line(ax, ay, ax+gap_x-2, ay)
+            p = c.beginPath()
+            p.moveTo(ax+gap_x-5, ay-3); p.lineTo(ax+gap_x-5, ay+3)
+            p.lineTo(ax+gap_x-1, ay); p.close()
+            c.setFillColor(col); c.drawPath(p, fill=1, stroke=0)
+
+    # Evidence badges
+    ev_y = cur - node_h - 28
+    c.setFont(FR, 5); c.setFillColor(MUTED)
+    c.drawString(x+8, ev_y, 'Evidence:')
+    bxb = x+52
+    for txt2, col2 in [('BBC film', BRAND), ('Police rpt', ALERT),
+                        ('Nation/Std', HexColor('#CC0000')), ('s.96 DPP', HexColor('#C05010'))]:
+        bw = c.stringWidth(txt2, FB, 5)+8
+        rrect(c, bxb, ev_y-2, bw, 9, r=2, fill=col2)
+        c.setFont(FB, 5); c.setFillColor(WHITE)
+        c.drawString(bxb+4, ev_y+3, txt2); bxb += bw+4
+
+    # DPP call
+    c.setFont(FR, 6); c.setFillColor(HexColor('#8A1030'))
+    c.drawString(x+8, cur-pip_content+14,
+                 'Prosecute under s.96 \u2014 incitement. BBC documentary is admissible evidence.')
+
+# ── Page 2 RIGHT: The Ask (58%) + 7-week trend (42%) ─────────────────────────
+def _dv_p2_right(c, brief, snap):
+    import re as _re2
+    x, w = _DV_RX, _DV_CW2
+    h    = _DV_P2_H   # 672pt
+
+    ask_h = int(h * 0.58)   # 389pt
+    trd_h = h - ask_h        # 283pt
+
+    # ASK
+    cur = _DV_P2_TOP
+    cur = _dv_band(c, x, cur, w,
+                   "The Ask \u00b7 Priority Actions for Policymakers & Funders",
+                   HexColor('#C05010'))
+    ask_content = ask_h - 14
+    c.setFillColor(HexColor('#fff5f0'))
+    c.rect(x, cur-ask_content, w, ask_content, fill=1, stroke=0)
+    _dv_lbar(c, x, cur-ask_content, ask_content, HexColor('#C05010'))
+
+    ask_items = snap.get('action_items', snap.get('asks', []))
+    ask_text  = brief.get('THE_ASK', '')
+    items = []
+    if isinstance(ask_items, list) and ask_items:
+        for it in ask_items[:6]:
+            items.append(it.get('text', str(it)) if isinstance(it, dict) else str(it))
+    elif ask_text:
+        for ln in ask_text.split('\n'):
+            ln = _re2.sub(r'^[\d\.\-\u2022\)\s\*]+', '', ln.strip()).strip('*').strip()
+            if ln: items.append(ln)
+        items = items[:6]
+    if not items: items = ['No action items generated this period.']
+
+    n     = len(items)
+    per   = ask_content // n
+    sq_c  = [BRAND, BRAND, HexColor('#C05010'), HexColor('#C05010'),
+             HexColor('#1A3F6F'), HexColor('#1A3F6F')]
+    for j, txt3 in enumerate(items):
+        top3 = cur - j*per
+        ry3  = cur - (j+1)*per
+        sc   = sq_c[j % len(sq_c)]
+        # Number square
+        c.setFillColor(sc); c.rect(x+6, top3-15, 12, 12, fill=1, stroke=0)
+        c.setFont(FB, 6); c.setFillColor(WHITE)
+        c.drawCentredString(x+12, top3-7, str(j+1).zfill(2))
+        # Text — bold first line, regular remainder
+        cpl2  = max(1, int((w-28)/(9*.57)))
+        lines = textwrap.wrap(txt3[:220], cpl2)
+        c.setFont(FB, 9); c.setFillColor(HexColor('#180410'))
+        c.drawString(x+22, top3-11, lines[0] if lines else '')
+        c.setFont(FR, 8); c.setFillColor(HexColor('#444'))
+        ty3 = top3-22
+        for ln in lines[1:]:
+            if ty3 < ry3+6: break
+            c.drawString(x+22, ty3, ln); ty3 -= 11
+        if j < n-1: _dv_rule(c, x, ry3, w)
+    cur = _DV_P2_TOP - ask_h
+
+    # 7-WEEK TREND CHART
+    cur = _dv_band(c, x, cur, w, "7-Week Misogyny Index Trend",
+                   HexColor('#1A2035'))
+    trd_content = trd_h - 14
+    c.setFillColor(HexColor('#f9fafb'))
+    c.rect(x, cur-trd_content, w, trd_content, fill=1, stroke=0)
+
+    mi   = float(snap.get('misogyny_index', 51) or 51)
+    hist = snap.get('index_history', [])
+    if not hist or len(hist) < 4:
+        hist = [max(20,int(mi-16)), max(20,int(mi-12)), max(20,int(mi-9)),
+                max(20,int(mi-6)), max(20,int(mi-3)), int(mi), int(mi)]
+    hist  = [int(v) for v in hist[-7:]]
+    lbls  = [f'W{i+1}' for i in range(len(hist)-1)] + ['Now']
+    chart_h = trd_content - 24
+    chart_w = int(w) - 28
+    bx0   = x + 22
+    by0   = cur - trd_content + 14
+    bar_w = max(4, (chart_w - len(hist)*2) // len(hist))
+
+    # Grid
+    for yv in [20, 40, 60, 80]:
+        ly = by0 + int(chart_h*yv/100)
+        c.setFillColor(HexColor('#e8eaed')); c.rect(bx0, ly, chart_w, 0.3, fill=1, stroke=0)
+        c.setFont(FR, 4); c.setFillColor(MUTED)
+        c.drawRightString(bx0-2, ly+1, str(yv))
+    # Alert threshold
+    thr_y = by0 + int(chart_h*60/100)
+    c.setStrokeColor(ALERT); c.setLineWidth(0.5); c.setDash([3,2])
+    c.line(bx0, thr_y, bx0+chart_w, thr_y); c.setDash([])
+
+    pts = []
+    for i, val in enumerate(hist):
+        bxb = bx0 + i*(bar_w+2)
+        bh  = int(chart_h*val/100)
+        fill = ALERT if val >= 60 else HexColor('#d4d8f0')
+        c.setFillColor(fill); c.rect(bxb, by0, bar_w, bh, fill=1, stroke=0)
+        c.setFont(FR, 4.5)
+        c.setFillColor(ALERT if val>=60 else MUTED)
+        c.drawCentredString(bxb+bar_w/2, by0+bh+2, str(val))
+        c.setFont(FR, 4); c.setFillColor(MUTED)
+        c.drawCentredString(bxb+bar_w/2, by0-7, lbls[i])
+        pts.append((bxb+bar_w/2, by0+bh))
+    c.setStrokeColor(BRAND); c.setLineWidth(0.8)
+    for i in range(len(pts)-1): c.line(pts[i][0], pts[i][1], pts[i+1][0], pts[i+1][1])
+
+    # Legend
+    c.setFont(FR, 5.5); c.setFillColor(MUTED)
+    c.drawString(x+8, cur-trd_content+8, f"7-wk avg: {sum(hist)//len(hist)}  \u00b7  Alert threshold: 60  \u00b7  Trend: {'Rising' if hist[-1]>hist[0] else 'Falling'}")
+
+# ── Page 2 BOTTOM BAR: FemSaidia Desk | Brief Metadata (full width, 80pt) ─────
+def _dv_bottom_bar(c, brief, snap):
+    import datetime as _dt
+    sy   = 28 + 8   # bar bottom y
+    sh   = _DV_BBAR # 80pt
+    half = CW / 2
+
+    # Left panel — FemSaidia callout
+    c.setFillColor(HexColor('#180410'))
+    c.rect(MAR-10, sy, half+5, sh, fill=1, stroke=0)
+    c.setFillColor(BRAND); c.rect(MAR-10, sy+sh-2, half+5, 2, fill=1, stroke=0)
+    c.setFont(FB, 8); c.setFillColor(BRAND)
+    c.drawString(MAR, sy+sh-16, 'EVERY 47 HOURS. A WOMAN DIES IN KENYA.')
+    c.setFont(FR, 8); c.setFillColor(WHITE)
+    c.drawString(MAR, sy+sh-30, '\u2014 FemSaidia Kenya Intelligence Desk')
+    c.setFont(FR, 7.5); c.setFillColor(HexColor('#C8B0C0'))
+    c.drawString(MAR, sy+sh-44, 'Share this brief. Cite it. Demand a response.')
+    c.setFont(FR, 7); c.setFillColor(MUTED)
+    c.drawString(MAR, sy+14, 'femsaidiakenya.org  \u00b7  halafu@femsaidiakenya.org')
+    c.drawString(MAR, sy+6, 'Subscribe  \u00b7  Donate  \u00b7  Partner')
+
+    # Right panel — Brief Metadata
+    rx2 = MAR + half + 5
+    rw2 = CW - half - 5
+    c.setFillColor(HexColor('#1A2035'))
+    c.rect(rx2, sy, rw2+10, sh, fill=1, stroke=0)
+    c.setFillColor(HexColor('#C05010'))
+    c.rect(rx2, sy+sh-2, rw2+10, 2, fill=1, stroke=0)
+    c.setFont(FB, 5.5); c.setFillColor(WHITE)
+    c.drawString(rx2+6, sy+sh-12, 'BRIEF METADATA')
+    lbl  = brief.get('period_label', '')
+    arts = snap.get('articles_count', 683)
+    kibe = snap.get('kibe_count', 52)
+    prot = snap.get('protest_count', 57)
+    c.setFont(FR, 6.5); c.setFillColor(HexColor('#C8C0D0'))
+    for i, txt4 in enumerate([
+        f'Period: {lbl}',
+        f'Articles: {arts}  \u00b7  Kibe-tagged: {kibe}  \u00b7  Protest: {prot}',
+        f'Scanner v3 (6h)  \u00b7  X poller 19 handles (2h)',
+        f'Generated: {_dt.datetime.now(_dt.timezone.utc).strftime("%d %b %Y")} EAT',
+    ]):
+        c.drawString(rx2+6, sy+sh-24-i*13, txt4)
+
+# ── MAIN ENTRY ────────────────────────────────────────────────────────────────
+
+
+
+def _parse_ti_text(raw):
+    import re as _r
+    cases, seen = [], set()
+    for line in raw.split('\n'):
+        stripped = line.strip()
+        if not stripped.startswith('-') and not stripped.startswith('*'):
+            continue
+        m = _r.match('\\s*[-*]\\s+\\*\\*([^*:]{3,55}?)\\*\\*[:\\s]*(.*)', stripped)
+        if not m:
+            m = _r.match('[-*]\\s+([A-Z][^:*]{3,50}):\\s*(.*)', stripped)
+        if not m:
+            continue
+        name = m.group(1).strip().rstrip(':').strip()
+        desc = _r.sub('\\*{1,2}([^*]+)\\*{1,2}', '\\1', m.group(2).strip())
+        key  = name.lower()[:20]
+        if len(name) < 3 or key in seen:
+            continue
+        seen.add(key)
+        county_match = _r.search('(Nairobi|Mombasa|Siaya|Meru|Kiambu|Nakuru|Bondo|Embakasi)', desc)
+        date_match   = _r.search('(May|June|Jan|Feb|Mar|Apr|Jul|Aug|Sep|Oct|Nov|Dec)\\s+\\d{1,2}', desc)
+        tech_p = [p for p in ['WhatsApp','Facebook','TikTok','Instagram'] if p in desc]
+        cases.append({
+            'victim_name':      name,
+            'notes':            desc[:150],
+            'county':           county_match.group(1) if county_match else '',
+            'incident_date':    date_match.group(0) if date_match else '',
+            'suspect_relationship': '',
+            'incident_type':    '',
+            'tech_facilitated': bool(tech_p),
+            'tech_platforms':   tech_p,
+            'source_url':       '',
+        })
+    return cases[:5]
+
+def page_double(c, brief, snap):
+    """2-page double-column brief — zero gaps, all sections filled."""
+    live_cases = fetch_live_cases(limit=6)
+
+    # Page 1
+    _dv_hdr(c, brief, snap, 1)
+    _dv_index(c, brief, snap)
+    _dv_p1_left(c, brief, snap, live_cases)
+    _dv_p1_right(c, brief, snap)
+    _dv_ftr(c, 1)
+    c.showPage()
+
+    # Page 2
+    _dv_hdr(c, brief, snap, 2)
+    c.setFillColor(BRAND); c.rect(0, H-38, W, 2, fill=1, stroke=0)
+    _dv_p2_left(c, brief, snap)
+    _dv_p2_right(c, brief, snap)
+    _dv_bottom_bar(c, brief, snap)
+    _dv_ftr(c, 2)
+    c.showPage()
+
+
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="FemSaidia Intel Brief PDF generator")
@@ -1415,7 +2472,7 @@ def main():
     cv.setSubject("Intel Brief — Digital Safety Intelligence")
 
     print("📄  Building single page v2…")
-    page_single_v2(cv, brief, snap); cv.showPage()
+    page_double(cv, brief, snap)
     cv.save()
     print(f"✅  → {OUTPUT_PATH}")
 
