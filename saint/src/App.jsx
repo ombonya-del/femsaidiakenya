@@ -597,7 +597,25 @@ function AboutTab() {
 export default function App() {
   const [intel, setIntel]   = useState(null)
   const [lane, setLane]     = useState('all')
-  const [activeTab, setActiveTab] = useState('intel')
+  const [activeTab, setActiveTab]     = useState('intel')
+  const [installPrompt, setInstallPrompt] = useState(null)
+  const [showIOSHint, setShowIOSHint]     = useState(false)
+  const isIOS = /iphone|ipad|ipod/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
+  const isInstalled = typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches
+
+  useEffect(() => {
+    const handler = (e) => { e.preventDefault(); setInstallPrompt(e) }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  const handleInstall = async () => {
+    if (isIOS) { setShowIOSHint(true); return }
+    if (!installPrompt) return
+    installPrompt.prompt()
+    const { outcome } = await installPrompt.userChoice
+    if (outcome === 'accepted') setInstallPrompt(null)
+  }
   const [fundProject, setFundProject] = useState(null)
   const [contactOpen, setContactOpen] = useState(false)
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
@@ -680,6 +698,16 @@ export default function App() {
                 {intel.score}/100
               </span>
             </div>
+          )}
+          {!isInstalled && (installPrompt || isIOS) && (
+            <button onClick={handleInstall}
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                padding:'6px 12px', background:'transparent',
+                border:`1px solid ${BD}`, color:MUT,
+                cursor:'pointer', letterSpacing:'.04em',
+                display:'flex', alignItems:'center', gap:5 }}>
+              ⬇ Install
+            </button>
           )}
           <button onClick={()=>setActiveTab('about')}
             style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
