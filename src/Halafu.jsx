@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ArrowRight, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
 import { createClient } from '@supabase/supabase-js'
 
@@ -223,6 +223,256 @@ const PROJECTS = [
     ],
   },
 ]
+
+
+// ── FIELD INTELLIGENCE COMPONENT ─────────────────────────────────────────────
+function FieldIntelligence() {
+  const [intel, setIntel]         = useState(null)
+  const [synthesis, setSynthesis] = useState('')
+  const [generating, setGenerating] = useState(false)
+  const [expanded, setExpanded]   = useState(false)
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+
+  useEffect(() => {
+    Promise.all([
+      _sb.from('misogyny_index').select('score,news_score,social_score,date')
+         .order('date', { ascending:false }).limit(2),
+      _sb.from('sentiment_articles').select(
+        'is_kibe_related,is_protest,tech_facilitated,content_category,misogyny_score',
+        { count:'exact' }
+      ).limit(1000),
+      _sb.from('femicide_cases').select('id,county,status', { count:'exact' })
+         .eq('published', true),
+      _sb.from('misogyny_highlights').select('id', { count:'exact' }).eq('active', true),
+    ]).then(([idx, arts, cases, motd]) => {
+      const latest  = idx.data?.[0] || {}
+      const prev    = idx.data?.[1] || {}
+      const aData   = arts.data || []
+      const cData   = cases.data || []
+      setIntel({
+        score:       latest.score || 51,
+        delta:       prev.score ? Math.round((latest.score - prev.score) * 10) / 10 : 0,
+        newsScore:   latest.news_score || 0,
+        socialScore: latest.social_score || 0,
+        articles:    arts.count || 0,
+        kibe:        aData.filter(a => a.is_kibe_related).length,
+        protest:     aData.filter(a => a.is_protest).length,
+        techGBV:     aData.filter(a => a.tech_facilitated).length,
+        highScore:   aData.filter(a => a.misogyny_score >= 8).length,
+        femicides:   cases.count || 0,
+        counties:    new Set(cData.map(c => c.county)).size,
+        convicted:   cData.filter(c => c.status === 'convicted').length,
+        motd:        motd.count || 0,
+        lastUpdated: latest.date ? new Date(latest.date).toLocaleDateString('en-KE', { day:'numeric', month:'short' }) : 'today',
+      })
+    })
+  }, [])
+
+  const generateSynthesis = async () => {
+    if (!intel) return
+    setGenerating(true)
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role:'user', content:
+            `You are the FemSaidia Kenya intelligence desk. A potential funder or partner is reading our ThinkTank project proposals right now. Write 3 sharp, specific sentences explaining why our live data makes these 10 projects not just useful but urgent. Do not be polite. Be precise.
+
+Live data:
+- Misogyny Index: ${intel.score}/100 (${intel.delta > 0 ? '+' : ''}${intel.delta} from last week). Alert threshold is 60.
+- ${intel.articles} articles classified in our scanner. ${intel.kibe} tagged as manosphere/Kibe content. ${intel.protest} protest/march articles.
+- ${intel.techGBV} tech-facilitated GBV cases documented. ${intel.highScore} articles scored 8+/10 for misogyny.
+- ${intel.femicides} femicide cases documented across ${intel.counties} counties. ${intel.convicted} convictions.
+- ${intel.motd} active MOTD highlights in the queue.
+
+Projects span: research (misogyny pipeline, economics of violence, intergenerational transmission), interruption (content lab, curriculum, crisis line, baraza network), and building (fathers programme, perpetrator intervention, intelligence brief).
+
+3 sentences. No fluff. For a funder who has seen too many vague proposals.`
+          }]
+        })
+      })
+      const data = await res.json()
+      setSynthesis(data.content?.[0]?.text || 'Unable to generate synthesis.')
+    } catch(e) {
+      setSynthesis('Intelligence synthesis temporarily unavailable.')
+    }
+    setGenerating(false)
+  }
+
+  const LANE_METRICS = [
+    {
+      lane:'Understand',
+      icon:'🔍',
+      color:'#3A1850',
+      accent:'#7C3AED',
+      label:'What is turning boys into men who harm?',
+      signal: intel ? `${intel.kibe} manosphere articles tracked · Index at ${intel.score}/100` : '—',
+      projects:['The Misogyny Pipeline in Kenya', 'The Economics of Male Violence', 'Boys Who Witnessed It'],
+      stat: intel ? intel.kibe : '—',
+      statLabel: 'manosphere articles in scanner',
+    },
+    {
+      lane:'Interrupt',
+      icon:'⚡',
+      color:'#0A2010',
+      accent:'#16A34A',
+      label:'Where can we intervene before harm happens?',
+      signal: intel ? `${intel.techGBV} tech-facilitated GBV cases · ${intel.protest} community actions tracked` : '—',
+      projects:['Counter-Narrative Content Lab', 'The 10-16 Curriculum', 'Salmin for Men', 'The Baraza Network'],
+      stat: intel ? intel.techGBV : '—',
+      statLabel: 'tech-facilitated GBV cases documented',
+    },
+    {
+      lane:'Build',
+      icon:'🔨',
+      color:'#200818',
+      accent:'#DC2626',
+      label:'What do we create to prevent the next death?',
+      signal: intel ? `${intel.femicides} cases across ${intel.counties} counties · ${intel.convicted} convictions` : '—',
+      projects:["Fathers & Daughters Initiative", 'KaaRada Perpetrator Intervention', 'FemSaidia Intelligence Brief'],
+      stat: intel ? intel.femicides : '—',
+      statLabel: 'femicide cases in our tracker',
+    },
+  ]
+
+  return (
+    <div style={{ background:'#0D0814', border:`1px solid rgba(138,16,48,0.4)`,
+      borderLeft:`4px solid #8A1030`, marginBottom:2 }}>
+
+      {/* Header */}
+      <div onClick={()=>setExpanded(!expanded)}
+        style={{ padding: isMobile ? '14px 16px' : '16px 24px', cursor:'pointer',
+          display:'flex', justifyContent:'space-between', alignItems:'center',
+          borderBottom: expanded ? '1px solid rgba(138,16,48,0.2)' : 'none' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <div style={{ width:8, height:8, borderRadius:'50%', background:'#16A34A',
+            boxShadow:'0 0 8px #16A34A', animation:'pulse 2s infinite' }}/>
+          <div>
+            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+              letterSpacing:'.2em', textTransform:'uppercase', color:'#8A1030', margin:0 }}>
+              Field Intelligence · Live Signal
+            </p>
+            {intel && (
+              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                color:'rgba(255,255,255,0.4)', margin:0, marginTop:2 }}>
+                Misogyny Index {intel.score}/100 · {intel.articles} articles classified ·
+                Updated {intel.lastUpdated}
+              </p>
+            )}
+          </div>
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          {intel && (
+            <span style={{ fontFamily:"'Lora',serif", fontSize:24, fontWeight:700,
+              color: intel.score >= 60 ? '#DC2626' : intel.score >= 40 ? '#CA8A04' : '#16A34A' }}>
+              {intel.score}
+              <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
+                color:'rgba(255,255,255,0.4)', marginLeft:2 }}>/100</span>
+            </span>
+          )}
+          <span style={{ color:'rgba(255,255,255,0.3)', fontSize:12 }}>
+            {expanded ? '▲' : '▼'}
+          </span>
+        </div>
+      </div>
+
+      {expanded && (
+        <div>
+          {/* Top metrics row */}
+          {intel && (
+            <div style={{ display:'grid',
+              gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(5,1fr)',
+              gap:1, borderBottom:'1px solid rgba(138,16,48,0.2)' }}>
+              {[
+                { v:intel.score, l:'Misogyny Index', s:`${intel.delta > 0 ? '↑' : '↓'}${Math.abs(intel.delta)}pt`, c: intel.score >= 60 ? '#DC2626' : '#CA8A04' },
+                { v:intel.kibe,  l:'Manosphere articles', s:'in scanner', c:'#7C3AED' },
+                { v:intel.techGBV, l:'Tech-facilitated GBV', s:'cases documented', c:'#2563EB' },
+                { v:intel.femicides, l:'Femicide cases', s:`${intel.counties} counties`, c:'#DC2626' },
+                { v:intel.protest, l:'Community actions', s:'marches & protests', c:'#16A34A' },
+              ].map((m,i) => (
+                <div key={i} style={{ padding:'16px 14px', background:'rgba(255,255,255,0.03)',
+                  borderRight: i < 4 ? '1px solid rgba(138,16,48,0.15)' : 'none' }}>
+                  <div style={{ fontFamily:"'Lora',serif", fontSize:28, fontWeight:700,
+                    color:m.c, lineHeight:1 }}>{m.v}</div>
+                  <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                    color:'rgba(255,255,255,0.7)', marginTop:4 }}>{m.l}</div>
+                  <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
+                    color:'rgba(255,255,255,0.35)', marginTop:2 }}>{m.s}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Lane signals */}
+          <div style={{ display:'grid',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)',
+            gap:1, borderBottom:'1px solid rgba(138,16,48,0.2)' }}>
+            {LANE_METRICS.map((lm,i) => (
+              <div key={i} style={{ padding:'16px 14px', background:lm.color,
+                borderRight: i < 2 ? '1px solid rgba(138,16,48,0.15)' : 'none' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:8 }}>
+                  <span style={{ fontSize:14 }}>{lm.icon}</span>
+                  <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+                    letterSpacing:'.15em', textTransform:'uppercase', color:lm.accent }}>
+                    {lm.lane}
+                  </span>
+                </div>
+                <div style={{ fontFamily:"'Lora',serif", fontSize:22, fontWeight:700,
+                  color:'#fff', marginBottom:2 }}>{lm.stat}</div>
+                <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
+                  color:'rgba(255,255,255,0.5)', marginBottom:10 }}>{lm.statLabel}</div>
+                {lm.projects.map((p,j) => (
+                  <div key={j} style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4 }}>
+                    <div style={{ width:4, height:4, borderRadius:'50%', background:lm.accent, flexShrink:0 }}/>
+                    <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
+                      color:'rgba(255,255,255,0.6)' }}>{p}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+
+          {/* Claude synthesis */}
+          <div style={{ padding:'16px 24px' }}>
+            {!synthesis && (
+              <button onClick={generateSynthesis} disabled={generating || !intel}
+                style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                  padding:'10px 20px', background:'rgba(138,16,48,0.2)',
+                  border:'1px solid rgba(138,16,48,0.4)', color:'#F0D0D8',
+                  cursor:'pointer', display:'flex', alignItems:'center', gap:8 }}>
+                {generating
+                  ? '⟳ Generating intelligence synthesis...'
+                  : '⚡ Generate intelligence synthesis for funders'}
+              </button>
+            )}
+            {synthesis && (
+              <div>
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+                  letterSpacing:'.15em', textTransform:'uppercase',
+                  color:'#8A1030', marginBottom:10 }}>
+                  Intelligence Synthesis · Generated from live data
+                </p>
+                <p style={{ fontFamily:"'Lora',serif", fontSize:14, fontStyle:'italic',
+                  color:'rgba(240,208,216,0.9)', lineHeight:1.8, margin:0 }}>
+                  {synthesis}
+                </p>
+                <button onClick={()=>{ setSynthesis(''); }}
+                  style={{ marginTop:10, fontFamily:"'Nunito Sans',sans-serif",
+                    fontSize:10, color:'rgba(255,255,255,0.3)', background:'none',
+                    border:'none', cursor:'pointer', padding:0 }}>
+                  Regenerate
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 function DonorCard({ donor }) {
   const meta = DONOR_META[donor.name] || {}
@@ -594,7 +844,10 @@ export default function HalaFuTab({ isMobile }) {
           </p>
         </div>
         <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf" target="_blank" rel="noopener noreferrer" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.08)', color:'#fff', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'10px 20px', textDecoration:'none', border:'1.5px solid rgba(255,255,255,0.7)', letterSpacing:'.04em', whiteSpace:'nowrap', background:'rgba(138,16,48,0.5)' }}>
-          📄 Download Intel Brief
+          📄 <FieldIntelligence/>
+
+          {/* Download Intel Brief */}
+          
         </a>
       </div>
 
