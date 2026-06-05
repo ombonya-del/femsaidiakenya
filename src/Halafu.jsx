@@ -315,7 +315,7 @@ function FieldIntelligence() {
   const [intel, setIntel]         = useState(null)
   const [synthesis, setSynthesis] = useState('')
   const [generating, setGenerating] = useState(false)
-  const [expanded, setExpanded]   = useState(false)
+  const [expanded, setExpanded]   = useState(true)  // open by default
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 
   useEffect(() => {
@@ -950,8 +950,8 @@ export default function HalaFuTab({ isMobile }) {
           </p>
         </div>
         <div style={{display:"flex",gap:2,alignItems:"flex-start"}}>
-          <div style={{flex:1,minWidth:0}}><FieldIntelligence/></div>
-          <CrisisCounter/>
+          <div style={{flex:"0 0 60%",minWidth:0}}><FieldIntelligence/></div>
+          <div style={{flex:"0 0 calc(40% - 2px)"}}><CrisisCounter/></div>
         </div>
 
           {/* Download Intel Brief */}

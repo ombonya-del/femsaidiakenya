@@ -601,7 +601,7 @@ export default function App() {
   const [installPrompt, setInstallPrompt] = useState(null)
   const [showIOSHint, setShowIOSHint]     = useState(false)
   const isIOS = /iphone|ipad|ipod/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
-  const isInstalled = typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches
+  const isInstalled = typeof window !== 'undefined' && (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true)
 
   useEffect(() => {
     const handler = (e) => { e.preventDefault(); setInstallPrompt(e) }
@@ -611,10 +611,14 @@ export default function App() {
 
   const handleInstall = async () => {
     if (isIOS) { setShowIOSHint(true); return }
-    if (!installPrompt) return
-    installPrompt.prompt()
-    const { outcome } = await installPrompt.userChoice
-    if (outcome === 'accepted') setInstallPrompt(null)
+    if (installPrompt) {
+      installPrompt.prompt()
+      const { outcome } = await installPrompt.userChoice
+      if (outcome === 'accepted') setInstallPrompt(null)
+    } else {
+      // Chrome hasn't fired prompt yet — show manual instructions
+      setShowIOSHint(true)
+    }
   }
   const [fundProject, setFundProject] = useState(null)
   const [contactOpen, setContactOpen] = useState(false)
@@ -699,7 +703,7 @@ export default function App() {
               </span>
             </div>
           )}
-          {!isInstalled && (installPrompt || isIOS) && (
+          {!isInstalled && (
             <button onClick={handleInstall}
               style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
                 padding:'6px 12px', background:'transparent',
