@@ -472,7 +472,7 @@ function AboutTab() {
       url: 'https://hepa.femsaidiakenya.org',
       icon: '🔒',
       color: '#0A2D1A',
-      desc: 'A panic safety PWA that works offline. Sets a check-in timer — if you don't respond, it alerts your contacts automatically. Disguised as a calculator.',
+      desc: 'A panic safety PWA that works offline. Sets a check-in timer — if you do not respond, it alerts your contacts automatically. Disguised as a calculator.',
       what: 'Personal safety · Offline-capable · PWA',
     },
     {
