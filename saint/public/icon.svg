@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#0A0D14" rx="80"/>
+  <rect x="40" y="40" width="432" height="432" fill="#111827" rx="60"/>
+  <rect x="40" y="40" width="432" height="50" fill="#8A1030" rx="60"/>
+  <text x="220" y="310" font-family="Georgia,serif" font-size="160" font-weight="700" fill="#F0E8F0" text-anchor="end">Sa</text>
+  <text x="232" y="310" font-family="Georgia,serif" font-size="160" font-weight="700" fill="#8A1030" text-anchor="start">Int</text>
+  <text x="256" y="390" font-family="Arial,sans-serif" font-size="42" font-weight="700" fill="#8892B0" text-anchor="middle" letter-spacing="4">SAIDIA INTEL</text>
+</svg>
