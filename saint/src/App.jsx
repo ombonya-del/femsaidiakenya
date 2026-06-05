@@ -343,6 +343,21 @@ function FundModal({ project, onClose }) {
 function IntelPanel({ intel }) {
   const [synthesis, setSynthesis] = useState('')
   const [generating, setGenerating] = useState(false)
+  const [cached, setCached] = useState(false)
+
+  // Load cached synthesis on mount
+  useEffect(() => {
+    sb.from('saint_synthesis')
+      .select('synthesis,generated_at')
+      .order('generated_at', { ascending:false })
+      .limit(1)
+      .then(({ data }) => {
+        if (data?.[0]?.synthesis) {
+          setSynthesis(data[0].synthesis)
+          setCached(true)
+        }
+      })
+  }, [])
 
   const generate = async () => {
     if (!intel) return
@@ -427,6 +442,10 @@ Our 10 projects span: understanding the misogyny pipeline, interrupting radicali
       )}
 
       {/* Synthesis */}
+      {synthesis && cached && (
+        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:8,
+          color:MUT, marginBottom:8 }}>Auto-generated daily · Last updated today</p>
+      )}
       {synthesis ? (
         <div>
           <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
@@ -435,7 +454,7 @@ Our 10 projects span: understanding the misogyny pipeline, interrupting radicali
           </p>
           <p style={{ fontFamily:"'Lora',serif", fontSize:15, fontStyle:'italic',
             color:TXT, lineHeight:1.9, marginBottom:12 }}>{synthesis}</p>
-          <button onClick={()=>setSynthesis('')}
+          <button onClick={()=>{ setSynthesis(''); setCached(false); }}
             style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
               color:MUT, background:'none', border:'none', cursor:'pointer', padding:0 }}>
             ↻ Regenerate
@@ -612,7 +631,7 @@ export default function App() {
   const projects = lane==='all' ? PROJECTS : PROJECTS.filter(p=>p.lane===lane)
 
   return (
-    <div style={{ background:BG, minHeight:'100vh', color:TXT }}>
+    <div style={{ background:BG, minHeight:'100vh', color:TXT, paddingBottom: isMobile ? 60 : 0 }}>
 
       {/* Top navigation */}
       <nav style={{ background:SURF, borderBottom:`1px solid ${BD}`,
@@ -629,26 +648,28 @@ export default function App() {
             SAIDIA INTELLIGENCE
           </span>
         </div>
-        {/* Tab nav */}
-        <div style={{ display:'flex', gap:0, position:'absolute',
-          left:'50%', transform:'translateX(-50%)' }}>
-          {[
-            { id:'intel',    label:'⚡ Intel' },
-            { id:'projects', label:'🔨 Projects' },
-            { id:'briefs',   label:'📄 Briefs' },
-            { id:'about',    label:'ℹ About' },
-          ].map(t => (
-            <button key={t.id} onClick={()=>setActiveTab(t.id)}
-              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-                padding:'0 16px', height:52, border:'none', cursor:'pointer',
-                background:'transparent',
-                borderBottom: activeTab===t.id ? `2px solid ${RED}` : '2px solid transparent',
-                color: activeTab===t.id ? TXT : MUT,
-                letterSpacing:'.04em' }}>
-              {t.label}
-            </button>
-          ))}
-        </div>
+        {/* Tab nav — desktop only (mobile tabs at bottom) */}
+        {!isMobile && (
+          <div style={{ display:'flex', gap:0, position:'absolute',
+            left:'50%', transform:'translateX(-50%)' }}>
+            {[
+              { id:'intel',    label:'⚡ Intel' },
+              { id:'projects', label:'🔨 Projects' },
+              { id:'briefs',   label:'📄 Briefs' },
+              { id:'about',    label:'ℹ About' },
+            ].map(t => (
+              <button key={t.id} onClick={()=>setActiveTab(t.id)}
+                style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                  padding:'0 16px', height:52, border:'none', cursor:'pointer',
+                  background:'transparent',
+                  borderBottom: activeTab===t.id ? `2px solid ${RED}` : '2px solid transparent',
+                  color: activeTab===t.id ? TXT : MUT,
+                  letterSpacing:'.04em' }}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
           {intel && (
             <div style={{ display:'flex', alignItems:'center', gap:6 }}>
@@ -820,6 +841,31 @@ export default function App() {
       )}
 
       {activeTab === 'about' && <AboutTab/>}
+
+      {/* Mobile bottom nav */}
+      {isMobile && (
+        <div style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:200,
+          background:SURF, borderTop:`1px solid ${BD}`,
+          display:'flex', height:60 }}>
+          {[
+            { id:'intel',    icon:'⚡', label:'Intel' },
+            { id:'projects', icon:'🔨', label:'Projects' },
+            { id:'briefs',   icon:'📄', label:'Briefs' },
+            { id:'about',    icon:'ℹ',  label:'About' },
+          ].map(t => (
+            <button key={t.id} onClick={()=>setActiveTab(t.id)}
+              style={{ flex:1, display:'flex', flexDirection:'column',
+                alignItems:'center', justifyContent:'center', gap:2,
+                border:'none', cursor:'pointer', background:'transparent',
+                borderTop: activeTab===t.id ? `2px solid ${RED}` : '2px solid transparent' }}>
+              <span style={{ fontSize:18 }}>{t.icon}</span>
+              <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
+                fontWeight:700, color: activeTab===t.id ? TXT : MUT,
+                letterSpacing:'.06em' }}>{t.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Footer */}
       <footer style={{ background:SURF, borderTop:`1px solid ${BD}`,
