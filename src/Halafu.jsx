@@ -949,7 +949,10 @@ export default function HalaFuTab({ isMobile }) {
             Updated every two weeks. Share with policymakers, funders and researchers.
           </p>
         </div>
-        <FieldIntelligence/>
+        <div style={{display:"flex",gap:2,alignItems:"flex-start"}}>
+          <div style={{flex:1,minWidth:0}}><FieldIntelligence/></div>
+          <CrisisCounter/>
+        </div>
 
           {/* Download Intel Brief */}
           

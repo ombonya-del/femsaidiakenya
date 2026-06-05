@@ -796,13 +796,13 @@ export default function App() {
                   textDecoration:'none', letterSpacing:'.06em' }}>
                 📄 Download PDF →
               </a>
-              <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest-viewer.html"
+              <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf"
                 target="_blank" rel="noopener noreferrer"
                 style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
                   padding:'10px 20px', background:'transparent',
                   border:`1px solid ${BD}`, color:TXT,
                   textDecoration:'none', letterSpacing:'.06em' }}>
-                View inline →
+                Open in browser →
               </a>
             </div>
           </div>
