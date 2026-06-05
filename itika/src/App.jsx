@@ -416,20 +416,43 @@ function Dashboard({ responder, onLogout }) {
         ))}
       </div>
 
-      {/* Tab nav */}
-      <div style={{display:'flex',gap:2,padding:'0 20px',marginBottom:16}}>
+      {/* Bottom navigation — fixed */}
+      <div style={{position:'fixed',bottom:0,left:0,right:0,zIndex:100,
+        background:SURF,borderTop:`1px solid ${BD}`,
+        display:'flex',height:64,alignItems:'stretch'}}>
         {[
-          {id:'alerts',  label:`🚨 Alerts (${alerts.length})`},
-          {id:'active',  label:`⚡ Active (${activeAlerts.length})`},
-          {id:'profile', label:'👤 Profile'},
+          {id:'alerts',  icon:'🚨', label:'Alerts',  badge:alerts.length},
+          {id:'active',  icon:'⚡', label:'Active',  badge:activeAlerts.length},
+          {id:'profile', icon:'👤', label:'Profile', badge:0},
         ].map(t => (
           <button key={t.id} onClick={()=>setTab(t.id)}
-            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
-              padding:'8px 12px',border:'none',cursor:'pointer',flex:1,
-              background:tab===t.id?GRN:CARD,color:tab===t.id?'#fff':MUT}}>
-            {t.label}
+            style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',
+              justifyContent:'center',gap:2,border:'none',cursor:'pointer',
+              background:tab===t.id?'rgba(42,154,90,0.15)':SURF,
+              borderTop:tab===t.id?`2px solid ${BGRN}`:'2px solid transparent',
+              position:'relative'}}>
+            {t.badge > 0 && (
+              <span style={{position:'absolute',top:6,right:'calc(50% - 14px)',
+                background:RED,color:'#fff',fontSize:9,fontWeight:700,
+                padding:'1px 5px',borderRadius:8,minWidth:16,textAlign:'center'}}>
+                {t.badge}
+              </span>
+            )}
+            <span style={{fontSize:20}}>{t.icon}</span>
+            <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,fontWeight:700,
+              color:tab===t.id?BGRN:MUT,letterSpacing:'.05em',textTransform:'uppercase'}}>
+              {t.label}
+            </span>
           </button>
         ))}
+        <button onClick={onLogout}
+          style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',
+            justifyContent:'center',gap:2,border:'none',cursor:'pointer',
+            background:SURF,borderTop:'2px solid transparent'}}>
+          <span style={{fontSize:20}}>🏠</span>
+          <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,fontWeight:700,
+            color:MUT,letterSpacing:'.05em',textTransform:'uppercase'}}>Home</span>
+        </button>
       </div>
 
       {/* Content */}

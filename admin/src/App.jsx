@@ -536,6 +536,7 @@ function ArchetypesTab() {
     {id:'allin',      label:'The All-In',      color:'#7A4ABA'},
     {id:'onoff',      label:'The On \u0026 Off',  color:'#8A1030'},
     {id:'onandoff',   label:'The On & Off',    color:'#8A1030'},
+    {id:'onoff', label:'The On & Off', color:'#8A1030'},
   ]
   const SECTIONS = [
     {id:'protective', label:'Protect Yourself'},
