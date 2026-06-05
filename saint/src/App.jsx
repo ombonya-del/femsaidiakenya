@@ -896,6 +896,17 @@ export default function App() {
                 letterSpacing:'.06em' }}>{t.label}</span>
             </button>
           ))}
+          {!isInstalled && (
+            <button onClick={handleInstall}
+              style={{ flex:1, display:'flex', flexDirection:'column',
+                alignItems:'center', justifyContent:'center', gap:2,
+                border:'none', cursor:'pointer', background:'transparent',
+                borderTop:'2px solid transparent' }}>
+              <span style={{ fontSize:18 }}>⬇</span>
+              <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
+                fontWeight:700, color:'#C8A040', letterSpacing:'.06em' }}>Install</span>
+            </button>
+          )}
         </div>
       )}
 
