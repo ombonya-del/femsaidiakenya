@@ -454,9 +454,131 @@ Our 10 projects span: understanding the misogyny pipeline, interrupting radicali
 }
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
+
+// ── ABOUT TAB ─────────────────────────────────────────────────────────────────
+function AboutTab() {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+  const ECOSYSTEM = [
+    {
+      name: 'FemSaidia Kenya',
+      url: 'https://femsaidiakenya.org',
+      icon: '🛡',
+      color: '#8A1030',
+      desc: 'The core platform. Tracks femicide cases, runs the misogyny scanner, publishes Intel Briefs, and hosts the JiJue archetype safety tool for women.',
+      what: 'Intelligence · Case tracking · Community safety',
+    },
+    {
+      name: 'hepa',
+      url: 'https://hepa.femsaidiakenya.org',
+      icon: '🔒',
+      color: '#0A2D1A',
+      desc: 'A panic safety PWA that works offline. Sets a check-in timer — if you don't respond, it alerts your contacts automatically. Disguised as a calculator.',
+      what: 'Personal safety · Offline-capable · PWA',
+    },
+    {
+      name: 'RedFlag',
+      url: 'https://redflag.femsaidiakenya.org',
+      icon: '🚩',
+      color: '#8A1030',
+      desc: 'JiJue/JiTume — Know yourself, know your risk. Four archetype-based safety profiles with red flags, protective measures and community voices. Also hosts KaaRada perpetrator registry.',
+      what: 'Risk profiling · Perpetrator registry · Community voices',
+    },
+    {
+      name: 'Itika',
+      url: 'https://itika.femsaidiakenya.org',
+      icon: '📡',
+      color: '#0A2A1A',
+      desc: 'Community First Responder Network. Boda-boda riders, SRHR advocates and local HRDs register to receive real-time alerts and dispatch calls from hepa and RedFlag.',
+      what: 'First responders · Alert dispatch · Community network',
+    },
+    {
+      name: 'SaInt',
+      url: 'https://saint.femsaidiakenya.org',
+      icon: '⚡',
+      color: '#0A0D14',
+      desc: 'Saidia Intelligence. Live femicide data, misogyny index tracking, and 10 specific research and intervention proposals for funders and policymakers. You are here.',
+      what: 'Intelligence · Proposals · Funder engagement',
+    },
+  ]
+
+  return (
+    <div style={{ padding: isMobile ? '24px 16px' : '32px 24px', maxWidth:1100, margin:'0 auto' }}>
+      <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+        letterSpacing:'.2em', color:RED, marginBottom:12 }}>ABOUT SAINT</p>
+      <h2 style={{ fontFamily:"'Lora',serif", fontSize: isMobile ? 24 : 32,
+        fontWeight:700, color:TXT, lineHeight:1.3, marginBottom:16, maxWidth:640 }}>
+        Intelligence infrastructure for the crisis that kills a woman every 47 hours in Kenya.
+      </h2>
+      <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:13, color:MUT,
+        lineHeight:1.9, maxWidth:680, marginBottom:32 }}>
+        SaInt is built by FemSaidia Kenya — an independent intelligence and advocacy
+        organisation tracking femicide, misogyny and gender-based violence in Kenya.
+        Our scanner classifies hundreds of articles every day. Our misogyny index
+        tracks the gap between media coverage and community response. Our Intel Brief
+        reaches Cabinet Secretaries, donors and county governors fortnightly.
+        The 10 projects on this platform are proposals we are actively seeking to fund
+        and implement — not aspirations, but architectures ready to build.
+      </p>
+
+      {/* Ecosystem */}
+      <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+        letterSpacing:'.2em', color:GOLD, marginBottom:16 }}>THE FEMSAIDIA ECOSYSTEM</p>
+      <div style={{ display:'grid',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(2,1fr)',
+        gap:2, marginBottom:32 }}>
+        {ECOSYSTEM.map((e,i) => (
+          <a key={i} href={e.url} target="_blank" rel="noopener noreferrer"
+            style={{ background:CARD, border:`1px solid ${BD}`,
+              borderLeft:`3px solid ${e.color}`,
+              padding:'18px 20px', textDecoration:'none',
+              display:'block', transition:'background .15s' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+              <span style={{ fontSize:20 }}>{e.icon}</span>
+              <span style={{ fontFamily:"'Lora',serif", fontSize:16, fontWeight:700,
+                color:TXT }}>{e.name}</span>
+              {e.name === 'SaInt' && (
+                <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:8,
+                  padding:'1px 6px', background:`${RED}33`, color:RED,
+                  fontWeight:700, letterSpacing:'.1em' }}>YOU ARE HERE</span>
+              )}
+            </div>
+            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12,
+              color:MUT, lineHeight:1.7, marginBottom:8 }}>{e.desc}</p>
+            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
+              fontWeight:700, color:`${e.color === BG ? GOLD : e.color}`,
+              letterSpacing:'.1em' }}>{e.what}</p>
+          </a>
+        ))}
+      </div>
+
+      {/* Contact */}
+      <div style={{ background:CARD, border:`1px solid ${BD}`,
+        borderTop:`3px solid ${RED}`, padding:'24px 20px' }}>
+        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+          letterSpacing:'.2em', color:RED, marginBottom:12 }}>PARTNER WITH US</p>
+        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:13,
+          color:MUT, lineHeight:1.8, marginBottom:16, maxWidth:560 }}>
+          If you are a funder, policymaker, researcher or organisation that wants
+          to build any of these 10 projects — or commission intelligence for your
+          own work — get in touch.
+        </p>
+        <a href="mailto:halafu@femsaidiakenya.org?subject=SaInt Partnership"
+          style={{ display:'inline-flex', alignItems:'center', gap:8,
+            fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+            padding:'10px 20px', background:RED, color:TXT, textDecoration:'none',
+            letterSpacing:'.06em' }}>
+          halafu@femsaidiakenya.org →
+        </a>
+      </div>
+    </div>
+  )
+}
+
+
 export default function App() {
   const [intel, setIntel]   = useState(null)
   const [lane, setLane]     = useState('all')
+  const [activeTab, setActiveTab] = useState('intel')
   const [fundProject, setFundProject] = useState(null)
   const [contactOpen, setContactOpen] = useState(false)
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
@@ -497,7 +619,8 @@ export default function App() {
         padding:'0 24px', display:'flex', justifyContent:'space-between',
         alignItems:'center', height:52, position:'sticky', top:0, zIndex:100 }}>
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <span style={{ fontFamily:"'Lora',serif", fontSize:20, fontWeight:700 }}>
+          <span style={{ fontFamily:"'Lora',serif", fontSize:20, fontWeight:700, cursor:'pointer' }}
+            onClick={()=>setActiveTab('intel')}>
             <span style={{ color:TXT }}>Sa</span><span style={{ color:RED }}>Int</span>
           </span>
           <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:8,
@@ -506,7 +629,27 @@ export default function App() {
             SAIDIA INTELLIGENCE
           </span>
         </div>
-        <div style={{ display:'flex', alignItems:'center', gap:16 }}>
+        {/* Tab nav */}
+        <div style={{ display:'flex', gap:0, position:'absolute',
+          left:'50%', transform:'translateX(-50%)' }}>
+          {[
+            { id:'intel',    label:'⚡ Intel' },
+            { id:'projects', label:'🔨 Projects' },
+            { id:'briefs',   label:'📄 Briefs' },
+            { id:'about',    label:'ℹ About' },
+          ].map(t => (
+            <button key={t.id} onClick={()=>setActiveTab(t.id)}
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                padding:'0 16px', height:52, border:'none', cursor:'pointer',
+                background:'transparent',
+                borderBottom: activeTab===t.id ? `2px solid ${RED}` : '2px solid transparent',
+                color: activeTab===t.id ? TXT : MUT,
+                letterSpacing:'.04em' }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
           {intel && (
             <div style={{ display:'flex', alignItems:'center', gap:6 }}>
               <div style={{ width:6, height:6, borderRadius:'50%',
@@ -517,17 +660,21 @@ export default function App() {
               </span>
             </div>
           )}
-          <button onClick={()=>setContactOpen(true)}
+          <button onClick={()=>setActiveTab('about')}
             style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
               padding:'6px 14px', background:RED, color:TXT,
               border:'none', cursor:'pointer', letterSpacing:'.06em' }}>
-            Partner with us
+            Partner →
           </button>
         </div>
       </nav>
 
-      {/* Live bar */}
+      {/* Live bar - always visible */}
       <LiveBar intel={intel}/>
+
+      {/* Tab content */}
+      {activeTab === 'intel' && (
+      <div>
 
       {/* Hero */}
       <div style={{ padding: isMobile ? '48px 20px' : '64px 40px',
@@ -592,38 +739,87 @@ export default function App() {
         </div>
       </div>
 
-      {/* Projects */}
-      <div id="projects" style={{ padding:'32px 24px', maxWidth:1100, margin:'0 auto' }}>
-        <div style={{ display:'flex', justifyContent:'space-between',
-          alignItems:'center', marginBottom:24, flexWrap:'wrap', gap:12 }}>
-          <div>
-            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
-              letterSpacing:'.2em', color:RED, marginBottom:6 }}>THE 10 PROJECTS</p>
-            <h2 style={{ fontFamily:"'Lora',serif", fontSize:26, fontWeight:700, color:TXT }}>
-              Specific. Fundable. Executable.
-            </h2>
+      {/* Projects moved to Projects tab */}
+
+      </div>
+      )}
+
+      {activeTab === 'projects' && (
+        <div style={{ padding: isMobile ? '24px 16px' : '32px 24px', maxWidth:1100, margin:'0 auto' }}>
+          <div style={{ display:'flex', justifyContent:'space-between',
+            alignItems:'center', marginBottom:24, flexWrap:'wrap', gap:12 }}>
+            <div>
+              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+                letterSpacing:'.2em', color:RED, marginBottom:6 }}>THE 10 PROJECTS</p>
+              <h2 style={{ fontFamily:"'Lora',serif", fontSize:26, fontWeight:700, color:TXT }}>
+                Specific. Fundable. Executable.
+              </h2>
+            </div>
+            <div style={{ display:'flex', gap:2 }}>
+              {['all','Understand','Interrupt','Build'].map(l => (
+                <button key={l} onClick={()=>setLane(l)}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                    padding:'7px 14px', border:'none', cursor:'pointer',
+                    background: lane===l ? (l==='all'?RED:LANE_META[l]?.color||RED) : SURF,
+                    color: lane===l ? TXT : MUT }}>
+                  {l==='all'?'All':LANE_META[l].icon+' '+l}
+                </button>
+              ))}
+            </div>
           </div>
-          <div style={{ display:'flex', gap:2 }}>
-            {['all','Understand','Interrupt','Build'].map(l => (
-              <button key={l} onClick={()=>setLane(l)}
-                style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-                  padding:'7px 14px', border:'none', cursor:'pointer',
-                  background: lane===l ? (l==='all'?RED:LANE_META[l]?.color||RED) : SURF,
-                  color: lane===l ? TXT : MUT,
-                  letterSpacing:'.06em' }}>
-                {l==='all'?'All':LANE_META[l].icon+' '+l}
-              </button>
+          <div style={{ display:'grid',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(2,1fr)', gap:2 }}>
+            {projects.map(p => (
+              <ProjectCard key={p.id} p={p} intel={intel} onFund={setFundProject}/>
             ))}
           </div>
         </div>
-        <div style={{ display:'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'repeat(2,1fr)',
-          gap:2 }}>
-          {projects.map(p => (
-            <ProjectCard key={p.id} p={p} intel={intel} onFund={setFundProject}/>
-          ))}
+      )}
+
+      {activeTab === 'briefs' && (
+        <div style={{ padding: isMobile ? '24px 16px' : '32px 24px', maxWidth:900, margin:'0 auto' }}>
+          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+            letterSpacing:'.2em', color:RED, marginBottom:12 }}>INTELLIGENCE BRIEFS</p>
+          <h2 style={{ fontFamily:"'Lora',serif", fontSize:26, fontWeight:700,
+            color:TXT, marginBottom:20 }}>Monthly evidence for policymakers.</h2>
+          <div style={{ background:CARD, border:`1px solid ${BD}`, borderTop:`3px solid ${RED}`,
+            padding:24, marginBottom:8 }}>
+            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+              letterSpacing:'.12em', color:GOLD, marginBottom:8 }}>LATEST BRIEF</p>
+            <p style={{ fontFamily:"'Lora',serif", fontSize:18, fontWeight:700,
+              color:TXT, marginBottom:16 }}>FemSaidia Intel Brief — June 2026</p>
+            <div style={{ display:'flex', gap:10 }}>
+              <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf"
+                target="_blank" rel="noopener noreferrer"
+                style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                  padding:'10px 20px', background:RED, color:TXT,
+                  textDecoration:'none', letterSpacing:'.06em' }}>
+                📄 Download PDF →
+              </a>
+              <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest-viewer.html"
+                target="_blank" rel="noopener noreferrer"
+                style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                  padding:'10px 20px', background:'transparent',
+                  border:`1px solid ${BD}`, color:TXT,
+                  textDecoration:'none', letterSpacing:'.06em' }}>
+                View inline →
+              </a>
+            </div>
+          </div>
+          <div style={{ background:CARD, border:`1px solid ${BD}`, padding:20 }}>
+            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12,
+              color:MUT, lineHeight:1.8 }}>
+              Intel Briefs are published fortnightly — on the 1st and 15th of each month.
+              Each brief synthesises the latest misogyny index data, scanner catches,
+              community pulse and case tracker updates into a 2-page document formatted
+              for Cabinet Secretaries, donors and county governors.
+              To receive briefs by email, contact halafu@femsaidiakenya.org.
+            </p>
+          </div>
         </div>
-      </div>
+      )}
+
+      {activeTab === 'about' && <AboutTab/>}
 
       {/* Footer */}
       <footer style={{ background:SURF, borderTop:`1px solid ${BD}`,
