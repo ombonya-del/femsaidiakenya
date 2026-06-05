@@ -883,7 +883,7 @@ export default function App() {
             { id:'intel',    icon:'⚡', label:'Intel' },
             { id:'projects', icon:'🔨', label:'Projects' },
             { id:'briefs',   icon:'📄', label:'Briefs' },
-            { id:'about',    icon:'ℹ',  label:'About' },
+            { id:'about',    icon:'🌍', label:'About' },
           ].map(t => (
             <button key={t.id} onClick={()=>setActiveTab(t.id)}
               style={{ flex:1, display:'flex', flexDirection:'column',
