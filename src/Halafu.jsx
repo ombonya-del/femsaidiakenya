@@ -953,7 +953,6 @@ export default function HalaFuTab({ isMobile }) {
 
           {/* Download Intel Brief */}
           
-        </a>
       </div>
 
       {/* Brief archive */}
