@@ -217,7 +217,8 @@ function ArchetypeCard({a, getContent}) {
           </div>
           {tab==='redflags'&&<div style={{display:'flex',flexDirection:'column',gap:10}}>
             {(redFlags
-              ? redFlags.map((text,i) => {
+              ? redFlags.map((textOrObj,i) => {
+                  const text = typeof textOrObj==='object'&&textOrObj!==null ? (textOrObj.content||'') : String(textOrObj||'')
                   const [flag,...whyParts] = text.split(' — ')
                   const why = whyParts.join(' — ')
                   return (
@@ -236,7 +237,8 @@ function ArchetypeCard({a, getContent}) {
             )}
           </div>}
           {tab==='protective'&&<div style={{display:'flex',flexDirection:'column',gap:10}}>
-            {(protective || a.protective).map((p,i)=>{
+            {(protective || a.protective).map((pOrObj,i)=>{
+              const p = typeof pOrObj==='object'&&pOrObj!==null ? (pOrObj.content||'') : String(pOrObj||'')
               const isDigital = p.includes('hepa')||p.includes('Salmin')||p.includes('Red Flag')||p.includes('femsaidiakenya')
               return (
                 <div key={i} style={{background:isDigital?'#0A2D1A':CRD,padding:'18px 20px',borderLeft:`4px solid ${isDigital?'#FF5C28':'#2D7A3A'}`,display:'flex',gap:14}}>
