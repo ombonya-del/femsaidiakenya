@@ -534,6 +534,7 @@ function ArchetypesTab() {
     {id:'naive',      label:'The Naive',      color:'#1A3F6F'},
     {id:'precocious', label:'The Precocious',  color:'#C06020'},
     {id:'allin',      label:'The All-In',      color:'#7A4ABA'},
+    {id:'onoff',      label:'The On \u0026 Off',  color:'#8A1030'},
     {id:'onandoff',   label:'The On & Off',    color:'#8A1030'},
   ]
   const SECTIONS = [
@@ -680,6 +681,7 @@ function VoicesTab() {
     {id:'naive',color:'#1A3F6F',label:'The Naive'},
     {id:'precocious',color:'#C06020',label:'The Precocious'},
     {id:'allin',color:'#7A4ABA',label:'The All-In'},
+    {id:'onoff',color:'#8A1030',label:'The On \u0026 Off'},
     {id:'onandoff',color:'#8A1030',label:'The On & Off'},
   ]
   const [voices,     setVoices]     = useState([])
@@ -852,6 +854,7 @@ function MemorialTab() {
     {id:'naive',      label:'The Naive',      color:'#1A3F6F'},
     {id:'precocious', label:'The Precocious',  color:'#C06020'},
     {id:'allin',      label:'The All-In',      color:'#7A4ABA'},
+    {id:'onoff',      label:'The On \u0026 Off',  color:'#8A1030'},
   ]
   const [items,   setItems]   = useState([])
   const [loading, setLoading] = useState(true)

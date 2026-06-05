@@ -192,8 +192,18 @@ function ArchetypeCard({a, getContent}) {
   const [vForm, setVForm] = useState({voice_type:'survivor', name:'', relationship:'', story:''})
   const [vSending, setVSending] = useState(false)
   const [vDone, setVDone] = useState(false)
+  const [memorial, setMemorial] = useState([])
+  const [memLoaded, setMemLoaded] = useState(false)
   const redFlags   = getContent ? getContent(a.id,'redflags',null)   : null
   const protective = getContent ? getContent(a.id,'protective',null) : null
+
+  const loadMemorial = () => {
+    if (memLoaded) return
+    supabase.from('archetype_memorial').select('*')
+      .eq('archetype_id', a.id).eq('active', true)
+      .order('sort_order',{ascending:true})
+      .then(({data}) => { setMemorial(data||[]); setMemLoaded(true) })
+  }
 
   const loadVoices = () => {
     supabase.from('archetype_voices').select('*')
@@ -237,7 +247,7 @@ function ArchetypeCard({a, getContent}) {
             ))}
           </div>
           <div style={{display:'flex',gap:2,marginBottom:20}}>
-            {[{id:'redflags',label:'🚩 Red flags'},{id:'protective',label:'🛡️ Protect yourself'},{id:'sister',label:'💬 Real talk'}].map(t=>(
+            {[{id:'redflags',label:'🚩 Red flags'},{id:'protective',label:'🛡️ Protect yourself'},{id:'sister',label:'💬 Real talk'},{id:'remember',label:'🕯️ We Remember'}].map(t=>(
               <button key={t.id} onClick={()=>setTab(t.id)} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,fontWeight:700,padding:'10px 20px',cursor:'pointer',border:'none',background:tab===t.id?a.color:CRD,color:tab===t.id?'#fff':MUT}}>{t.label}</button>
             ))}
           </div>
@@ -272,6 +282,36 @@ function ArchetypeCard({a, getContent}) {
               )
             })}
           </div>}
+          {tab==='remember'&&(
+            <div>
+              {(()=>{ loadMemorial(); return null })()}
+              <div style={{marginBottom:12,padding:'16px 20px',background:CRD,borderLeft:`4px solid ${a.color}`}}>
+                <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,letterSpacing:'.12em',textTransform:'uppercase',color:a.color,marginBottom:8}}>In memory</div>
+                <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:MUT,lineHeight:1.7,margin:0}}>
+                  These women were lost to femicide. They fit the pattern of "{a.label}". We say their names so their stories protect others.
+                </p>
+              </div>
+              {memorial.length===0 ? (
+                <div style={{textAlign:'center',padding:32,color:MUT,fontFamily:"'Nunito Sans',sans-serif",fontSize:13}}>
+                  🕯️ No entries yet for this archetype. Contact us to add a memorial.
+                </div>
+              ) : memorial.map((m,i)=>(
+                <div key={m.id} style={{display:'flex',gap:16,padding:'16px 20px',marginBottom:2,background:i%2===0?CRD:'#f5e8ec',borderLeft:`3px solid ${a.color}`}}>
+                  <span style={{fontSize:22,flexShrink:0}}>🕯️</span>
+                  <div>
+                    <div style={{fontFamily:"'Lora',serif",fontSize:17,fontWeight:700,color:TXT,marginBottom:4}}>{m.victim_name||'Name withheld'}</div>
+                    <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT,marginBottom:m.note?8:0}}>
+                      {[m.county, m.incident_date ? new Date(m.incident_date).toLocaleDateString('en-KE',{year:'numeric',month:'long'}) : ''].filter(Boolean).join(' · ')}
+                    </div>
+                    {m.note&&<p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'#5A2030',lineHeight:1.7,fontStyle:'italic',margin:0}}>"{m.note}"</p>}
+                  </div>
+                </div>
+              ))}
+              <div style={{marginTop:16,padding:'12px 20px',background:'#180410',textAlign:'center'}}>
+                <p style={{fontFamily:"'Lora',serif",fontSize:13,fontStyle:'italic',color:'rgba(240,208,216,0.6)',margin:0}}>Say their names. Remember their lives. Demand justice.</p>
+              </div>
+            </div>
+          )}
           {tab==='sister'&&(
             <div>
               <div style={{background:CRD,padding:'32px 28px',borderLeft:`4px solid ${a.color}`,marginBottom:12}}>
