@@ -365,7 +365,7 @@ Data:
 
 Our 10 projects span: understanding the misogyny pipeline, interrupting radicalisation, and building perpetrator accountability systems.
 
-3 sentences. For a funder who funds globally. Make Kenya's crisis undeniable and our projects the logical response.`
+3 sentences. For a funder who funds globally. Make Kenya\'s crisis undeniable and our projects the logical response.`
           }]
         })
       })
@@ -577,7 +577,7 @@ export default function App() {
         <div style={{ maxWidth:1100, margin:'0 auto', display:'grid',
           gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', gap:16 }}>
           {[
-            { icon:'🌍', label:'Regional context', text:'Kenya's femicide rate is among the highest in Sub-Saharan Africa. East African governments have no shared intelligence framework for tracking or responding to the crisis.' },
+            { icon:'🌍', label:'Regional context', text:'Kenya femicide rate is among the highest in Sub-Saharan Africa. East African governments have no shared intelligence framework for tracking or responding to the crisis.' },
             { icon:'📱', label:'The digital accelerant', text:'Manosphere content on TikTok, YouTube and Telegram reaches millions of Kenyan boys daily. Platform accountability is non-existent. Our scanner tracks this in real time.' },
             { icon:'⚖️', label:'The accountability gap', text:'Fewer than 12% of documented femicide cases in our tracker have resulted in a conviction. The Maputo Protocol and SDG 16 commitments are unmet.' },
           ].map((c,i) => (
