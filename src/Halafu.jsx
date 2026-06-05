@@ -226,6 +226,91 @@ const PROJECTS = [
 
 
 // ── FIELD INTELLIGENCE COMPONENT ─────────────────────────────────────────────
+// ── 47-HOUR COUNTER + MOTD PANEL ─────────────────────────────────────────────
+function CrisisCounter() {
+  const [elapsed, setElapsed] = useState(0)
+  const [motd, setMotd] = useState(null)
+  const CYCLE = 47 * 3600  // 47 hours in seconds
+
+  useEffect(() => {
+    // Start from a random point in the cycle for realism
+    const offset = Math.floor(Math.random() * CYCLE * 0.7)
+    setElapsed(offset)
+    const timer = setInterval(() => {
+      setElapsed(e => {
+        if (e >= CYCLE) return 0
+        return e + 1
+      })
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    _sb.from('misogyny_highlights').select('*')
+      .eq('active', true)
+      .order('highlight_date', { ascending:false })
+      .limit(1)
+      .then(({ data }) => setMotd(data?.[0] || null))
+  }, [])
+
+  const hrs  = Math.floor(elapsed / 3600)
+  const mins = Math.floor((elapsed % 3600) / 60)
+  const secs = elapsed % 60
+  const pct  = (elapsed / CYCLE) * 100
+  const critical = pct > 75
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:2, minWidth:220 }}>
+      {/* 47-hour counter */}
+      <div style={{ background:'#180410', border:`1px solid rgba(138,16,48,0.3)`,
+        padding:'20px 18px' }}>
+        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:8, fontWeight:700,
+          letterSpacing:'.2em', color:'rgba(138,16,48,0.7)', marginBottom:10 }}>
+          TIME SINCE LAST FEMICIDE (AVG)
+        </p>
+        <div style={{ fontFamily:'monospace', fontSize:36, fontWeight:700,
+          color: critical ? '#DC2626' : '#F0D0D8', letterSpacing:'.05em',
+          lineHeight:1, marginBottom:10 }}>
+          {String(hrs).padStart(2,'0')}:{String(mins).padStart(2,'0')}:{String(secs).padStart(2,'0')}
+        </div>
+        {/* Progress bar */}
+        <div style={{ height:4, background:'rgba(138,16,48,0.15)', borderRadius:0 }}>
+          <div style={{ height:'100%', width:`${pct}%`,
+            background: critical ? '#DC2626' : '#8A1030',
+            transition:'width 1s linear' }}/>
+        </div>
+        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
+          color:'rgba(240,208,216,0.4)', marginTop:6 }}>
+          A woman is killed every 47 hours in Kenya.
+          This counter resets when the cycle completes.
+        </p>
+      </div>
+
+      {/* Latest MOTD */}
+      {motd && (
+        <div style={{ background:'rgba(138,16,48,0.08)',
+          border:`1px solid rgba(138,16,48,0.2)`, padding:'16px 18px' }}>
+          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:8, fontWeight:700,
+            letterSpacing:'.15em', color:'#8A1030', marginBottom:8 }}>
+            MISOGYNY OF THE DAY · {motd.platform || 'X'}
+          </p>
+          <p style={{ fontFamily:"'Lora',serif", fontSize:12, fontStyle:'italic',
+            color:'rgba(240,208,216,0.8)', lineHeight:1.7, marginBottom:8 }}>
+            "{(motd.content || '').slice(0, 160)}{motd.content?.length > 160 ? '...' : ''}"
+          </p>
+          {motd.context && (
+            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
+              color:'rgba(240,208,216,0.5)', lineHeight:1.6 }}>
+              {motd.context.slice(0, 100)}...
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+
 function FieldIntelligence() {
   const [intel, setIntel]         = useState(null)
   const [synthesis, setSynthesis] = useState('')
@@ -380,7 +465,7 @@ Projects span: research (misogyny pipeline, economics of violence, intergenerati
       </div>
 
       {expanded && (
-        <div>
+        <div onClick={e=>e.stopPropagation()}>
           {/* Top metrics row */}
           {intel && (
             <div style={{ display:'grid',
@@ -437,7 +522,28 @@ Projects span: research (misogyny pipeline, economics of violence, intergenerati
 
           {/* Claude synthesis */}
           <div style={{ padding:'16px 24px' }}>
-            {!synthesis && (
+            {/* Action buttons */}
+          <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:16 }}>
+            <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf"
+              target="_blank" rel="noopener noreferrer"
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                padding:'8px 14px', background:'rgba(138,16,48,0.3)',
+                border:'1px solid rgba(138,16,48,0.5)', color:'#F0D0D8',
+                textDecoration:'none', display:'inline-flex', alignItems:'center', gap:6 }}
+              onClick={e => e.stopPropagation()}>
+              📄 Download Intel Brief
+            </a>
+            <a href="https://saint.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                padding:'8px 14px', background:'rgba(10,13,20,0.6)',
+                border:'1px solid rgba(138,16,48,0.3)', color:'#F0D0D8',
+                textDecoration:'none', display:'inline-flex', alignItems:'center', gap:6 }}
+              onClick={e => e.stopPropagation()}>
+              ⚡ Open SaInt Intelligence →
+            </a>
+          </div>
+
+          {!synthesis && (
               <button onClick={generateSynthesis} disabled={generating || !intel}
                 style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
                   padding:'10px 20px', background:'rgba(138,16,48,0.2)',
@@ -843,8 +949,7 @@ export default function HalaFuTab({ isMobile }) {
             Updated every two weeks. Share with policymakers, funders and researchers.
           </p>
         </div>
-        <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf" target="_blank" rel="noopener noreferrer" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.08)', color:'#fff', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'10px 20px', textDecoration:'none', border:'1.5px solid rgba(255,255,255,0.7)', letterSpacing:'.04em', whiteSpace:'nowrap', background:'rgba(138,16,48,0.5)' }}>
-          📄 <FieldIntelligence/>
+        <FieldIntelligence/>
 
           {/* Download Intel Brief */}
           
@@ -976,15 +1081,6 @@ export default function HalaFuTab({ isMobile }) {
             </button>
           </div>
           {/* PDF frame */}
-          <iframe
-            src="/intel-brief-latest-viewer.html"
-            title="FemSaidia Intel Brief"
-            style={{
-              width:'100%', maxWidth:'860px',
-              height:'80vh', border:'none',
-              borderRadius:'8px', background:'#fff',
-            }}
-          />
           {/* external link fallback */}
           <a
             href="/intel-brief-latest.pdf"
