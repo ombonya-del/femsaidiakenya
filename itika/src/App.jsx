@@ -283,10 +283,12 @@ async function subscribeToPush(responder) {
     const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY || 'BJ3LvNkAYyEu-BzcbjZqJJYRQWlWRIwiXxpacsqy3ePvQpAewCUrECslTqZAT06M_gSmXS61ocJ_k87EGhgbHws'
     if (!vapidKey) return
 
+    console.log('Subscribing with VAPID key:', vapidKey?.slice(0,20))
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: vapidKey,
     })
+    console.log('Subscription created:', sub.endpoint?.slice(0,40))
 
     const subJson = sub.toJSON()
     const { error: upsertErr } = await sb.from('push_subscriptions').upsert({
