@@ -1,4 +1,4 @@
-const CACHE = "itika-v3"
+const CACHE = "itika-v4"
 const SHELL = ["/", "/index.html"]
 
 self.addEventListener("install", e => {
@@ -28,38 +28,29 @@ self.addEventListener("fetch", e => {
 
 // ── PUSH NOTIFICATIONS ────────────────────────────────────────────────────────
 self.addEventListener("push", event => {
-  let data = {}; try { data = event.data?.json() || {} } catch(e) {}
-  const title = data.title || "Itika Alert"
-  const body  = data.body  || "A new alert has been dispatched in your county."
+  let data = {}
+  try { data = event.data?.json() || {} } catch(e) {}
+  const title = data.title || "\ud83d\udea8 Emergency Alert \u2014 Itika"
+  const body  = data.body  || "An emergency has been reported in your county. Open Itika NOW to respond."
 
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
-      icon:   "/icon-192.png",
-      badge:  "/icon-192.png",
-      tag:    "itika-alert",
-      renotify: true,
-      requireInteraction: true,
-      data:   data.data || {},
-      actions: [
-        { action: "view",    title: "View Alert" },
-        { action: "dismiss", title: "Dismiss" },
-      ],
-      vibrate: [200, 100, 200, 100, 200],
+      icon:  "/icon-192.png",
+      badge: "/icon-192.png",
+      tag:   "itika-alert",
     })
   )
 })
 
 self.addEventListener("notificationclick", event => {
   event.notification.close()
-  if (event.action === "view" || !event.action) {
-    event.waitUntil(
-      clients.matchAll({ type:"window" }).then(list => {
-        for (const client of list) {
-          if (client.url.includes("itika") && "focus" in client) return client.focus()
-        }
-        if (clients.openWindow) return clients.openWindow("/")
-      })
-    )
-  }
+  event.waitUntil(
+    clients.matchAll({ type:"window" }).then(list => {
+      for (const client of list) {
+        if (client.url.includes("itika") && "focus" in client) return client.focus()
+      }
+      if (clients.openWindow) return clients.openWindow("/")
+    })
+  )
 })
