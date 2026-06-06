@@ -396,10 +396,32 @@ function CheckInScreen({ contacts, onBack }) {
 
     const msg = `🚨 CHECK-IN MISSED\n\nThis is an automated hepa alert.\n\n${locText}\n\nI did not check in by the agreed time. Please check on me immediately.\n\nCall police: 999\nDCI Gender Desk: 0800 722 203`
 
-    // Send WhatsApp first (with location link)
+    // 1. Fire Itika responder alert
+    const user = JSON.parse(localStorage.getItem('hepa_user') || '{}')
+    fetch('https://uuluuhltphgwfblcghlp.supabase.co/rest/v1/responder_alerts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify({
+        alert_type:   'hepa_timer_expired',
+        county:       user.county || 'Unknown',
+        location_lat: location?.lat || null,
+        location_lng: location?.lng || null,
+        caller_phone: user.phone || null,
+        details:      `hepa check-in timer expired. User did not respond by agreed time. ${location ? `GPS: ${location.lat},${location.lng}` : 'No GPS.'}`,
+        status:       'active',
+        source:       'hepa',
+      }),
+    }).catch(() => {})
+
+    // 2. Send WhatsApp (with location link)
     window.open(`https://wa.me/${intlPhone}?text=${encodeURIComponent(msg)}`, '_blank')
 
-    // Send SMS after a longer delay so WhatsApp has time to open
+    // 3. Send SMS after a delay
     setTimeout(() => {
       window.location.href = `sms:${phone}?body=${encodeURIComponent(msg)}`
     }, 3000)

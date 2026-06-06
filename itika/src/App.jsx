@@ -242,6 +242,41 @@ function RegisterScreen({ onDone }) {
   )
 }
 
+
+// ── PUSH SUBSCRIPTION ─────────────────────────────────────────────────────────
+async function subscribeToPush(responder) {
+  try {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+    const reg = await navigator.serviceWorker.ready
+    const existing = await reg.pushManager.getSubscription()
+    if (existing) return // already subscribed
+
+    const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY
+    if (!vapidKey) return
+
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: vapidKey,
+    })
+
+    const subJson = sub.toJSON()
+    await createClient(
+      import.meta.env.VITE_SUPABASE_URL,
+      import.meta.env.VITE_SUPABASE_ANON_KEY
+    ).from('push_subscriptions').upsert({
+      endpoint:           subJson.endpoint,
+      p256dh:             subJson.keys?.p256dh,
+      auth:               subJson.keys?.auth,
+      county:             responder.county,
+      subscription_group: 'itika_responders',
+      responder_id:       responder.id,
+    }, { onConflict: 'endpoint' })
+  } catch(e) {
+    console.log('Push subscription failed:', e)
+  }
+}
+
+
 // ── ALERT CARD ────────────────────────────────────────────────────────────────
 function AlertCard({ alert, responder, onRespond }) {
   const [responding, setResponding] = useState(false)
@@ -352,7 +387,17 @@ function Dashboard({ responder, onLogout }) {
       })
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    // Request push notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(p => {
+        if (p === 'granted') subscribeToPush(responder)
+      })
+    } else if (Notification.permission === 'granted') {
+      subscribeToPush(responder)
+    }
+  }, [])
 
   // Poll for new alerts every 60 seconds
   useEffect(() => {
