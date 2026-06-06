@@ -280,7 +280,7 @@ async function subscribeToPush(responder) {
     const existing = await reg.pushManager.getSubscription()
     if (existing) await existing.unsubscribe()
 
-    const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY
+    const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY || 'BJ3LvNkAYyEu-BzcbjZqJJYRQWlWRIwiXxpacsqy3ePvQpAewCUrECslTqZAT06M_gSmXS61ocJ_k87EGhgbHws'
     if (!vapidKey) return
 
     const sub = await reg.pushManager.subscribe({
@@ -289,10 +289,7 @@ async function subscribeToPush(responder) {
     })
 
     const subJson = sub.toJSON()
-    await createClient(
-      import.meta.env.VITE_SUPABASE_URL,
-      import.meta.env.VITE_SUPABASE_ANON_KEY
-    ).from('push_subscriptions').upsert({
+    await sb.from('push_subscriptions').upsert({
       endpoint:           subJson.endpoint,
       p256dh:             subJson.keys?.p256dh,
       auth:               subJson.keys?.auth,
