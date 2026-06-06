@@ -300,7 +300,6 @@ async function subscribeToPush(responder) {
     if (upsertErr) throw new Error('Upsert failed: ' + upsertErr.message)
   } catch(e) {
     console.log('Push subscription failed:', e)
-    alert('Push error: ' + String(e))
   }
 }
 
