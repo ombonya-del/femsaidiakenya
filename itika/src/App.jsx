@@ -80,15 +80,43 @@ function RegisterScreen({ onDone }) {
 
   if (done) return (
     <div style={{minHeight:'100vh',background:BG,display:'flex',alignItems:'center',justifyContent:'center',padding:24}}>
-      <div style={{textAlign:'center'}}>
+      <div style={{textAlign:'center',maxWidth:360}}>
         <div style={{fontSize:56,marginBottom:16}}>✅</div>
         <h2 style={{fontFamily:"'Lora',serif",fontSize:24,fontWeight:700,color:TXT,marginBottom:8}}>
           Asante, {form.full_name.split(' ')[0]}
         </h2>
-        <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:14,color:MUT,lineHeight:1.7}}>
+        <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:14,color:MUT,lineHeight:1.7,marginBottom:24}}>
           Your registration is received. The FemSaidia team will verify and activate your account.
-          You will receive an SMS when you are active.
         </p>
+        {/* Notification permission — the most important step */}
+        <div style={{background:SURF,border:`1px solid ${BD}`,padding:20,marginBottom:16}}>
+          <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,
+            letterSpacing:'.1em',color:BGRN,textTransform:'uppercase',marginBottom:8}}>
+            One more step
+          </p>
+          <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:TXT,lineHeight:1.7,marginBottom:16}}>
+            Enable notifications so you receive instant alerts when someone in {form.county} needs help.
+          </p>
+          <button onClick={async () => {
+            if (!('Notification' in window)) return
+            const p = await Notification.requestPermission()
+            if (p === 'granted') {
+              // Store the county for subscription once user is activated
+              localStorage.setItem('itika_pending_notif', JSON.stringify({county: form.county, phone: form.phone}))
+            }
+            // Proceed to done regardless
+            setTimeout(() => onDone(form), 500)
+          }}
+            style={{width:'100%',fontFamily:"'Nunito Sans',sans-serif",fontSize:14,fontWeight:700,
+              padding:'14px',background:GRN,color:'#fff',border:'none',cursor:'pointer',marginBottom:8}}>
+            🔔 Enable emergency alerts
+          </button>
+          <button onClick={() => setTimeout(() => onDone(form), 100)}
+            style={{width:'100%',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,
+              padding:'10px',background:'transparent',color:MUT,border:`1px solid ${BD}`,cursor:'pointer'}}>
+            Skip for now
+          </button>
+        </div>
       </div>
     </div>
   )
