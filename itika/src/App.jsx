@@ -275,7 +275,6 @@ function RegisterScreen({ onDone }) {
 async function subscribeToPush(responder) {
   try {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      alert('STOP 1: No SW or PushManager')
       return
     }
     const reg = await navigator.serviceWorker.ready
@@ -284,7 +283,6 @@ async function subscribeToPush(responder) {
     if (existing) await existing.unsubscribe()
 
     const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY || 'BJ3LvNkAYyEu-BzcbjZqJJYRQWlWRIwiXxpacsqy3ePvQpAewCUrECslTqZAT06M_gSmXS61ocJ_k87EGhgbHws'
-    alert('STOP 3: vapidKey=' + vapidKey.slice(0,20))
     if (!vapidKey) return
 
     console.log('Subscribing with VAPID key:', vapidKey?.slice(0,20))
