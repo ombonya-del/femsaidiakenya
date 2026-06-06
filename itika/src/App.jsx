@@ -278,9 +278,9 @@ async function subscribeToPush(responder) {
       return
     }
     const reg = await navigator.serviceWorker.ready
-    // Unsubscribe any stale subscription before creating fresh one
-    const existing = await reg.pushManager.getSubscription()
-    if (existing) await existing.unsubscribe()
+    // Reuse existing subscription — don't unsubscribe (leaves orphaned DB entries)
+    let sub = await reg.pushManager.getSubscription()
+    if (!sub) {
 
     const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY || 'BJ3LvNkAYyEu-BzcbjZqJJYRQWlWRIwiXxpacsqy3ePvQpAewCUrECslTqZAT06M_gSmXS61ocJ_k87EGhgbHws'
     if (!vapidKey) return
@@ -290,6 +290,7 @@ async function subscribeToPush(responder) {
       userVisibleOnly: true,
       applicationServerKey: vapidKey,
     })
+    }
     console.log('Subscription created:', sub.endpoint?.slice(0,40))
 
     const subJson = sub.toJSON()
