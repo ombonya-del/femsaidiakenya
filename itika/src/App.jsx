@@ -592,6 +592,30 @@ function Dashboard({ responder, onLogout }) {
             <button onClick={onLogout}
               style={{width:'100%',fontFamily:"'Nunito Sans',sans-serif",fontSize:13,fontWeight:700,
                 padding:'12px',background:CARD,color:MUT,border:`1px solid ${BD}`,cursor:'pointer'}}>
+          {/* Enable notifications button */}
+          <button onClick={async () => {
+            if (!('Notification' in window)) {
+              alert('Notifications not supported on this browser.')
+              return
+            }
+            if (Notification.permission === 'granted') {
+              await subscribeToPush(responder)
+              alert('✅ Notifications already enabled!')
+              return
+            }
+            const p = await Notification.requestPermission()
+            if (p === 'granted') {
+              await subscribeToPush(responder)
+              alert('✅ Notifications enabled! You will receive alerts when a new emergency is reported in your county.')
+            } else {
+              alert('❌ Notifications blocked. Go to Chrome Settings → Site Settings → Notifications → itika.femsaidiakenya.org → Allow')
+            }
+          }}
+            style={{ width:'100%', fontFamily:"'Nunito Sans',sans-serif", fontSize:13,
+              fontWeight:700, padding:'12px', background:GRN, color:'#fff',
+              border:'none', cursor:'pointer', marginBottom:8 }}>
+            🔔 Enable alert notifications
+          </button>
               Sign out
             </button>
           </div>
