@@ -1807,6 +1807,225 @@ function ContactsTab() {
 
 
 // -- INTEL BRIEFS TAB --
+
+// ── SAINT ADMIN TAB ───────────────────────────────────────────────────────────
+function SaIntTab() {
+  const [expressions, setExpressions] = useState([])
+  const [analytics,   setAnalytics]   = useState([])
+  const [synthesis,   setSynthesis]   = useState([])
+  const [activeView,  setActiveView]  = useState('expressions')
+  const [loading,     setLoading]     = useState(true)
+
+  useEffect(() => {
+    Promise.all([
+      supabase.from('fund_expressions').select('*').order('created_at',{ascending:false}).limit(50),
+      supabase.from('saint_analytics').select('event,project_title,lane,tab,created_at').order('created_at',{ascending:false}).limit(200),
+      supabase.from('saint_synthesis').select('synthesis,score,generated_at').order('generated_at',{ascending:false}).limit(10),
+    ]).then(([exp, ana, syn]) => {
+      setExpressions(exp.data || [])
+      setAnalytics(ana.data || [])
+      setSynthesis(syn.data || [])
+      setLoading(false)
+    })
+  }, [])
+
+  // Compute analytics summaries
+  const projectClicks = analytics.filter(a => a.event === 'project_click')
+  const topProjects   = Object.entries(
+    projectClicks.reduce((acc, a) => {
+      acc[a.project_title] = (acc[a.project_title] || 0) + 1
+      return acc
+    }, {})
+  ).sort((a,b) => b[1]-a[1]).slice(0,5)
+
+  const fundOpens = analytics.filter(a => a.event === 'fund_modal_open')
+  const topFunded = Object.entries(
+    fundOpens.reduce((acc, a) => {
+      acc[a.project_title] = (acc[a.project_title] || 0) + 1
+      return acc
+    }, {})
+  ).sort((a,b) => b[1]-a[1]).slice(0,5)
+
+  const tabCounts = analytics.filter(a => a.event === 'tab_switch').reduce((acc,a) => {
+    acc[a.tab] = (acc[a.tab]||0)+1; return acc
+  }, {})
+
+  const fmt = (d) => d ? new Date(d).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}) : ''
+
+  return (
+    <div>
+      <div style={{ marginBottom:20 }}>
+        <h2 style={{ fontFamily:"'Lora',serif", fontSize:22, fontWeight:700, color:TXT, marginBottom:4 }}>
+          SaInt Intelligence Platform
+        </h2>
+        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT }}>
+          Fund expressions, engagement analytics and synthesis history from saint.femsaidiakenya.org
+        </p>
+      </div>
+
+      {/* Summary tiles */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:20 }}>
+        {[
+          { v:expressions.length,                     l:'Fund expressions',   c:A },
+          { v:projectClicks.length,                   l:'Project views',      c:'#7C3AED' },
+          { v:analytics.filter(a=>a.event==='synthesis_generate').length, l:'Synthesis runs', c:'#CA8A04' },
+          { v:synthesis.length,                       l:'Briefs cached',      c:'#16A34A' },
+        ].map((s,i) => (
+          <div key={i} style={{ background:CRD, border:`1px solid ${BD}`, padding:'14px 16px' }}>
+            <div style={{ fontFamily:"'Lora',serif", fontSize:28, fontWeight:700, color:s.c }}>{s.v}</div>
+            <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT, marginTop:4 }}>{s.l}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* View tabs */}
+      <div style={{ display:'flex', gap:2, marginBottom:16 }}>
+        {[
+          { id:'expressions', label:'💰 Fund Expressions' },
+          { id:'analytics',   label:'📊 Engagement' },
+          { id:'synthesis',   label:'⚡ Synthesis History' },
+        ].map(t => (
+          <button key={t.id} onClick={()=>setActiveView(t.id)}
+            style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+              padding:'8px 16px', border:'none', cursor:'pointer',
+              background:activeView===t.id?A:CRD, color:activeView===t.id?'#fff':MUT }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {loading && <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT }}>Loading…</p>}
+
+      {/* Fund Expressions */}
+      {!loading && activeView==='expressions' && (
+        <div>
+          {expressions.length === 0 ? (
+            <div style={{ background:CRD, border:`1px solid ${BD}`, padding:32, textAlign:'center' }}>
+              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:13, color:MUT }}>
+                No fund expressions yet. Share saint.femsaidiakenya.org with funders.
+              </p>
+            </div>
+          ) : expressions.map((e,i) => (
+            <div key={e.id||i} style={{ background:CRD, border:`1px solid ${BD}`,
+              borderLeft:`3px solid ${A}`, padding:'16px 18px', marginBottom:6 }}>
+              <div style={{ display:'flex', justifyContent:'space-between',
+                alignItems:'flex-start', marginBottom:8 }}>
+                <div>
+                  <p style={{ fontFamily:"'Lora',serif", fontSize:15, fontWeight:700,
+                    color:TXT, marginBottom:2 }}>{e.name} · {e.org}</p>
+                  <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                    color:MUT }}>{e.role} · {e.email}</p>
+                </div>
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
+                  color:MUT }}>{fmt(e.created_at)}</p>
+              </div>
+              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                fontWeight:700, color:A, marginBottom:4 }}>
+                {e.project_title}
+              </p>
+              {e.note && (
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12,
+                  color:TXT, lineHeight:1.7, fontStyle:'italic' }}>"{e.note}"</p>
+              )}
+              <a href={`mailto:${e.email}?subject=Re: ${encodeURIComponent(e.project_title||'SaInt Partnership')}`}
+                style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                  color:A, textDecoration:'none', marginTop:8, display:'inline-block' }}>
+                Reply via email →
+              </a>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Engagement analytics */}
+      {!loading && activeView==='analytics' && (
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+          <div style={{ background:CRD, border:`1px solid ${BD}`, padding:20 }}>
+            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+              letterSpacing:'.12em', color:A, marginBottom:12 }}>TOP PROJECTS BY VIEWS</p>
+            {topProjects.length === 0 ? (
+              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT }}>No data yet</p>
+            ) : topProjects.map(([title,count],i) => (
+              <div key={i} style={{ display:'flex', justifyContent:'space-between',
+                alignItems:'center', marginBottom:8, paddingBottom:8,
+                borderBottom:`1px solid ${BD}` }}>
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                  color:TXT, flex:1, marginRight:8 }}>{title?.slice(0,40)}…</p>
+                <span style={{ fontFamily:"'Lora',serif", fontSize:16, fontWeight:700,
+                  color:A, flexShrink:0 }}>{count}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ background:CRD, border:`1px solid ${BD}`, padding:20 }}>
+            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+              letterSpacing:'.12em', color:'#7C3AED', marginBottom:12 }}>MOST FUND INTEREST</p>
+            {topFunded.length === 0 ? (
+              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT }}>No data yet</p>
+            ) : topFunded.map(([title,count],i) => (
+              <div key={i} style={{ display:'flex', justifyContent:'space-between',
+                alignItems:'center', marginBottom:8, paddingBottom:8,
+                borderBottom:`1px solid ${BD}` }}>
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                  color:TXT, flex:1, marginRight:8 }}>{title?.slice(0,40)}…</p>
+                <span style={{ fontFamily:"'Lora',serif", fontSize:16, fontWeight:700,
+                  color:'#7C3AED', flexShrink:0 }}>{count}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ background:CRD, border:`1px solid ${BD}`, padding:20 }}>
+            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+              letterSpacing:'.12em', color:'#CA8A04', marginBottom:12 }}>TAB ENGAGEMENT</p>
+            {Object.entries(tabCounts).map(([tab,count],i) => (
+              <div key={i} style={{ display:'flex', justifyContent:'space-between',
+                marginBottom:8 }}>
+                <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:TXT }}>{tab}</span>
+                <span style={{ fontFamily:"'Lora',serif", fontSize:16, fontWeight:700,
+                  color:'#CA8A04' }}>{count}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ background:CRD, border:`1px solid ${BD}`, padding:20 }}>
+            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+              letterSpacing:'.12em', color:'#16A34A', marginBottom:12 }}>RECENT ACTIVITY</p>
+            {analytics.slice(0,8).map((a,i) => (
+              <div key={i} style={{ display:'flex', justifyContent:'space-between',
+                marginBottom:6, paddingBottom:6, borderBottom:`1px solid ${BD}` }}>
+                <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
+                  color:TXT }}>{a.event?.replace('_',' ')}</span>
+                <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
+                  color:MUT }}>{fmt(a.created_at)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Synthesis history */}
+      {!loading && activeView==='synthesis' && (
+        <div>
+          {synthesis.map((s,i) => (
+            <div key={i} style={{ background:CRD, border:`1px solid ${BD}`,
+              borderLeft:`3px solid #CA8A04`, padding:'16px 18px', marginBottom:6 }}>
+              <div style={{ display:'flex', justifyContent:'space-between',
+                marginBottom:10 }}>
+                <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
+                  fontWeight:700, color:'#CA8A04', letterSpacing:'.12em' }}>
+                  SYNTHESIS · INDEX {s.score}/100
+                </span>
+                <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
+                  color:MUT }}>{fmt(s.generated_at)}</span>
+              </div>
+              <p style={{ fontFamily:"'Lora',serif", fontSize:13, fontStyle:'italic',
+                color:TXT, lineHeight:1.8 }}>{s.synthesis}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+
 function IntelBriefsTab() {
   const [briefs,   setBriefs]   = useState([])
   const [loading,  setLoading]  = useState(true)
