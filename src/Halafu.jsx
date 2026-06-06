@@ -524,7 +524,7 @@ Projects span: research (misogyny pipeline, economics of violence, intergenerati
           <div style={{ padding:'16px 24px' }}>
             {/* Action buttons */}
           <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:16 }}>
-            <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf"
+            <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf?v=20260606"
               target="_blank" rel="noopener noreferrer"
               style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
                 padding:'8px 14px', background:'rgba(138,16,48,0.3)',
@@ -982,7 +982,7 @@ export default function HalaFuTab({ isMobile }) {
                       {b.period_start} — {b.period_end}
                     </p>
                   </div>
-                  <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf" target="_blank" rel="noopener noreferrer" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.08)', color:'#fff', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'10px 18px', textDecoration:'none', border:'1.5px solid rgba(255,255,255,0.7)', letterSpacing:'.04em', whiteSpace:'nowrap', background:'rgba(138,16,48,0.5)' }}>
+                  <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf?v=20260606" target="_blank" rel="noopener noreferrer" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.08)', color:'#fff', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'10px 18px', textDecoration:'none', border:'1.5px solid rgba(255,255,255,0.7)', letterSpacing:'.04em', whiteSpace:'nowrap', background:'rgba(138,16,48,0.5)' }}>
                     📄 Download
                   </a>
                 </div>
@@ -1085,7 +1085,7 @@ export default function HalaFuTab({ isMobile }) {
           {/* PDF frame */}
           {/* external link fallback */}
           <a
-            href="/intel-brief-latest.pdf"
+            href="/intel-brief-latest.pdf?v=20260606"
             target="_blank"
             rel="noopener noreferrer"
             style={{

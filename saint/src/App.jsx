@@ -754,7 +754,7 @@ export default function App() {
               letterSpacing:'.06em' }}>
             See the 10 projects →
           </a>
-          <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf"
+          <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf?v=20260606"
             target="_blank" rel="noopener noreferrer"
             style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700,
               padding:'12px 24px', background:'transparent',
@@ -842,14 +842,14 @@ export default function App() {
             <p style={{ fontFamily:"'Lora',serif", fontSize:18, fontWeight:700,
               color:TXT, marginBottom:16 }}>FemSaidia Intel Brief — June 2026</p>
             <div style={{ display:'flex', gap:10 }}>
-              <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf"
+              <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf?v=20260606"
                 target="_blank" rel="noopener noreferrer"
                 style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
                   padding:'10px 20px', background:RED, color:TXT,
                   textDecoration:'none', letterSpacing:'.06em' }}>
                 📄 Download PDF →
               </a>
-              <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf"
+              <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf?v=20260606"
                 target="_blank" rel="noopener noreferrer"
                 style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
                   padding:'10px 20px', background:'transparent',
@@ -899,10 +899,14 @@ export default function App() {
           {!isInstalled && (
             <button onClick={handleInstall}
               style={{ flex:1, display:'flex', flexDirection:'column',
-                alignItems:'center', justifyContent:'center', gap:2,
-                border:'none', cursor:'pointer', background:'transparent',
-                borderTop:'2px solid transparent' }}>
-              <span style={{ fontSize:18 }}>⬇</span>
+                alignItems:'center', justifyContent:'center', gap:3,
+                border:'none', cursor:'pointer',
+                background:'rgba(200,160,64,0.15)',
+                borderTop:'2px solid #C8A040' }}>
+              <span style={{ fontSize:14, background:'#C8A040',
+                borderRadius:'50%', width:24, height:24,
+                display:'flex', alignItems:'center', justifyContent:'center',
+                color:'#0A0D14', fontWeight:700 }}>↓</span>
               <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
                 fontWeight:700, color:'#C8A040', letterSpacing:'.06em' }}>Install</span>
             </button>
@@ -932,7 +936,7 @@ export default function App() {
                 color:MUT, textDecoration:'none' }}>
               halafu@femsaidiakenya.org
             </a>
-            <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf"
+            <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf?v=20260606"
               target="_blank" rel="noopener noreferrer"
               style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
                 color:RED, textDecoration:'none', fontWeight:700 }}>
