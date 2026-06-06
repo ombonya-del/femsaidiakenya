@@ -6,6 +6,21 @@ const sb = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY
 )
 
+
+// ── ANALYTICS TRACKER ─────────────────────────────────────────────────────────
+const track = async (event, data = {}) => {
+  try {
+    await sb.from('saint_analytics').insert({
+      event,
+      project_id:    data.project_id    || null,
+      project_title: data.project_title || null,
+      lane:          data.lane          || null,
+      tab:           data.tab           || null,
+      metadata:      data.metadata      || null,
+    })
+  } catch(e) { /* silent */ }
+}
+
 // ── PALETTE ───────────────────────────────────────────────────────────────────
 const BG    = '#0A0D14'
 const SURF  = '#111827'
@@ -167,13 +182,18 @@ function LiveBar({ intel }) {
 function ProjectCard({ p, intel, onFund }) {
   const [open, setOpen] = useState(false)
   const lm = LANE_META[p.lane]
+  const toggleOpen = () => {
+    const next = !open
+    setOpen(next)
+    if (next) track('project_click', { project_id:p.id, project_title:p.title, lane:p.lane })
+  }
   const statValue = intel ? (intel[p.stat] ?? '—') : '—'
 
   return (
     <div style={{ background:CARD, border:`1px solid ${BD}`,
       borderTop:`3px solid ${p.laneColor}`, animation:'fadeIn .4s both' }}>
       {/* Card header */}
-      <div onClick={()=>setOpen(!open)} style={{ padding:'20px 22px',
+      <div onClick={toggleOpen} style={{ padding:'20px 22px',
         cursor:'pointer', userSelect:'none' }}>
         <div style={{ display:'flex', justifyContent:'space-between',
           alignItems:'flex-start', marginBottom:10 }}>
@@ -242,7 +262,7 @@ function ProjectCard({ p, intel, onFund }) {
               ))}
             </div>
           </div>
-          <button onClick={()=>onFund(p)}
+          <button onClick={()=>{ onFund(p); track('fund_modal_open', { project_id:p.id, project_title:p.title, lane:p.lane }) }}
             style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
               padding:'10px 20px', background:RED, color:TXT,
               border:'none', cursor:'pointer', letterSpacing:'.06em' }}>
@@ -362,6 +382,7 @@ function IntelPanel({ intel }) {
   const generate = async () => {
     if (!intel) return
     setGenerating(true)
+    track('synthesis_generate', { metadata: { score: intel?.score } })
     try {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method:'POST',
@@ -810,7 +831,7 @@ export default function App() {
             </div>
             <div style={{ display:'flex', gap:2 }}>
               {['all','Understand','Interrupt','Build'].map(l => (
-                <button key={l} onClick={()=>setLane(l)}
+                <button key={l} onClick={()=>{ setLane(l); track('lane_filter', { lane:l }) }}
                   style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
                     padding:'7px 14px', border:'none', cursor:'pointer',
                     background: lane===l ? (l==='all'?RED:LANE_META[l]?.color||RED) : SURF,
