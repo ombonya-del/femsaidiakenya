@@ -740,7 +740,11 @@ export default function App() {
         // Refresh from DB
         sb.from('responders').select('*').eq('id', r.id).single()
           .then(({data}) => {
-            if (data) { setResponder(data); setScreen('dashboard') }
+            setResponder(data)
+            setScreen('dashboard')
+            if ('Notification' in window && Notification.permission === 'granted') {
+              subscribeToPush(data).catch(e => console.log('sub error:', e))
+            }
           })
       } catch(e) {}
     }
