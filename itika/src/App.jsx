@@ -289,7 +289,7 @@ async function subscribeToPush(responder) {
     })
 
     const subJson = sub.toJSON()
-    await sb.from('push_subscriptions').upsert({
+    const { error: upsertErr } = await sb.from('push_subscriptions').upsert({
       endpoint:           subJson.endpoint,
       p256dh:             subJson.keys?.p256dh,
       auth:               subJson.keys?.auth,
@@ -297,6 +297,7 @@ async function subscribeToPush(responder) {
       subscription_group: 'itika_responders',
       responder_id:       responder.id,
     }, { onConflict: 'endpoint' })
+    if (upsertErr) throw new Error('Upsert failed: ' + upsertErr.message)
   } catch(e) {
     console.log('Push subscription failed:', e)
     alert('Push error: ' + String(e))
