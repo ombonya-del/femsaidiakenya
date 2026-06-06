@@ -490,8 +490,6 @@ function Dashboard({ responder, onLogout }) {
       <div style={{padding:'4px 20px'}}>
         <button onClick={async()=>{let m='';try{m+='SW:'+('serviceWorker'in navigator)+'\nPM:'+('PushManager'in window)+'\n';const r=await navigator.serviceWorker.ready;m+='Ready:yes\n';const e=await r.pushManager.getSubscription();if(e)await e.unsubscribe();const k='BJ3LvNkAYyEu-BzcbjZqJJYRQWlWRIwiXxpacsqy3ePvQpAewCUrECslTqZAT06M_gSmXS61ocJ_k87EGhgbHws';const s=await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:k});m+='Sub:'+s.endpoint.slice(0,50)+'\n';const j=s.toJSON();const{error:er}=await sb.from('push_subscriptions').upsert({endpoint:j.endpoint,p256dh:j.keys?.p256dh,auth:j.keys?.auth,county:responder.county,subscription_group:'itika_responders',responder_id:responder.id},{onConflict:'endpoint'});m+=er?'FAIL:'+er.message:'SUCCESS!'}catch(ex){m+='ERR:'+String(ex)}alert(m)}}
           style={{width:'100%',padding:'6px',background:'#0F3A22',color:'#2A9A5A',fontFamily:"'Nunito Sans',sans-serif",fontSize:10,border:'1px solid #1A4A2A',cursor:'pointer'}}>
-          🔔 Test push
-        </button>
       </div>
       <div style={{position:'fixed',bottom:0,left:0,right:0,zIndex:100,
         background:SURF,borderTop:`1px solid ${BD}`,
