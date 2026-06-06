@@ -2753,6 +2753,7 @@ const TAB_GROUPS = [
   { id:'halafu', label:'Halafu?', color:'#8A4010', standalone:false, tabs:[
       { id:'donors', label:'Donor Interest', icon:<Flag size={14}/> },
       { id:'intel-briefs', label:'Intel Briefs', icon:<FileText size={14}/> },
+      { id:'saint', label:'⚡ SaInt', icon:null },
   ]},
 ]
 
@@ -3024,6 +3025,7 @@ export default function App() {
         {tab==='donors'      && <DonorInterestTab/>}
         {tab==='contacts'    && <ContactsTab/>}
         {tab==='intel-briefs' && <IntelBriefsTab/>}
+        {tab==='saint' && <SaIntTab/>}
       </main>
 
       <footer style={{ borderTop:`1px solid ${BD}`, padding:'16px 24px', marginTop:40 }}>
