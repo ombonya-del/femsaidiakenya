@@ -299,6 +299,7 @@ async function subscribeToPush(responder) {
     }, { onConflict: 'endpoint' })
   } catch(e) {
     console.log('Push subscription failed:', e)
+    alert('Push error: ' + String(e))
   }
 }
 
