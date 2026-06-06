@@ -1208,6 +1208,11 @@ def fetch_brief(brief_id=None):
     content = row.get("content","") or ""
     row.update(_parse_content(content))
 
+    # Strip non-WinAnsi characters that break Edge Function encoding
+    def _clean(v):
+        if not isinstance(v, str): return v
+        return v.replace('\u2192','>').replace('\u2190','<').replace('\u2013','-').replace('\u2014','--').replace('\u2018',"'").replace('\u2019',"'").replace('\u201c','"').replace('\u201d','"')
+    row = {k: _clean(v) for k,v in row.items()}
     return row
 
 def _parse_content(md: str) -> dict:
