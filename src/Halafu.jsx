@@ -233,8 +233,8 @@ function CrisisCounter() {
   const CYCLE = 47 * 3600  // 47 hours in seconds
 
   useEffect(() => {
-    // Start from a random point in the cycle for realism
-    const offset = Math.floor(Math.random() * CYCLE * 0.7)
+    const epoch = new Date('2026-01-01T00:00:00Z').getTime()
+    const offset = Math.floor(((Date.now() - epoch) % (CYCLE * 1000)) / 1000)
     setElapsed(offset)
     const timer = setInterval(() => {
       setElapsed(e => {
