@@ -28,7 +28,7 @@ self.addEventListener("fetch", e => {
 
 // ── PUSH NOTIFICATIONS ────────────────────────────────────────────────────────
 self.addEventListener("push", event => {
-  const data = event.data?.json() || {}
+  let data = {}; try { data = event.data?.json() || {} } catch(e) {}
   const title = data.title || "Itika Alert"
   const body  = data.body  || "A new alert has been dispatched in your county."
 
