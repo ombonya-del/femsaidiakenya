@@ -359,7 +359,7 @@ function PanicScreen({ contacts, onDismiss }) {
             ✓ WhatsApp opened with your location
           </div>
         )}
-        <a href={`sms:999?body=${encodeURIComponent(message)}`}
+        <a href={`sms:${phone}?body=${encodeURIComponent(message)}`}
           style={{display:'block',background:'rgba(255,255,255,0.1)',color:'#fff',
             fontFamily:"'Nunito Sans',sans-serif",fontSize:13,fontWeight:600,
             padding:'12px',borderRadius:14,textAlign:'center',textDecoration:'none'}}>
