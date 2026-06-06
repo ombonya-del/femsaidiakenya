@@ -75,7 +75,7 @@ function RegisterScreen({ onDone }) {
     }])
     setSending(false)
     setDone(true)
-    setTimeout(() => onDone(form), 1500)
+    // User must tap 'Enable' or 'Skip' to proceed
   }
 
   if (done) return (
