@@ -276,8 +276,9 @@ async function subscribeToPush(responder) {
   try {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
     const reg = await navigator.serviceWorker.ready
+    // Unsubscribe any stale subscription before creating fresh one
     const existing = await reg.pushManager.getSubscription()
-    if (existing) return // already subscribed
+    if (existing) await existing.unsubscribe()
 
     const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY
     if (!vapidKey) return
