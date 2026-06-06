@@ -2479,6 +2479,12 @@ function RespondersTab() {
   }
   useEffect(()=>{ load() },[])
 
+  const deleteResponder = async (id, name) => {
+    if (!window.confirm(`Delete ${name} permanently? This cannot be undone.`)) return
+    await supabase.from('responders').delete().eq('id', id)
+    load()
+  }
+
   const update = async (id, updates) => {
     await supabase.from('responders').update(updates).eq('id',id)
     load(); setEditing(null)
@@ -2611,6 +2617,12 @@ function RespondersTab() {
                     style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
                       padding:'4px 10px',background:CRD,color:MUT,border:`1px solid ${BD}`,cursor:'pointer'}}>
                     {editing===r.id?'Close':'Edit'}
+                  </button>
+                  <button onClick={()=>deleteResponder(r.id, r.full_name)}
+                    style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
+                      padding:'4px 10px',background:'#5A0A1A',color:'#fff',
+                      border:'none',cursor:'pointer'}}>
+                    🗑 Delete
                   </button>
                 </div>
               </div>
