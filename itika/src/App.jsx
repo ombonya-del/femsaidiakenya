@@ -282,7 +282,7 @@ async function subscribeToPush(responder) {
     let sub = await reg.pushManager.getSubscription()
     if (!sub) {
 
-    const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY || 'BOcENhE48dHNQuPWaxsV1rvT_vH7HwRAO6u_CThCP1068nWP5MvDYwQeI43yhEnq6x7SgdpR4mxXqTwPXfYPau0'
+    const vapidKey = 'BOcENhE48dHNQuPWaxsV1rvT_vH7HwRAO6u_CThCP1068nWP5MvDYwQeI43yhEnq6x7SgdpR4mxXqTwPXfYPau0'
     if (!vapidKey) return
 
     console.log('Subscribing with VAPID key:', vapidKey?.slice(0,20))
