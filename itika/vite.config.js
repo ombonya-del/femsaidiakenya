@@ -6,6 +6,10 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'public',
+      filename: 'sw.js',
+      injectManifest: { injectionPoint: undefined },
       registerType: 'autoUpdate',
       manifest: {
         id: 'itika-responder-network',
