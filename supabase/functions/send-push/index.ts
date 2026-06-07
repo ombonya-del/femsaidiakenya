@@ -35,8 +35,8 @@ serve(async (req) => {
   if (req.method==="OPTIONS") return new Response("ok",{headers:corsHeaders})
   try {
     const {county,group,title,body,data} = await req.json()
-    const pubKey  = Deno.env.get("VAPID_PUBLIC_KEY") || Deno.env.get("VITE_VAPID_PUBLIC_KEY") || ""
-    const privKey = Deno.env.get("VAPID_PRIVATE_KEY") || Deno.env.get("VITE_VAPID_PRIVATE_KEY") || ""
+    const pubKey  = Deno.env.get("VAPID_PUBLIC_KEY") || ""
+    const privKey = Deno.env.get("VAPID_PRIVATE_KEY") || ""
     const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!)
     let q = sb.from("push_subscriptions").select("*")
     if (county && county!=="all") q = q.eq("county",county)
