@@ -352,18 +352,6 @@ function CrisisCounter() {
       )}
           <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:8, fontWeight:700,
             letterSpacing:'.15em', color:'#8A1030', marginBottom:8 }}>
-            MISOGYNY OF THE DAY · {motd.platform || 'X'}
-          </p>
-          <p style={{ fontFamily:"'Lora',serif", fontSize:12, fontStyle:'italic',
-            color:'#F0D0D8', lineHeight:1.7, marginBottom:8 }}>
-            "{(motd.content || '').slice(0, 160)}{motd.content?.length > 160 ? '...' : ''}"
-          </p>
-          {motd.context && (
-            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
-              color:'rgba(240,208,216,0.6)', lineHeight:1.6 }}>
-              {motd.context.slice(0, 100)}...
-            </p>
-          )}
         </div>
       )}
     </div>
