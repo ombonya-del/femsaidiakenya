@@ -280,7 +280,7 @@ function CrisisCounter() {
             transition:'width 1s linear' }}/>
         </div>
         <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
-          color:'rgba(240,208,216,0.4)', marginTop:6 }}>
+          color:'#FFFFFF', marginTop:6 }}>
           A woman is killed every 47 hours in Kenya.
           This counter resets when the cycle completes.
         </p>
