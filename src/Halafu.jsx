@@ -262,7 +262,7 @@ function CrisisCounter() {
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:2, minWidth:220 }}>
       {/* 47-hour counter */}
-      <div style={{ background:'#180410', border:`1px solid rgba(138,16,48,0.3)`,
+      <div style={{ background:'#1E2D40', border:`1px solid rgba(138,16,48,0.3)`,
         padding:'20px 18px' }}>
         <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:8, fontWeight:700,
           letterSpacing:'.2em', color:'rgba(138,16,48,0.7)', marginBottom:10 }}>
@@ -468,7 +468,7 @@ Projects span: research (misogyny pipeline, economics of violence, intergenerati
   ]
 
   return (
-    <div style={{ background:'#0D0814', border:`1px solid rgba(138,16,48,0.4)`,
+    <div style={{ background:'#1A2535', border:`1px solid rgba(138,16,48,0.35)`,
       borderLeft:`4px solid #8A1030`, marginBottom:2 }}>
 
       {/* Header */}
@@ -709,7 +709,7 @@ function FundModal({ project, onClose }) {
                 style={{ background:'none', border:'none', cursor:'pointer', color:MUT, fontSize:18, lineHeight:1 }}>×</button>
             </div>
             <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT, lineHeight:1.7, marginBottom:20,
-              background:'#180410', padding:'12px 14px', borderLeft:`3px solid ${A}`, color:'#B89AAA' }}>
+              background:'#1E2D40', padding:'12px 14px', borderLeft:`3px solid ${A}`, color:'#B89AAA' }}>
               You are coming to us. That is how this should work. Tell us who you are and we will build the conversation from there — no 50-page application required.
             </p>
             {error && <p style={{ fontSize:12, color:A, marginBottom:10, fontFamily:"'Nunito Sans',sans-serif" }}>{error}</p>}
@@ -856,7 +856,7 @@ function ProjectCard({ p, isMobile }) {
             <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
               {/* Fund this project */}
               <button onClick={() => setFundOpen(true)}
-                style={{ display:'inline-flex', alignItems:'center', gap:8, background:'#180410',
+                style={{ display:'inline-flex', alignItems:'center', gap:8, background:'#1E2D40',
                   color:'#D4B0B8', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700,
                   padding:'10px 18px', border:`1px solid #3A1830`, cursor:'pointer', letterSpacing:'.04em' }}>
                 💰 Fund this project
@@ -879,7 +879,7 @@ function ProjectCard({ p, isMobile }) {
                   </button>
                 </>
               ) : (
-                <div style={{ width:'100%', background:'#180410', border:`1px solid #3A1830`, padding:16 }}>
+                <div style={{ width:'100%', background:'#1E2D40', border:`1px solid #3A1830`, padding:16 }}>
                   <p style={{ fontSize:12, color:'#D4B0B8', fontFamily:"'Nunito Sans',sans-serif", fontWeight:700, marginBottom:4 }}>
                     {joinType === 'individual' ? '👤 Joining as an individual' : '🏢 Joining as an organisation'}
                   </p>
@@ -938,7 +938,7 @@ export default function HalaFuTab({ isMobile }) {
         <h1 className="serif" style={{ fontSize:isMobile?28:36, fontWeight:700, color:TXT }}>
           Halafu<span style={{ color:A }}>?</span>
         </h1>
-        <div style={{ marginTop:12, background:'#180410', padding:'16px 20px', borderLeft:`4px solid ${A}` }}>
+        <div style={{ marginTop:12, background:'#1E2D40', padding:'16px 20px', borderLeft:`4px solid ${A}` }}>
           <p style={{ fontFamily:"'Lora',serif", fontSize:isMobile?13:15, color:'#D4B0B8', lineHeight:1.8, fontStyle:'italic' }}>
             "Too much admiration of the pink elephant and very little slaying of the dragon."
           </p>
@@ -949,7 +949,7 @@ export default function HalaFuTab({ isMobile }) {
       </div>
 
       {/* Donor magnet strip */}
-      <div style={{ background:'#180410', border:`1px solid #3A1830`, padding: isMobile?'16px 14px':'20px 24px',
+      <div style={{ background:'#1E2D40', border:`1px solid #3A1830`, padding: isMobile?'16px 14px':'20px 24px',
         marginBottom:2, display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
         <div>
           <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, letterSpacing:'.1em',
@@ -1079,7 +1079,7 @@ export default function HalaFuTab({ isMobile }) {
       </div>
 
       {/* Submit */}
-      <div style={{ marginTop:16, background:'#180410', border:`1px solid #3A1830`,
+      <div style={{ marginTop:16, background:'#1E2D40', border:`1px solid #3A1830`,
         padding:isMobile?'20px 16px':'24px 28px' }}>
         <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
           letterSpacing:'.12em', textTransform:'uppercase', color:A, marginBottom:8 }}>
