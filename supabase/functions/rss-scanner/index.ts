@@ -5,6 +5,20 @@ const SUPABASE_URL     = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 const supabase         = createClient(SUPABASE_URL, SUPABASE_SERVICE)
 
+// Strip HTML tags and decode common entities
+function stripHtml(str: string): string {
+  return (str || '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .trim()
+}
+
+
 // ── FEEDS ─────────────────────────────────────────────────────────────────────
 const FEEDS = [
   // Core Kenya femicide/GBV — Google News (most reliable)
