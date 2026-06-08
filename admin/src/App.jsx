@@ -2481,7 +2481,10 @@ function RespondersTab() {
 
   const deleteResponder = async (id, name) => {
     if (!window.confirm(`Delete ${name} permanently? This cannot be undone.`)) return
-    // Delete push subscription first (foreign key)
+    // Delete all related records first (foreign keys)
+    await supabase.from('push_subscriptions').delete().eq('responder_id', id)
+    await supabase.from('responder_responses').delete().eq('responder_id', id)
+    await supabase.from('responder_alerts').delete().eq('responder_id', id)
     await supabase.from('push_subscriptions').delete().eq('responder_id', id)
     const { error } = await supabase.from('responders').delete().eq('id', id)
     if (error) { alert('Delete failed: ' + error.message); return }
