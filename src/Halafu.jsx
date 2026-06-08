@@ -265,7 +265,7 @@ function CrisisCounter() {
       <div style={{ background:'#1E2D40', border:`1px solid rgba(138,16,48,0.3)`,
         padding:'20px 18px' }}>
         <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:8, fontWeight:700,
-          letterSpacing:'.2em', color:'#D4607A', marginBottom:10 }}>
+          letterSpacing:'.2em', color:'#C05010', marginBottom:10 }}>
           TIME SINCE LAST FEMICIDE (AVG)
         </p>
         <div style={{ fontFamily:'monospace', fontSize:36, fontWeight:700,
