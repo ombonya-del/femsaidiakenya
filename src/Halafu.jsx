@@ -295,12 +295,12 @@ function CrisisCounter() {
             MISOGYNY OF THE DAY · {motd.platform || 'X'}
           </p>
           <p style={{ fontFamily:"'Lora',serif", fontSize:12, fontStyle:'italic',
-            color:'rgba(240,208,216,0.8)', lineHeight:1.7, marginBottom:8 }}>
+            color:'#F0D0D8', lineHeight:1.7, marginBottom:8 }}>
             "{(motd.content || '').slice(0, 160)}{motd.content?.length > 160 ? '...' : ''}"
           </p>
           {motd.context && (
             <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
-              color:'rgba(240,208,216,0.5)', lineHeight:1.6 }}>
+              color:'rgba(240,208,216,0.6)', lineHeight:1.6 }}>
               {motd.context.slice(0, 100)}...
             </p>
           )}
