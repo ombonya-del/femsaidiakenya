@@ -250,7 +250,7 @@ function CrisisCounter() {
       .eq('active', true)
       .order('highlight_date', { ascending:false })
       .limit(1)
-      .then(({ data }) => setMotd(data?.[0] || null))
+      .then(({ data }) => { console.log('MOTD fetch:', data); setMotd(data?.[0] || null) })
   }, [])
 
   const hrs  = Math.floor(elapsed / 3600)
