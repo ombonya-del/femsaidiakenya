@@ -763,7 +763,7 @@ export default function App() {
   return (
     <>
       {screen==='login'     && <LoginScreen onLogin={handleLogin} onRegister={()=>setScreen('register')}/>}
-      {screen==='register'  && <RegisterScreen onDone={handleLogin}/>}
+      {screen==='register'  && <RegisterScreen onDone={() => setScreen('login')}/>}
       {screen==='dashboard' && responder && <Dashboard responder={responder} onLogout={handleLogout}/>}
     </>
   )
