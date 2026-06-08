@@ -288,7 +288,7 @@ function CrisisCounter() {
 
       {/* Latest MOTD */}
       {motd && (
-        <div style={{ background:'rgba(138,16,48,0.08)',
+        <div style={{ background:'#1A0510', border:'2px solid #8A1030', padding:'16px 18px' }}>
           border:`1px solid rgba(138,16,48,0.2)`, padding:'16px 18px' }}>
           <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:8, fontWeight:700,
             letterSpacing:'.15em', color:'#8A1030', marginBottom:8 }}>
