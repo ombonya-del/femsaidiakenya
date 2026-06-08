@@ -906,7 +906,7 @@ export default function HalaFuTab({ isMobile }) {
 
       {/* Donor magnet strip */}
       <div style={{ background:'#180410', border:`1px solid #3A1830`, padding: isMobile?'16px 14px':'20px 24px',
-        marginBottom:2, display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
+        marginBottom:2, display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
         <div>
           <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, letterSpacing:'.1em',
             textTransform:'uppercase', color:A, marginBottom:6 }}>● Are you a funder? These projects need you.</p>
@@ -935,7 +935,7 @@ export default function HalaFuTab({ isMobile }) {
 
       {/* Intel Brief strip */}
       <div style={{ background:'#EDE0E8', border:`1px solid #D4BEC4`, padding:'16px 20px', marginBottom:2,
-        display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
+        display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
         <div>
           <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
             letterSpacing:'.12em', textTransform:'uppercase', color:'#7A4A60', marginBottom:4 }}>
