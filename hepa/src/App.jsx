@@ -268,6 +268,19 @@ function PanicScreen({ contacts, onDismiss }) {
             status:       'active',
           }),
         }).catch(() => {})
+
+        // Notify Itika responders
+        fetch('https://uuluuhltphgwfblcghlp.supabase.co/functions/v1/send-push', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bHV1aGx0cGhnd2ZibGNnaGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MjI2NDAsImV4cCI6MjA5MzQ5ODY0MH0.KU_wtm0NVUz8vrMqgozPvTlmiCIf_yXP8Z3Gpmh599E'
+          },
+          body: JSON.stringify({
+            title: 'EMERGENCY ALERT - Itika',
+            body: 'A woman has triggered a hepa panic alert. Open Itika NOW to respond.'
+          })
+        }).catch(() => {})
       },
       () => {
         setLocation(null)
@@ -288,6 +301,19 @@ function PanicScreen({ contacts, onDismiss }) {
             details:      'hepa panic triggered. GPS unavailable.',
             status:       'active',
           }),
+        }).catch(() => {})
+
+        // Notify Itika responders
+        fetch('https://uuluuhltphgwfblcghlp.supabase.co/functions/v1/send-push', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bHV1aGx0cGhnd2ZibGNnaGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MjI2NDAsImV4cCI6MjA5MzQ5ODY0MH0.KU_wtm0NVUz8vrMqgozPvTlmiCIf_yXP8Z3Gpmh599E'
+          },
+          body: JSON.stringify({
+            title: 'EMERGENCY ALERT - Itika',
+            body: 'A woman has triggered a hepa panic alert. Open Itika NOW to respond.'
+          })
         }).catch(() => {})
       },
       { timeout: 8000, enableHighAccuracy: true }
@@ -321,6 +347,19 @@ function PanicScreen({ contacts, onDismiss }) {
           status:       'active',
         }),
       })
+
+        // Notify Itika responders
+        fetch('https://uuluuhltphgwfblcghlp.supabase.co/functions/v1/send-push', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bHV1aGx0cGhnd2ZibGNnaGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MjI2NDAsImV4cCI6MjA5MzQ5ODY0MH0.KU_wtm0NVUz8vrMqgozPvTlmiCIf_yXP8Z3Gpmh599E'
+          },
+          body: JSON.stringify({
+            title: 'EMERGENCY ALERT - Itika',
+            body: 'A woman has triggered a hepa panic alert. Open Itika NOW to respond.'
+          })
+        }).catch(() => {})
     } catch(e) { /* silent fail — never block the alert */ }
     // 2. Open WhatsApp AFTER Supabase insert completes
     if (contacts.length > 0) {
@@ -417,6 +456,19 @@ function CheckInScreen({ contacts, onBack }) {
         source:       'hepa',
       }),
     }).catch(() => {})
+
+        // Notify Itika responders
+        fetch('https://uuluuhltphgwfblcghlp.supabase.co/functions/v1/send-push', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bHV1aGx0cGhnd2ZibGNnaGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MjI2NDAsImV4cCI6MjA5MzQ5ODY0MH0.KU_wtm0NVUz8vrMqgozPvTlmiCIf_yXP8Z3Gpmh599E'
+          },
+          body: JSON.stringify({
+            title: 'EMERGENCY ALERT - Itika',
+            body: 'A woman has triggered a hepa panic alert. Open Itika NOW to respond.'
+          })
+        }).catch(() => {})
 
     // 2. Send WhatsApp (with location link)
     window.open(`https://wa.me/${intlPhone}?text=${encodeURIComponent(msg)}`, '_blank')
