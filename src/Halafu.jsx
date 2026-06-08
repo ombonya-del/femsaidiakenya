@@ -350,6 +350,7 @@ function CrisisCounter() {
           </div>
         </div>
       )}
+    </div>
   )
 }
 
