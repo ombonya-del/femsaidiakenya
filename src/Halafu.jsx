@@ -288,8 +288,68 @@ function CrisisCounter() {
 
       {/* Latest MOTD */}
       {motd && (
-        <div style={{ background:'#1A0510', border:'2px solid #8A1030', padding:'16px 18px' }}>
-          border:`1px solid rgba(138,16,48,0.2)`, padding:'16px 18px' }}>
+        <div style={{ background:'#F9F0F4', border:'2px solid #8A1030', padding:'18px 20px', marginTop:2 }}>
+          {/* Header */}
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:800,
+              letterSpacing:'.18em', color:'#8A1030', textTransform:'uppercase' }}>
+              ⚠ Misogyny of the Day · {motd.platform || 'X'}
+            </p>
+            {motd.misogyny_score && (
+              <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:800,
+                background:'#8A1030', color:'#fff', padding:'2px 8px' }}>
+                Score {motd.misogyny_score}/10
+              </span>
+            )}
+          </div>
+
+          {/* Handle */}
+          {motd.handle && (
+            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+              color:'#5A1828', marginBottom:6 }}>
+              {motd.handle}
+            </p>
+          )}
+
+          {/* Quote */}
+          <p style={{ fontFamily:"'Lora',serif", fontSize:13, fontStyle:'italic',
+            color:'#2A0812', lineHeight:1.75, marginBottom:10,
+            borderLeft:'3px solid #8A1030', paddingLeft:10 }}>
+            "{motd.content || ''}"
+          </p>
+
+          {/* Context — the pipeline explanation */}
+          {motd.context && (
+            <div style={{ background:'rgba(138,16,48,0.06)', padding:'10px 12px', marginBottom:10 }}>
+              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:800,
+                letterSpacing:'.12em', color:'#8A1030', marginBottom:4, textTransform:'uppercase' }}>
+                Why this matters
+              </p>
+              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                color:'#3A1020', lineHeight:1.7 }}>
+                {motd.context}
+              </p>
+            </div>
+          )}
+
+          {/* Reach + Source */}
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:6 }}>
+            {motd.reach && (
+              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
+                color:'#7A3050', fontWeight:600 }}>
+                📢 Reach: {motd.reach}
+              </p>
+            )}
+            {motd.source_url && (
+              <a href={motd.source_url} target="_blank" rel="noopener noreferrer"
+                style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
+                  color:'#8A1030', fontWeight:700, textDecoration:'none' }}>
+                View post →
+              </a>
+            )}
+          </div>
+        </div>
+      )}
           <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:8, fontWeight:700,
             letterSpacing:'.15em', color:'#8A1030', marginBottom:8 }}>
             MISOGYNY OF THE DAY · {motd.platform || 'X'}
