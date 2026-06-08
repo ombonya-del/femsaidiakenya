@@ -683,7 +683,7 @@ export default function App() {
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
           <span style={{ fontFamily:"'Lora',serif", fontSize:20, fontWeight:700, cursor:'pointer' }}
             onClick={()=>setActiveTab('intel')}>
-            <span style={{ color:TXT }}>Sa</span><span style={{ color:RED }}><span style={{ position:'relative', display:'inline-block' }}>I<span style={{ position:'absolute', top:'-0.04em', left:'50%', transform:'translateX(-50%)', width:'0.18em', height:'0.18em', borderRadius:'50%', background:'#FFFFFF', display:'block' }}/></span>nt</span>
+            <span style={{ color:TXT }}>Sa</span><span style={{ color:RED }}><span style={{ position:'relative', display:'inline-block' }}>I<span style={{ position:'absolute', top:'0em', left:'50%', transform:'translateX(-50%)', width:'0.18em', height:'0.18em', borderRadius:'50%', background:'#FFFFFF', display:'block' }}/></span>nt</span>
           </span>
           <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:8,
             fontWeight:700, letterSpacing:'.2em', color:MUT,
@@ -943,7 +943,7 @@ export default function App() {
           alignItems:'center', flexWrap:'wrap', gap:16 }}>
           <div>
             <p style={{ fontFamily:"'Lora',serif", fontSize:18, fontWeight:700, marginBottom:4 }}>
-              <span style={{ color:TXT }}>Sa</span><span style={{ color:RED }}><span style={{ position:'relative', display:'inline-block' }}>I<span style={{ position:'absolute', top:'-0.04em', left:'50%', transform:'translateX(-50%)', width:'0.18em', height:'0.18em', borderRadius:'50%', background:'#FFFFFF', display:'block' }}/></span>nt</span>
+              <span style={{ color:TXT }}>Sa</span><span style={{ color:RED }}><span style={{ position:'relative', display:'inline-block' }}>I<span style={{ position:'absolute', top:'0em', left:'50%', transform:'translateX(-50%)', width:'0.18em', height:'0.18em', borderRadius:'50%', background:'#FFFFFF', display:'block' }}/></span>nt</span>
               <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
                 color:MUT, marginLeft:8, fontWeight:400 }}>· Saidia Intelligence</span>
             </p>
