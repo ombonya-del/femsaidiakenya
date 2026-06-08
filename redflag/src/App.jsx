@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@supabase/supabase-js'
 
 const sb = createClient(
@@ -154,62 +154,134 @@ const ECOSYSTEM = [
     actions:['Say hello. Consistent human contact makes isolation harder.','If she asks you to say she is not home to someone — do it. She has a reason.','You can knock and ask if everything is okay. You do not need a formal reason.','Know who lives in your building. Notice when someone stops being visible.','If genuinely worried, you can call for a wellness check without her knowing.']},
 ]
 
-// ── ITIKA SOS BUTTON ─────────────────────────────────────────────────────────
+// ── FLOATING SOS BUTTON (long press) ─────────────────────────────────────────
 function ItikaSOSButton() {
-  const [sent,    setSent]    = useState(false)
-  const [sending, setSending] = useState(false)
+  const [sent,     setSent]     = useState(false)
+  const [pressing, setPressing] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const timerRef   = useRef(null)
+  const intervalRef = useRef(null)
+  const HOLD_MS = 2000
 
-  const fireAlert = async () => {
-    setSending(true)
-    // Get GPS if available
-    let lat = null, lng = null
-    try {
-      const pos = await new Promise((res,rej) =>
-        navigator.geolocation?.getCurrentPosition(res, rej, {timeout:4000})
-      )
-      lat = pos.coords.latitude
-      lng = pos.coords.longitude
-    } catch(e) {}
-
-    try {
-      await fetch('https://uuluuhltphgwfblcghlp.supabase.co/rest/v1/responder_alerts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bHV1aGx0cGhnd2ZibGNnaGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MjI2NDAsImV4cCI6MjA5MzQ5ODY0MH0.KU_wtm0NVUz8vrMqgozPvTlmiCIf_yXP8Z3Gpmh599E',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bHV1aGx0cGhnd2ZibGNnaGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MjI2NDAsImV4cCI6MjA5MzQ5ODY0MH0.KU_wtm0NVUz8vrMqgozPvTlmiCIf_yXP8Z3Gpmh599E',
-          'Prefer': 'return=minimal',
-        },
-        body: JSON.stringify({
-          alert_type:   'redflag_sos',
-          county:       localStorage.getItem('redflag_county')||'Unknown',
-          location_lat: lat,
-          location_lng: lng,
-          details:      'Red Flag PWA SOS triggered.' + (lat ? ` GPS: ${lat},${lng}` : ' No GPS available.'),
-          status:       'active',
-        }),
-      })
+  const startPress = () => {
+    if (sent) return
+    setPressing(true)
+    setProgress(0)
+    const start = Date.now()
+    intervalRef.current = setInterval(() => {
+      const pct = Math.min(((Date.now() - start) / HOLD_MS) * 100, 100)
+      setProgress(pct)
+    }, 30)
+    timerRef.current = setTimeout(async () => {
+      clearInterval(intervalRef.current)
+      setProgress(100)
+      // Get GPS
+      let lat = null, lng = null
+      try {
+        const pos = await new Promise((res,rej) =>
+          navigator.geolocation?.getCurrentPosition(res, rej, {timeout:4000})
+        )
+        lat = pos.coords.latitude; lng = pos.coords.longitude
+      } catch(e) {}
+      // Insert responder alert
+      try {
+        await fetch('https://uuluuhltphgwfblcghlp.supabase.co/rest/v1/responder_alerts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bHV1aGx0cGhnd2ZibGNnaGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MjI2NDAsImV4cCI6MjA5MzQ5ODY0MH0.KU_wtm0NVUz8vrMqgozPvTlmiCIf_yXP8Z3Gpmh599E',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bHV1aGx0cGhnd2ZibGNnaGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MjI2NDAsImV4cCI6MjA5MzQ5ODY0MH0.KU_wtm0NVUz8vrMqgozPvTlmiCIf_yXP8Z3Gpmh599E',
+            'Prefer': 'return=minimal',
+          },
+          body: JSON.stringify({
+            alert_type:   'redflag_sos',
+            county:       localStorage.getItem('redflag_county') || 'Unknown',
+            location_lat: lat, location_lng: lng,
+            details:      'RedFlag SOS triggered.' + (lat ? ' GPS: ' + lat + ',' + lng : ' No GPS.'),
+            status:       'active',
+          }),
+        })
+        // Notify Itika responders
+        fetch('https://uuluuhltphgwfblcghlp.supabase.co/functions/v1/send-push', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bHV1aGx0cGhnd2ZibGNnaGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MjI2NDAsImV4cCI6MjA5MzQ5ODY0MH0.KU_wtm0NVUz8vrMqgozPvTlmiCIf_yXP8Z3Gpmh599E',
+          },
+          body: JSON.stringify({
+            title: 'EMERGENCY ALERT - Itika',
+            body:  'A woman has triggered a RedFlag SOS. Open Itika NOW to respond.',
+          }),
+        }).catch(() => {})
+      } catch(e) {}
       setSent(true)
-    } catch(e) {
-      setSent(true) // show confirmation regardless — never leave user hanging
-    }
-    setSending(false)
+      setPressing(false)
+    }, HOLD_MS)
   }
 
-  if (sent) return (
-    <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
-      padding:'5px 10px',background:'#1A5A2A',color:'#fff'}}>
-      ✓ Responders notified
-    </span>
-  )
+  const cancelPress = () => {
+    clearTimeout(timerRef.current)
+    clearInterval(intervalRef.current)
+    setPressing(false)
+    setProgress(0)
+  }
+
+  // Floating button — always visible
+  const SIZE = 56
+  const R = (SIZE / 2) - 4
+  const CIRC = 2 * Math.PI * R
+  const dash = (progress / 100) * CIRC
 
   return (
-    <button onClick={fireAlert} disabled={sending}
-      style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
-        padding:'5px 10px',background:sending?'#5A0010':RED,color:'#fff',
-        border:'none',cursor:'pointer'}}>
-      {sending ? '...' : '🆘 I need help now'}
-    </button>
+    <div style={{
+      position: 'fixed', bottom: 24, right: 20, zIndex: 999,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+    }}>
+      {sent && (
+        <div style={{
+          background: '#1A5A2A', color: '#fff', padding: '4px 10px',
+          fontFamily: "'Nunito Sans',sans-serif", fontSize: 10, fontWeight: 700,
+          marginBottom: 4, textAlign: 'center', maxWidth: 80,
+        }}>✓ Sent</div>
+      )}
+      <div
+        onMouseDown={startPress} onTouchStart={startPress}
+        onMouseUp={cancelPress} onMouseLeave={cancelPress}
+        onTouchEnd={cancelPress} onTouchCancel={cancelPress}
+        style={{ position: 'relative', width: SIZE, height: SIZE, cursor: 'pointer', userSelect: 'none' }}
+      >
+        {/* Progress ring */}
+        <svg width={SIZE} height={SIZE} style={{ position: 'absolute', top: 0, left: 0, transform: 'rotate(-90deg)' }}>
+          <circle cx={SIZE/2} cy={SIZE/2} r={R} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={3}/>
+          <circle cx={SIZE/2} cy={SIZE/2} r={R} fill="none"
+            stroke={sent ? '#2A9A5A' : '#FF4040'}
+            strokeWidth={3}
+            strokeDasharray={CIRC}
+            strokeDashoffset={CIRC - dash}
+            style={{ transition: pressing ? 'none' : 'stroke-dashoffset 0.2s' }}
+          />
+        </svg>
+        {/* Button face */}
+        <div style={{
+          position: 'absolute', top: 4, left: 4,
+          width: SIZE - 8, height: SIZE - 8,
+          borderRadius: '50%',
+          background: sent ? '#1A5A2A' : pressing ? '#FF2020' : '#CC1010',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 20, transition: 'background 0.15s',
+          boxShadow: pressing ? '0 0 20px rgba(255,40,40,0.7)' : '0 2px 12px rgba(204,16,16,0.5)',
+        }}>
+          {sent ? '✓' : '🆘'}
+        </div>
+      </div>
+      <p style={{
+        fontFamily: "'Nunito Sans',sans-serif", fontSize: 8, fontWeight: 700,
+        color: 'rgba(255,255,255,0.6)', textAlign: 'center', margin: 0,
+        letterSpacing: '.08em',
+      }}>
+        {sent ? 'SENT' : pressing ? 'HOLD...' : 'HOLD SOS'}
+      </p>
+    </div>
   )
 }
 
