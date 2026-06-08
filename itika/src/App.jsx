@@ -285,7 +285,6 @@ async function subscribeToPush(responder) {
     const vapidKey = 'BOcENhE48dHNQuPWaxsV1rvT_vH7HwRAO6u_CThCP1068nWP5MvDYwQeI43yhEnq6x7SgdpR4mxXqTwPXfYPau0'
     if (!vapidKey) return
 
-    console.log('Subscribing with VAPID key:', vapidKey?.slice(0,20))
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: vapidKey,
@@ -304,7 +303,6 @@ async function subscribeToPush(responder) {
     }, { onConflict: 'endpoint' })
     if (upsertErr) throw new Error('Upsert failed: ' + upsertErr.message)
   } catch(e) {
-    console.log('Push subscription failed:', e)
   }
 }
 
@@ -744,7 +742,6 @@ export default function App() {
             setResponder(data)
             setScreen('dashboard')
             if ('Notification' in window && Notification.permission === 'granted') {
-              subscribeToPush(data).catch(e => console.log('sub error:', e))
             }
           })
       } catch(e) {}
