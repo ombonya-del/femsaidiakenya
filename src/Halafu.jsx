@@ -350,11 +350,6 @@ function CrisisCounter() {
           </div>
         </div>
       )}
-          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:8, fontWeight:700,
-            letterSpacing:'.15em', color:'#8A1030', marginBottom:8 }}>
-        </div>
-      )}
-    </div>
   )
 }
 
