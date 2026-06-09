@@ -466,7 +466,7 @@ function CheckInScreen({ contacts, onBack }) {
           },
           body: JSON.stringify({
             title: 'EMERGENCY ALERT - Itika',
-            body: 'A woman's check-in timer has expired — she may be in danger. Open Itika NOW to respond.'
+            body: 'A woman check-in timer has expired — she may be in danger. Open Itika NOW to respond.'
           })
         }).catch(() => {})
 
