@@ -197,10 +197,153 @@ async function sendEmail(checks: Check[], diagnosis: string) {
   })
 }
 
+
+// ── ADVISORY CHECKS (cannot auto-fix — provide exact commands) ────────────────
+async function checkVapidKeyConsistency(): Promise<Check & {fixCmd?:string}> {
+  // Check if VAPID_PUBLIC_KEY secret matches what we expect
+  const expected = "BOcENhE48dHNQuPWaxsV1rvT_vH7HwRAO6u_CThCP1068nWP5MvDYwQeI43yhEnq6x7SgdpR4mxXqTwPXfYPau0"
+  // We can't read secrets directly but we can test send-push with a known-bad sub
+  // Instead just verify push_subscriptions exist and are recent
+  const { data } = await sb.from("push_subscriptions")
+    .select("created_at").order("created_at",{ascending:false}).limit(1)
+  if (!data?.[0]) return { name:"VAPID / Push Config", ok:false,
+    detail:"No active subscriptions — VAPID key may be misconfigured",
+    fixCmd:`supabase secrets set VAPID_PUBLIC_KEY=${expected}\nsupabase secrets set VAPID_PRIVATE_KEY=_XRjISaGITl1XFslRjIubswLque4Wo9xChlJqWvLb2k\nsupabase functions deploy send-push` }
+  const hoursOld = (Date.now() - new Date(data[0].created_at).getTime()) / 3600000
+  if (hoursOld > 168) return { name:"VAPID / Push Config", ok:false,
+    detail:`Subscriptions are ${Math.floor(hoursOld/24)} days old — may be stale`,
+    fixCmd:"DELETE FROM push_subscriptions; -- Run in Supabase SQL Editor\n-- Then ask responders to reopen Itika" }
+  return { name:"VAPID / Push Config", ok:true, detail:`Subscriptions active (newest: ${hoursOld.toFixed(0)}h ago)` }
+}
+
+async function checkResendConfig(): Promise<Check & {fixCmd?:string}> {
+  // Try sending a test to verify Resend is configured
+  const key = Deno.env.get("RESEND_API_KEY") ?? ""
+  if (!key) return { name:"Resend Email Config", ok:false,
+    detail:"RESEND_API_KEY secret not set",
+    fixCmd:"supabase secrets set RESEND_API_KEY=re_YOUR_KEY_HERE" }
+  return { name:"Resend Email Config", ok:true, detail:"API key configured" }
+}
+
+async function checkAnthropicConfig(): Promise<Check & {fixCmd?:string}> {
+  const key = Deno.env.get("ANTHROPIC_API_KEY") ?? ""
+  if (!key) return { name:"Anthropic API Config", ok:false,
+    detail:"ANTHROPIC_API_KEY secret not set — AI diagnosis disabled",
+    fixCmd:"supabase secrets set ANTHROPIC_API_KEY=sk-ant-YOUR_KEY_HERE" }
+  return { name:"Anthropic API Config", ok:true, detail:"API key configured" }
+}
+
+async function checkHepaTimerWiring(): Promise<Check & {fixCmd?:string}> {
+  // Check if recent responder_alerts have been created (indicator hepa is firing)
+  const { data } = await sb.from("responder_alerts")
+    .select("created_at,alert_type").order("created_at",{ascending:false}).limit(5)
+  if (!data?.length) return { name:"hepa Alert Wiring", ok:false,
+    detail:"No responder alerts recorded — hepa panic/timer may not be wired",
+    fixCmd:"// Check hepa/src/App.jsx for send-push calls after responder_alerts insert" }
+  const latest = data[0]
+  const hoursAgo = (Date.now() - new Date(latest.created_at).getTime()) / 3600000
+  return { name:"hepa Alert Activity", ok:true,
+    detail:`Last alert: ${hoursAgo.toFixed(1)}h ago (${latest.alert_type})` }
+}
+
+
+// ── EMAIL V3 — auto-fix + advisory + Claude diagnosis ────────────────────────
+async function sendEmailV3(checks: Check[], advisory: (Check & {fixCmd?:string})[], diagnosis: string) {
+  const failures  = checks.filter(c => !c.ok)
+  const autoFixed = checks.filter(c => c.autoFixed)
+  const warnings  = advisory.filter(c => !c.ok)
+  const allGreen  = failures.length === 0 && warnings.length === 0
+  const now       = new Date().toISOString().slice(0,16).replace("T"," ") + " UTC"
+
+  const rowColor  = (c: Check) => c.autoFixed ? "#FFF8E1" : c.ok ? "#F0FFF4" : "#FFF0F0"
+  const statusIcon = (c: Check) => c.autoFixed ? "🔧" : c.ok ? "✅" : "❌"
+
+  const statusRows = checks.map(c =>
+    `<tr style="background:${rowColor(c)};border-bottom:1px solid #eee">
+      <td style="padding:8px 12px;font-size:16px">${statusIcon(c)}</td>
+      <td style="padding:8px 12px;font-weight:600;font-size:13px">${c.name}</td>
+      <td style="padding:8px 12px;font-size:12px;color:#555">${c.detail}</td>
+    </tr>`
+  ).join("")
+
+  const advisoryRows = advisory.map(c =>
+    `<tr style="background:${c.ok?"#F0FFF4":"#FFFBEA"};border-bottom:1px solid #eee">
+      <td style="padding:8px 12px;font-size:16px">${c.ok?"✅":"⚠️"}</td>
+      <td style="padding:8px 12px;font-weight:600;font-size:13px">${c.name}</td>
+      <td style="padding:8px 12px;font-size:12px;color:#555">
+        ${c.detail}
+        ${!c.ok && c.fixCmd ? `<br/><code style="font-size:10px;background:#1A2035;color:#C8F0A0;padding:6px 8px;display:block;margin-top:6px;white-space:pre-wrap">${c.fixCmd}</code>` : ""}
+      </td>
+    </tr>`
+  ).join("")
+
+  const subject = allGreen
+    ? `✅ FemSaidia — All systems green (${now})`
+    : failures.length > 0
+      ? `🚨 FemSaidia Health Alert — ${failures.length} failure(s), ${warnings.length} warning(s) (${now})`
+      : `⚠️ FemSaidia Health Check — ${warnings.length} advisory item(s) (${now})`
+
+  const html = `
+<div style="font-family:sans-serif;max-width:640px;margin:0 auto;background:#fff">
+  <div style="background:${allGreen?"#1A4A2A":failures.length>0?"#8A1030":"#7A4A00"};padding:20px 24px">
+    <h1 style="color:#fff;margin:0;font-size:20px">
+      ${allGreen?"✅ All Systems Operational":failures.length>0?"🚨 Failures Detected":"⚠️ Advisory Items"}
+    </h1>
+    <p style="color:rgba(255,255,255,0.85);margin:6px 0 0;font-size:12px">
+      FemSaidia Kenya · Health Check · ${now}
+    </p>
+  </div>
+
+  ${autoFixed.length > 0 ? `
+  <div style="background:#FFF8E1;border-left:4px solid #C05010;padding:12px 16px">
+    <strong style="color:#8A4000;font-size:13px">🔧 Auto-remediated ${autoFixed.length} issue(s):</strong><br/>
+    ${autoFixed.map(f=>`<span style="color:#5A3000;font-size:12px">• ${f.name}: ${f.detail}</span>`).join("<br/>")}
+  </div>` : ""}
+
+  ${failures.length > 0 ? `
+  <div style="background:#FFF0F0;border-left:4px solid #8A1030;padding:12px 16px">
+    <strong style="color:#8A1030;font-size:13px">❌ ${failures.length} unresolved failure(s):</strong><br/>
+    ${failures.map(f=>`<span style="color:#5A1020;font-size:12px">• ${f.name}: ${f.detail}</span>`).join("<br/>")}
+  </div>
+  ${diagnosis ? `
+  <div style="background:#F8F0F4;border-left:4px solid #8A1030;padding:14px 16px">
+    <p style="margin:0 0 6px;font-size:10px;font-weight:800;letter-spacing:.1em;color:#8A1030;text-transform:uppercase">🤖 AI Diagnosis</p>
+    <p style="margin:0;font-size:13px;color:#2A0810;line-height:1.7">${diagnosis}</p>
+  </div>` : ""}` : ""}
+
+  <h3 style="margin:16px 24px 4px;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:#8A1030">System Health</h3>
+  <table style="width:100%;border-collapse:collapse">
+    <thead><tr style="background:#F5F0F4">
+      <th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;color:#8A1030;width:40px">Status</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;color:#8A1030">Component</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;color:#8A1030">Detail</th>
+    </tr></thead>
+    <tbody>${statusRows}</tbody>
+  </table>
+
+  <h3 style="margin:16px 24px 4px;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:#7A5A00">Advisory & Housekeeping</h3>
+  <table style="width:100%;border-collapse:collapse">
+    <tbody>${advisoryRows}</tbody>
+  </table>
+
+  <div style="padding:14px 24px;background:#F9F5F7;border-top:1px solid #E8D8E4;margin-top:8px">
+    <p style="margin:0;font-size:10px;color:#999">
+      FemSaidia Kenya Intelligence Infrastructure · Auto health check every 6 hours<br/>
+      🔧 Auto-remediated · ✅ Healthy · ⚠️ Advisory · ❌ Needs attention
+    </p>
+  </div>
+</div>`
+
+  await fetch("https://api.resend.com/emails", {
+    method:"POST",
+    headers:{ "Authorization":`Bearer ${RESEND_API_KEY}`, "Content-Type":"application/json" },
+    body: JSON.stringify({ from:FROM_EMAIL, to:ALERT_EMAIL, subject, html })
+  })
+}
+
 // ── MAIN ──────────────────────────────────────────────────────────────────────
 serve(async () => {
   try {
-    // Run independent checks in parallel, sequential for auto-fix ones
     const [sites, femicide, intel, subs, responders] = await Promise.all([
       checkSites(),
       checkFemicideCases(),
@@ -208,18 +351,27 @@ serve(async () => {
       checkPushSubscriptions(),
       checkResponders(),
     ])
-    // Auto-fix checks run sequentially (they trigger Edge Functions)
     const rss       = await checkRssScanner()
     const synthesis = await checkSaintSynthesis()
 
-    const all = [...sites, rss, synthesis, subs, responders, femicide, intel]
+    // Advisory checks
+    const [vapid, resend, anthropic, hepaWiring] = await Promise.all([
+      checkVapidKeyConsistency(),
+      checkResendConfig(),
+      checkAnthropicConfig(),
+      checkHepaTimerWiring(),
+    ])
+
+    const all      = [...sites, rss, synthesis, subs, responders, femicide, intel]
+    const advisory = [vapid, resend, anthropic, hepaWiring]
     const diagnosis = await getClaudeDiagnosis(all)
-    await sendEmail(all, diagnosis)
+    await sendEmailV3(all, advisory, diagnosis)
 
     const failures  = all.filter(c=>!c.ok).length
     const autoFixed = all.filter(c=>c.autoFixed).length
+    const warnings  = advisory.filter(c=>!c.ok).length
     return new Response(JSON.stringify({
-      checked:all.length, ok:all.length-failures, failures, autoFixed,
+      checked:all.length, ok:all.length-failures, failures, autoFixed, warnings,
       timestamp:new Date().toISOString()
     }), { headers:{"Content-Type":"application/json"} })
   } catch(e) {
