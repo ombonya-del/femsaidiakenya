@@ -444,6 +444,15 @@ function Dashboard({ responder, onLogout }) {
             letterSpacing:'.2em',textTransform:'uppercase',color:BGRN,marginBottom:2}}>
             Itika · {responder.county}
           </p>
+          {'Notification' in window && Notification.permission !== 'granted' && (
+            <button onClick={async()=>{
+              const p = await Notification.requestPermission()
+              if(p==='granted') await subscribeToPush(responder).catch(()=>{})
+            }} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,fontWeight:700,
+              background:'#C05010',color:'#fff',border:'none',padding:'3px 8px',cursor:'pointer',marginTop:2}}>
+              🔔 Enable alerts
+            </button>
+          )}
           <h1 style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,color:TXT}}>
             {responder.full_name.split(' ')[0]}
           </h1>
