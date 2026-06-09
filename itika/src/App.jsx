@@ -444,20 +444,20 @@ function Dashboard({ responder, onLogout }) {
             letterSpacing:'.2em',textTransform:'uppercase',color:BGRN,marginBottom:2}}>
             Itika · {responder.county}
           </p>
-          {'Notification' in window && Notification.permission !== 'granted' && (
-            <button onClick={async()=>{
-              const p = await Notification.requestPermission()
-              if(p==='granted'){
-                try{
-                  await subscribeToPush(responder)
-                  alert('✅ Alerts enabled!')
-                }catch(e){alert('❌ Error: '+String(e))}
-              } else { alert('❌ Permission denied: '+p) }
-            }} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,fontWeight:700,
-              background:'#C05010',color:'#fff',border:'none',padding:'3px 8px',cursor:'pointer',marginTop:2}}>
-              🔔 Enable alerts
-            </button>
-          )}
+          <button onClick={async()=>{
+            if(!('Notification' in window)){alert('Push not supported on this browser');return}
+            const p = Notification.permission==='granted'?'granted':await Notification.requestPermission()
+            if(p==='granted'){
+              try{
+                await subscribeToPush(responder)
+                alert('✅ Alerts enabled!')
+              }catch(e){alert('❌ Error: '+String(e))}
+            } else { alert('❌ Permission denied. Enable in Chrome Settings → Site Settings → Notifications → itika.femsaidiakenya.org') }
+          }} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,fontWeight:700,
+            background:Notification.permission==='granted'?'#1A5A2A':'#C05010',
+            color:'#fff',border:'none',padding:'3px 8px',cursor:'pointer',marginTop:2}}>
+            {Notification.permission==='granted'?'🔔 Alerts on':'🔔 Enable alerts'}
+          </button>
           <h1 style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,color:TXT}}>
             {responder.full_name.split(' ')[0]}
           </h1>
