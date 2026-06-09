@@ -447,7 +447,12 @@ function Dashboard({ responder, onLogout }) {
           {'Notification' in window && Notification.permission !== 'granted' && (
             <button onClick={async()=>{
               const p = await Notification.requestPermission()
-              if(p==='granted') await subscribeToPush(responder).catch(()=>{})
+              if(p==='granted'){
+                try{
+                  await subscribeToPush(responder)
+                  alert('✅ Alerts enabled!')
+                }catch(e){alert('❌ Error: '+String(e))}
+              } else { alert('❌ Permission denied: '+p) }
             }} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,fontWeight:700,
               background:'#C05010',color:'#fff',border:'none',padding:'3px 8px',cursor:'pointer',marginTop:2}}>
               🔔 Enable alerts
