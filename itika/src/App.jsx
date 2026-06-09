@@ -419,8 +419,11 @@ function Dashboard({ responder, onLogout }) {
 
   useEffect(() => {
     load()
-    // Request push notification permission
-    // Push subscription handled at login
+    // Subscribe on every Dashboard mount — handles all browser contexts
+    // (Chrome, Chrome Custom Tabs, PWA each need their own subscription)
+    if ('Notification' in window && Notification.permission === 'granted') {
+      subscribeToPush(responder).catch(() => {})
+    }
   }, [])
 
   // Poll for new alerts every 60 seconds
