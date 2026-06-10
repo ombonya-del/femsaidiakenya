@@ -200,7 +200,7 @@ export default function PetitionTab() {
                   {s.county && <span style={{ fontSize:11, color:MUT, marginLeft:6, fontFamily:"'Nunito Sans',sans-serif" }}>· {s.county}</span>}
                 </div>
                 <span style={{ fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>
-                  {new Date(s.created_at).toLocaleDateString('en-KE')}
+                  {new Date(s.created_at).toLocaleDateString(['en-KE','en-GB'])}
                 </span>
               </div>
             ))}

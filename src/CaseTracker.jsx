@@ -266,7 +266,7 @@ export default function CaseTrackerTab() {
               const conf   = STATUS_CONFIG[c.status] || STATUS_CONFIG.reported
               const isOpen = expanded === c.id
               const dateStr = c.incident_date
-                ? new Date(c.incident_date).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})
+                ? new Date(c.incident_date).toLocaleDateString(['en-KE','en-GB'],{day:'numeric',month:'short',year:'numeric'})
                 : 'Date unknown'
 
               return (

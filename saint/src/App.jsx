@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
+import ProjectStories from './ProjectStories'
 
 const sb = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -34,6 +35,19 @@ const PURP  = '#7C3AED'
 const TXT   = '#F0E8F0'
 const MUT   = '#8892B0'
 const BD    = 'rgba(138,16,48,0.25)'
+
+// ── BRAND WORDMARK — Sa in white, Int in red, white dot on the I ─────────────
+const SaIntMark = () => (
+  <span style={{ whiteSpace:'nowrap' }}>
+    <span style={{ color:'#FFFFFF' }}>Sa</span>
+    <span style={{ color:RED }}>
+      <span style={{ position:'relative', display:'inline-block' }}>I
+        <span style={{ position:'absolute', top:'0em', left:'50%', transform:'translateX(-50%)',
+          width:'0.18em', height:'0.18em', borderRadius:'50%', background:'#FFFFFF', display:'block' }}/>
+      </span>nt
+    </span>
+  </span>
+)
 
 // ── PROJECTS (from FemSaidia ThinkTank) ──────────────────────────────────────
 const PROJECTS = [
@@ -262,6 +276,9 @@ function ProjectCard({ p, intel, onFund }) {
               ))}
             </div>
           </div>
+          {/* Real-life stories */}
+          <ProjectStories projectId={p.id} dark/>
+
           <button onClick={()=>{ onFund(p); track('fund_modal_open', { project_id:p.id, project_title:p.title, lane:p.lane }) }}
             style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
               padding:'10px 20px', background:RED, color:TXT,
@@ -544,14 +561,14 @@ function AboutTab() {
   return (
     <div style={{ padding: isMobile ? '24px 16px' : '32px 24px', maxWidth:1100, margin:'0 auto' }}>
       <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
-        letterSpacing:'.2em', color:RED, marginBottom:12 }}>ABOUT SAINT</p>
+        letterSpacing:'.2em', color:RED, marginBottom:12 }}>ABOUT <SaIntMark/></p>
       <h2 style={{ fontFamily:"'Lora',serif", fontSize: isMobile ? 24 : 32,
         fontWeight:700, color:TXT, lineHeight:1.3, marginBottom:16, maxWidth:640 }}>
         Intelligence infrastructure for the crisis that kills a woman every 47 hours in Kenya.
       </h2>
       <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:13, color:MUT,
         lineHeight:1.9, maxWidth:680, marginBottom:32 }}>
-        SaInt is built by FemSaidia Kenya — an independent intelligence and advocacy
+        <SaIntMark/> is built by FemSaidia Kenya — an independent intelligence and advocacy
         organisation tracking femicide, misogyny and gender-based violence in Kenya.
         Our scanner classifies hundreds of articles every day. Our misogyny index
         tracks the gap between media coverage and community response. Our Intel Brief
@@ -575,7 +592,7 @@ function AboutTab() {
             <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
               <span style={{ fontSize:20 }}>{e.icon}</span>
               <span style={{ fontFamily:"'Lora',serif", fontSize:16, fontWeight:700,
-                color:TXT }}>{e.name}</span>
+                color:TXT }}>{e.name === 'SaInt' ? <SaIntMark/> : e.name}</span>
               {e.name === 'SaInt' && (
                 <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:8,
                   padding:'1px 6px', background:`${RED}33`, color:RED,
@@ -666,7 +683,7 @@ export default function App() {
         femicides: cases.count || 0,
         counties:  new Set(c.map(x=>x.county)).size,
         convicted: c.filter(x=>x.status==='convicted').length,
-        lastUpdated: latest.date ? new Date(latest.date).toLocaleDateString('en-KE',{day:'numeric',month:'short'}) : 'today',
+        lastUpdated: latest.date ? new Date(latest.date).toLocaleDateString(['en-KE','en-GB'],{day:'numeric',month:'short'}) : 'today',
       })
     })
   }, [])
@@ -764,7 +781,7 @@ export default function App() {
         </h1>
         <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:16, color:MUT,
           lineHeight:1.9, maxWidth:640, margin:'0 auto 28px' }}>
-          SaInt is the intelligence infrastructure behind 10 specific, fundable,
+          <SaIntMark/> is the intelligence infrastructure behind 10 specific, fundable,
           executable projects that interrupt the pipeline from misogyny to murder.
           This is not another awareness campaign. This is architecture.
         </p>

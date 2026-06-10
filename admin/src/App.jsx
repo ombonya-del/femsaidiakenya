@@ -244,7 +244,7 @@ function SubmissionsTab() {
               <div style={{ fontFamily:"'Lora',serif", fontSize:16, fontWeight:700, color:TXT }}>{sub.name}</div>
               <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT, marginTop:3 }}>
                 {sub.county && `${sub.county} · `}
-                {sub.created_at && new Date(sub.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}
+                {sub.created_at && new Date(sub.created_at).toLocaleDateString(['en-KE','en-GB'],{day:'numeric',month:'short',year:'numeric'})}
               </div>
             </div>
             <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
@@ -463,7 +463,7 @@ function LindaLindaTab() {
             <div style={{ flex:1 }}>
               <div style={{ fontFamily:"'Lora',serif", fontSize:15, fontWeight:700, color:TXT, marginBottom:4 }}>{norm.title}</div>
               <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT }}>
-                {norm.submitted_by||'Anonymous'} · {norm.context||'General'} · {norm.created_at&&new Date(norm.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}
+                {norm.submitted_by||'Anonymous'} · {norm.context||'General'} · {norm.created_at&&new Date(norm.created_at).toLocaleDateString(['en-KE','en-GB'],{day:'numeric',month:'short',year:'numeric'})}
               </div>
             </div>
             <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
@@ -906,7 +906,7 @@ function MemorialTab() {
               <div>
                 <div style={{ fontFamily:"'Lora',serif", fontSize:14, fontWeight:700, color:TXT }}>{item.victim_name}</div>
                 <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT }}>
-                  {item.county}{item.age?` · ${item.age}`:''}{item.incident_date?` · ${new Date(item.incident_date).toLocaleDateString('en-KE',{month:'short',year:'numeric'})}`:''}</div>
+                  {item.county}{item.age?` · ${item.age}`:''}{item.incident_date?` · ${new Date(item.incident_date).toLocaleDateString(['en-KE','en-GB'],{month:'short',year:'numeric'})}`:''}</div>
               </div>
               <button onClick={()=>toggle(item.id,item.active)}
                 style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
@@ -1084,7 +1084,7 @@ function CasesTab() {
                 <tr key={c.id} style={{ background:c.published?'#fff':'rgba(180,150,160,0.2)', borderBottom:`1px solid ${BD}` }}>
                   <td style={{ padding:'8px 12px', fontWeight:700 }}>{c.victim_name||'Unknown'}</td>
                   <td style={{ padding:'8px 12px' }}>{c.county}</td>
-                  <td style={{ padding:'8px 12px', color:MUT, fontSize:11 }}>{c.incident_date?new Date(c.incident_date).toLocaleDateString('en-KE'):'-'}</td>
+                  <td style={{ padding:'8px 12px', color:MUT, fontSize:11 }}>{c.incident_date?new Date(c.incident_date).toLocaleDateString(['en-KE','en-GB']):'-'}</td>
                   <td style={{ padding:'8px 12px' }}>
                     <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px',
                       background:STATUS_COLORS[c.status]||'#DDD', border:`1px solid ${BD}`, color:TXT }}>
@@ -1256,7 +1256,7 @@ function AccessCodesTab() {
             </div>
             <div style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>
               Used {c.uses_count||0}×{c.uses_limit?` · max ${c.uses_limit}`:''}
-              {' · '}{new Date(c.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}
+              {' · '}{new Date(c.created_at).toLocaleDateString(['en-KE','en-GB'],{day:'numeric',month:'short',year:'numeric'})}
             </div>
           </div>
           <div style={{ display:'flex', gap:6, flexShrink:0 }}>
@@ -1583,7 +1583,7 @@ function KaaRadaAdminTab() {
                 </div>
                 <div style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>
                   {e.county&&`${e.county} · `}{e.case_number&&`${e.case_number} · `}{e.sentence&&`${e.sentence}`}
-                  {e.conviction_date&&` · ${new Date(e.conviction_date).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}`}
+                  {e.conviction_date&&` · ${new Date(e.conviction_date).toLocaleDateString(['en-KE','en-GB'],{day:'numeric',month:'short',year:'numeric'})}`}
                 </div>
                 {e.notes && <div style={{ fontSize:11, color:'#7A6070', fontFamily:"'Nunito Sans',sans-serif", marginTop:2, fontStyle:'italic' }}>{e.notes}</div>}
               </div>
@@ -1808,6 +1808,195 @@ function ContactsTab() {
 
 // -- INTEL BRIEFS TAB --
 
+// ── MBONA — REAL-LIFE STORIES MANAGER (gate for Halafu?/SaInt project stories) ─
+const MBONA_PROJECTS = [
+  { id:'p1',  title:'The Misogyny Pipeline in Kenya' },
+  { id:'p2',  title:'The Economics of Male Violence' },
+  { id:'p3',  title:'Boys Who Witnessed It' },
+  { id:'p4',  title:'Counter-Narrative Content Lab' },
+  { id:'p5',  title:'The 10-16 Curriculum' },
+  { id:'p6',  title:'Salmin for Men' },
+  { id:'p7',  title:'The Baraza Network' },
+  { id:'p8',  title:'Fathers & Daughters Initiative' },
+  { id:'p9',  title:'KaaRada Perpetrator Intervention Programme' },
+  { id:'p10', title:'FemSaidia Intelligence Brief' },
+]
+const mbonaTitle = (id) => MBONA_PROJECTS.find(p => p.id === id)?.title || id
+
+const EMPTY_STORY = { project_id:'p1', title:'', summary:'', story_url:'', source_name:'', media_url:'', media_type:'' }
+
+function MbonaManager() {
+  const [stories, setStories]   = useState([])
+  const [loading, setLoading]   = useState(true)
+  const [filter,  setFilter]    = useState('all')
+  const [form,    setForm]      = useState(null)   // null = closed; {...story} = editing/adding
+  const [file,    setFile]      = useState(null)
+  const [saving,  setSaving]    = useState(false)
+
+  const load = () => {
+    setLoading(true)
+    supabase.from('project_stories').select('*').order('created_at', { ascending:false })
+      .then(({ data }) => { setStories(data || []); setLoading(false) })
+  }
+  useEffect(load, [])
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const save = async () => {
+    if (!form.title?.trim()) { alert('A title is required.'); return }
+    setSaving(true)
+    try {
+      let { media_url, media_type } = form
+      if (file) {
+        const safe = file.name.replace(/[^\w.\-]/g, '_')
+        const path = `${form.project_id}/${Date.now()}_${safe}`
+        const { error: upErr } = await supabase.storage.from('story-media').upload(path, file)
+        if (upErr) throw new Error('Media upload failed: ' + upErr.message)
+        media_url  = supabase.storage.from('story-media').getPublicUrl(path).data.publicUrl
+        media_type = file.type.startsWith('video') ? 'video' : 'image'
+      } else if (media_url && !media_type) {
+        media_type = /\.(mp4|webm|mov)(\?|$)/i.test(media_url) ? 'video' : 'image'
+      }
+      const payload = {
+        project_id: form.project_id, title: form.title, summary: form.summary,
+        story_url: form.story_url, source_name: form.source_name,
+        media_url, media_type, updated_at: new Date().toISOString(),
+      }
+      const { error } = form.id
+        ? await supabase.from('project_stories').update(payload).eq('id', form.id)
+        : await supabase.from('project_stories').insert({ ...payload, active:true })
+      if (error) throw new Error(error.message)
+      setForm(null); setFile(null); load()
+    } catch (e) { alert(String(e.message || e)) }
+    setSaving(false)
+  }
+
+  const toggleActive = async (s) => {
+    await supabase.from('project_stories').update({ active: !s.active }).eq('id', s.id)
+    load()
+  }
+
+  const visible = filter === 'all' ? stories : stories.filter(s => s.project_id === filter)
+  const NS = "'Nunito Sans',sans-serif"
+
+  return (
+    <div>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:10, marginBottom:14, flexWrap:'wrap' }}>
+        <div>
+          <p style={{ fontFamily:NS, fontSize:9, fontWeight:700, letterSpacing:'.15em', color:A, marginBottom:2 }}>
+            ❖ MBONA — WHY THESE PROJECTS EXIST
+          </p>
+          <p style={{ fontFamily:NS, fontSize:11, color:MUT }}>
+            Real-life stories attached to each Halafu?/SaInt project. Stories you add here appear live on both dashboards.
+          </p>
+        </div>
+        <div style={{ display:'flex', gap:6 }}>
+          <select value={filter} onChange={e=>setFilter(e.target.value)}
+            style={{ fontFamily:NS, fontSize:11, color:MUT, background:CRD, border:`1px solid ${BD}`, padding:'7px 10px', outline:'none', cursor:'pointer' }}>
+            <option value="all">All projects ({stories.length})</option>
+            {MBONA_PROJECTS.map(p => (
+              <option key={p.id} value={p.id}>{p.title} ({stories.filter(s=>s.project_id===p.id).length})</option>
+            ))}
+          </select>
+          <button onClick={()=>{ setFile(null); setForm({ ...EMPTY_STORY, project_id: filter==='all' ? 'p1' : filter }) }}
+            style={{ fontFamily:NS, fontSize:11, fontWeight:700, padding:'7px 16px',
+              background:A, color:'#fff', border:'none', cursor:'pointer', letterSpacing:'.04em' }}>
+            + Add story
+          </button>
+        </div>
+      </div>
+
+      {/* Add / Edit form */}
+      {form && (
+        <div style={{ background:CRD, border:`1px solid ${BD}`, borderLeft:`3px solid ${A}`, padding:18, marginBottom:14 }}>
+          <p style={{ fontFamily:NS, fontSize:10, fontWeight:700, letterSpacing:'.1em', color:A, marginBottom:12 }}>
+            {form.id ? '✎ EDIT STORY' : '+ NEW STORY'}
+          </p>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8 }}>
+            <select value={form.project_id} onChange={e=>set('project_id', e.target.value)}
+              style={{ fontFamily:NS, fontSize:12, color:TXT, background:'#DDD0D0', border:`1px solid ${BD}`, padding:'9px 10px', outline:'none' }}>
+              {MBONA_PROJECTS.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+            </select>
+            <input value={form.source_name||''} onChange={e=>set('source_name', e.target.value)}
+              placeholder="Source — e.g. Tuko.co.ke"
+              style={{ fontFamily:NS, fontSize:12, color:TXT, background:'#DDD0D0', border:`1px solid ${BD}`, padding:'9px 10px', outline:'none' }}/>
+          </div>
+          <input value={form.title||''} onChange={e=>set('title', e.target.value)}
+            placeholder="Title — e.g. Kennedy Kamau Kabaiko — Githunguri, Kiambu"
+            style={{ width:'100%', boxSizing:'border-box', fontFamily:NS, fontSize:12, color:TXT, background:'#DDD0D0', border:`1px solid ${BD}`, padding:'9px 10px', outline:'none', marginBottom:8 }}/>
+          <textarea value={form.summary||''} onChange={e=>set('summary', e.target.value)}
+            placeholder="Why this story matters to this project…"
+            style={{ width:'100%', boxSizing:'border-box', minHeight:90, resize:'vertical', fontFamily:NS, fontSize:12, color:TXT, background:'#DDD0D0', border:`1px solid ${BD}`, padding:'9px 10px', outline:'none', marginBottom:8, lineHeight:1.6 }}/>
+          <input value={form.story_url||''} onChange={e=>set('story_url', e.target.value)}
+            placeholder="Story URL — https://…"
+            style={{ width:'100%', boxSizing:'border-box', fontFamily:NS, fontSize:12, color:TXT, background:'#DDD0D0', border:`1px solid ${BD}`, padding:'9px 10px', outline:'none', marginBottom:8 }}/>
+          <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap', marginBottom:12 }}>
+            <input value={form.media_url||''} onChange={e=>set('media_url', e.target.value)}
+              placeholder="Media URL (image/video) — optional"
+              style={{ flex:1, minWidth:220, fontFamily:NS, fontSize:12, color:TXT, background:'#DDD0D0', border:`1px solid ${BD}`, padding:'9px 10px', outline:'none' }}/>
+            <label style={{ fontFamily:NS, fontSize:11, color:MUT }}>
+              …or upload: <input type="file" accept="image/*,video/*" style={{ fontSize:11 }}
+                onChange={e=>setFile(e.target.files?.[0] || null)}/>
+            </label>
+          </div>
+          <div style={{ display:'flex', gap:8 }}>
+            <button onClick={save} disabled={saving}
+              style={{ fontFamily:NS, fontSize:11, fontWeight:700, padding:'9px 20px', background:A, color:'#fff', border:'none', cursor:'pointer' }}>
+              {saving ? 'Saving…' : form.id ? 'Save changes' : 'Publish story'}
+            </button>
+            <button onClick={()=>{ setForm(null); setFile(null) }} disabled={saving}
+              style={{ fontFamily:NS, fontSize:11, fontWeight:700, padding:'9px 14px', background:'transparent', color:MUT, border:`1px solid ${BD}`, cursor:'pointer' }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {loading && <p style={{ fontFamily:NS, fontSize:12, color:MUT }}>Loading…</p>}
+
+      {!loading && visible.length === 0 && (
+        <div style={{ background:CRD, border:`1px solid ${BD}`, padding:32, textAlign:'center' }}>
+          <p style={{ fontFamily:NS, fontSize:13, color:MUT }}>
+            No stories yet. Add the first one — it appears instantly on the Halafu? and SaInt project cards.
+          </p>
+        </div>
+      )}
+
+      {!loading && visible.map(s => (
+        <div key={s.id} style={{ background:CRD, border:`1px solid ${BD}`,
+          borderLeft:`3px solid ${s.active ? A : MUT}`, padding:'14px 16px', marginBottom:6,
+          opacity: s.active ? 1 : .55 }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:10 }}>
+            <div style={{ flex:1, minWidth:0 }}>
+              <p style={{ fontFamily:NS, fontSize:9, fontWeight:700, letterSpacing:'.1em', color:A, marginBottom:3 }}>
+                {mbonaTitle(s.project_id).toUpperCase()} {!s.active && ' · HIDDEN'}
+              </p>
+              <p style={{ fontFamily:"'Lora',serif", fontSize:14, fontWeight:700, color:TXT, marginBottom:4 }}>{s.title}</p>
+              {s.summary && <p style={{ fontFamily:NS, fontSize:11, color:MUT, lineHeight:1.6, marginBottom:4 }}>{s.summary.slice(0,180)}{s.summary.length>180?'…':''}</p>}
+              <p style={{ fontFamily:NS, fontSize:10, color:MUT }}>
+                {s.source_name || '—'}{s.media_url ? ` · ${s.media_type || 'media'} attached` : ''} · {s.created_at && new Date(s.created_at).toLocaleDateString(['en-KE','en-GB'],{day:'numeric',month:'short',year:'numeric'})}
+                {s.story_url && <> · <a href={s.story_url} target="_blank" rel="noopener noreferrer" style={{ color:A, fontWeight:700 }}>source ↗</a></>}
+              </p>
+            </div>
+            <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+              <button onClick={()=>{ setFile(null); setForm({ ...s }) }}
+                style={{ fontFamily:NS, fontSize:10, fontWeight:700, padding:'5px 12px', background:CRD, color:MUT, border:`1px solid ${BD}`, cursor:'pointer' }}>
+                ✎ Edit
+              </button>
+              <button onClick={()=>toggleActive(s)}
+                style={{ fontFamily:NS, fontSize:10, fontWeight:700, padding:'5px 12px',
+                  background: s.active ? 'transparent' : '#1A5A2A', color: s.active ? MUT : '#fff',
+                  border:`1px solid ${BD}`, cursor:'pointer' }}>
+                {s.active ? 'Hide' : 'Show'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ── SAINT ADMIN TAB ───────────────────────────────────────────────────────────
 function SaIntTab() {
   const [expressions, setExpressions] = useState([])
@@ -1815,19 +2004,36 @@ function SaIntTab() {
   const [synthesis,   setSynthesis]   = useState([])
   const [activeView,  setActiveView]  = useState('expressions')
   const [loading,     setLoading]     = useState(true)
+  const [generating,  setGenerating]  = useState(false)
 
-  useEffect(() => {
+  const loadAll = () => {
     Promise.all([
       supabase.from('fund_expressions').select('*').order('created_at',{ascending:false}).limit(50),
       supabase.from('saint_analytics').select('event,project_title,lane,tab,created_at').order('created_at',{ascending:false}).limit(200),
-      supabase.from('saint_synthesis').select('synthesis,score,generated_at').order('generated_at',{ascending:false}).limit(10),
+      supabase.from('saint_synthesis').select('synthesis,score,articles_count,kibe_count,generated_at').order('generated_at',{ascending:false}).limit(25),
     ]).then(([exp, ana, syn]) => {
       setExpressions(exp.data || [])
       setAnalytics(ana.data || [])
       setSynthesis(syn.data || [])
       setLoading(false)
     })
-  }, [])
+  }
+  useEffect(loadAll, [])
+
+  const generateSynthesis = async () => {
+    setGenerating(true)
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/saint-synthesis`, {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body:'{}',
+      })
+      const data = await res.json()
+      if (data.success) loadAll()
+      else alert('Error: ' + (data.error || 'generation failed'))
+    } catch (e) { alert('Error: ' + e.message) }
+    setGenerating(false)
+  }
 
   // Compute analytics summaries
   const projectClicks = analytics.filter(a => a.event === 'project_click')
@@ -1850,7 +2056,7 @@ function SaIntTab() {
     acc[a.tab] = (acc[a.tab]||0)+1; return acc
   }, {})
 
-  const fmt = (d) => d ? new Date(d).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}) : ''
+  const fmt = (d) => d ? new Date(d).toLocaleDateString(['en-KE','en-GB'],{day:'numeric',month:'short',year:'numeric'}) : ''
 
   return (
     <div>
@@ -1884,6 +2090,7 @@ function SaIntTab() {
           { id:'expressions', label:'💰 Fund Expressions' },
           { id:'analytics',   label:'📊 Engagement' },
           { id:'synthesis',   label:'⚡ Synthesis History' },
+          { id:'mbona',       label:'❖ Mbona' },
         ].map(t => (
           <button key={t.id} onClick={()=>setActiveView(t.id)}
             style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
@@ -2003,24 +2210,50 @@ function SaIntTab() {
       {/* Synthesis history */}
       {!loading && activeView==='synthesis' && (
         <div>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT }}>
+              {synthesis.length === 0
+                ? 'No syntheses stored yet.'
+                : `${synthesis.length} stored synthesis${synthesis.length === 1 ? '' : 'es'} — newest first. The SaInt PWA shows the most recent one.`}
+            </p>
+            <button onClick={generateSynthesis} disabled={generating}
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                padding:'7px 16px', background:'#CA8A04', color:'#fff', border:'none',
+                cursor:'pointer', letterSpacing:'.04em' }}>
+              {generating ? 'Generating…' : '⚡ Generate new synthesis'}
+            </button>
+          </div>
+          {synthesis.length === 0 && (
+            <div style={{ background:CRD, border:`1px solid ${BD}`, padding:32, textAlign:'center' }}>
+              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:13, color:MUT, lineHeight:1.7 }}>
+                Nothing here yet. Either no synthesis has been generated, or the database is blocking reads
+                (run the stories/synthesis SQL setup). Click "Generate new synthesis" to create the first one.
+              </p>
+            </div>
+          )}
           {synthesis.map((s,i) => (
             <div key={i} style={{ background:CRD, border:`1px solid ${BD}`,
               borderLeft:`3px solid #CA8A04`, padding:'16px 18px', marginBottom:6 }}>
               <div style={{ display:'flex', justifyContent:'space-between',
-                marginBottom:10 }}>
+                marginBottom:10, flexWrap:'wrap', gap:6 }}>
                 <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
                   fontWeight:700, color:'#CA8A04', letterSpacing:'.12em' }}>
                   SYNTHESIS · INDEX {s.score}/100
+                  {s.articles_count != null && ` · ${s.articles_count} ARTICLES`}
+                  {s.kibe_count != null && ` · ${s.kibe_count} MANOSPHERE`}
                 </span>
                 <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
                   color:MUT }}>{fmt(s.generated_at)}</span>
               </div>
               <p style={{ fontFamily:"'Lora',serif", fontSize:13, fontStyle:'italic',
-                color:TXT, lineHeight:1.8 }}>{s.synthesis}</p>
+                color:TXT, lineHeight:1.8, whiteSpace:'pre-wrap' }}>{s.synthesis}</p>
             </div>
           ))}
         </div>
       )}
+
+      {/* Mbona — real-life stories manager */}
+      {!loading && activeView==='mbona' && <MbonaManager/>}
     </div>
   )
 }
@@ -2109,7 +2342,7 @@ function IntelBriefsTab() {
                   <div>
                     <p style={{ fontFamily:"'Lora',serif", fontSize:14, fontWeight:700, color:'#F0D0D8', marginBottom:2 }}>{b.title}</p>
                     <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'#7A4A60' }}>
-                      {b.period_start} — {b.period_end} · Generated {new Date(b.generated_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}
+                      {b.period_start} — {b.period_end} · Generated {new Date(b.generated_at).toLocaleDateString(['en-KE','en-GB'],{day:'numeric',month:'short',year:'numeric'})}
                     </p>
                   </div>
                   <div style={{ display:'flex', gap:6, flexShrink:0 }}>
@@ -2231,7 +2464,7 @@ function DonorInterestTab() {
                           <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, padding:'1px 6px', background:BD, color:TXT, fontWeight:700 }}>{d.donor_type}</span>
                         </div>
                         <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT, flexShrink:0 }}>
-                          {new Date(d.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}
+                          {new Date(d.created_at).toLocaleDateString(['en-KE','en-GB'],{day:'numeric',month:'short',year:'numeric'})}
                         </span>
                       </div>
                       {d.message && <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT, marginTop:8, lineHeight:1.6, fontStyle:'italic' }}>"{d.message}"</p>}
@@ -2725,7 +2958,7 @@ function RespondersTab() {
                   <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:TXT,fontWeight:700}}>{alert.county}</span>
                 </div>
                 <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT,flexShrink:0}}>
-                  {alert.created_at&&new Date(alert.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}
+                  {alert.created_at&&new Date(alert.created_at).toLocaleDateString(['en-KE','en-GB'],{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}
                 </span>
               </div>
               <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,marginBottom:4}}>

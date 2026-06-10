@@ -1,0 +1,64 @@
+name: Intelligence Pipeline Scheduler
+
+# Replacement scheduler for the Supabase pg_cron jobs that stopped firing.
+# - RSS scanner: every 2 hours (feeds the Socials & Sentiment tab)
+# - Health check: every 6 hours (emails status + auto-fixes stale pipeline)
+# The anon key below is the public client key already shipped in the frontend.
+
+on:
+  schedule:
+    - cron: '15 */2 * * *'   # rss-scanner, every 2h at :15
+    - cron: '0 */6 * * *'    # health-check, every 6h on the hour
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Which function to trigger'
+        required: false
+        default: 'both'
+        type: choice
+        options: [both, rss-scanner, health-check]
+
+env:
+  SUPABASE_URL: https://uuluuhltphgwfblcghlp.supabase.co
+  ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bHV1aGx0cGhnd2ZibGNnaGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MjI2NDAsImV4cCI6MjA5MzQ5ODY0MH0.KU_wtm0NVUz8vrMqgozPvTlmiCIf_yXP8Z3Gpmh599E
+
+jobs:
+  rss-scan:
+    # runs on the 2-hourly schedule, or manual dispatch
+    if: github.event_name == 'workflow_dispatch' && (inputs.target == 'both' || inputs.target == 'rss-scanner') || github.event.schedule == '15 */2 * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger rss-scanner
+        run: |
+          set -e
+          RESP=$(curl -sS -w '\n%{http_code}' -X POST \
+            "$SUPABASE_URL/functions/v1/rss-scanner" \
+            -H "Authorization: Bearer $ANON_KEY" \
+            -H "apikey: $ANON_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{}' --max-time 300)
+          BODY=$(echo "$RESP" | head -n -1)
+          CODE=$(echo "$RESP" | tail -n 1)
+          echo "rss-scanner -> HTTP $CODE"
+          echo "$BODY"
+          [ "$CODE" = "200" ] || exit 1
+
+  health-check:
+    # runs on the 6-hourly schedule, or manual dispatch
+    if: github.event_name == 'workflow_dispatch' && (inputs.target == 'both' || inputs.target == 'health-check') || github.event.schedule == '0 */6 * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger health-check
+        run: |
+          set -e
+          RESP=$(curl -sS -w '\n%{http_code}' -X POST \
+            "$SUPABASE_URL/functions/v1/health-check" \
+            -H "Authorization: Bearer $ANON_KEY" \
+            -H "apikey: $ANON_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{}' --max-time 300)
+          BODY=$(echo "$RESP" | head -n -1)
+          CODE=$(echo "$RESP" | tail -n 1)
+          echo "health-check -> HTTP $CODE"
+          echo "$BODY"
+          [ "$CODE" = "200" ] || exit 1

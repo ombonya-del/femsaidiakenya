@@ -458,7 +458,7 @@ function DashboardTab({ isMobile = false }){
           ):recentCases.map((inc,i)=>{
             const statusMap={convicted:{bg:'#1A5A2A',bc:'#2D7A3A',tc:'#fff'},charged:{bg:'#1A3F6F',bc:'#2A5FAF',tc:'#fff'},trial:{bg:'#5A3A8A',bc:'#7A5AAA',tc:'#fff'},investigated:{bg:'#8A4010',bc:'#AA6030',tc:'#fff'},reported:{bg:CRD,bc:BD,tc:TXT},no_action:{bg:'#8A1030',bc:'#AA2050',tc:'#fff'},dismissed:{bg:'#5A4A60',bc:'#7A6A80',tc:'#fff'}}
             const s=statusMap[inc.status]||statusMap['reported']
-            const dateStr=inc.incident_date?new Date(inc.incident_date).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}):'—'
+            const dateStr=inc.incident_date?new Date(inc.incident_date).toLocaleDateString(['en-KE','en-GB'],{day:'numeric',month:'short',year:'numeric'}):'—'
             return(
               <div key={inc.id} style={{padding:'14px 0',borderBottom:i<recentCases.length-1?`1px solid ${BD}`:'none'}}>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
@@ -1001,7 +1001,7 @@ function KaaRadaTab({ isMobile }) {
                         {[
                           { l:'County',   v:p.county },
                           { l:'Sentence', v:p.sentence },
-                          { l:'Date',     v:p.conviction_date ? new Date(p.conviction_date).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}) : null },
+                          { l:'Date',     v:p.conviction_date ? new Date(p.conviction_date).toLocaleDateString(['en-KE','en-GB'],{day:'numeric',month:'short',year:'numeric'}) : null },
                           { l:'Case',     v:p.case_number },
                         ].map(({l,v}) => v && (
                           <div key={l} style={{ overflow:'hidden' }}>
@@ -1479,7 +1479,7 @@ function WeRememberTab() {
 
   const fmt = (d) => {
     if (!d) return ''
-    try { return new Date(d).toLocaleDateString('en-KE', { year:'numeric', month:'long' }) }
+    try { return new Date(d).toLocaleDateString(['en-KE','en-GB'], { year:'numeric', month:'long' }) }
     catch { return d }
   }
 
@@ -1637,7 +1637,7 @@ export default function App() {
           50%       { opacity: 0.75; }
         }
       `}</style>
-      <div style={{fontFamily:"'Nunito Sans',sans-serif",color:TXT,minHeight:'100vh',background:BG,width:'100%'}}>
+      <div style={{fontFamily:"'Nunito Sans',sans-serif",color:TXT,minHeight:'100vh',background:BG,width:'100%',overflowX:'hidden'}}>
 
         {/* ── ALERT BANNER ── */}
         <div style={{background:A,color:'#F0D0D8',padding: isMobile ? '7px 12px' : '7px 32px',display:'flex',alignItems:'center',gap:8,fontSize:11,fontFamily:"'Nunito Sans',sans-serif",width:'100%',overflow:'hidden'}}>
@@ -1677,7 +1677,7 @@ export default function App() {
               <div style={{textAlign:'right',paddingBottom:4}}>
                 <p style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>Last updated</p>
                 <p style={{fontSize:12,color:'#5A3050',fontFamily:"'Nunito Sans',sans-serif",marginTop:2}}>
-                  {new Date().toLocaleDateString('en-KE',{day:'2-digit',month:'short',year:'numeric'})} · {new Date().toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit',timeZone:'Africa/Nairobi'})} EAT
+                  {new Date().toLocaleDateString(['en-KE','en-GB'],{day:'2-digit',month:'short',year:'numeric'})} · {new Date().toLocaleTimeString(['en-KE','en-GB'],{hour:'2-digit',minute:'2-digit',timeZone:'Africa/Nairobi'})} EAT
                 </p>
               </div>
             </div>

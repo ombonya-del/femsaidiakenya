@@ -500,7 +500,7 @@ export default function SocialsSentimentTab() {
                   letterSpacing:'.1em', textTransform:'uppercase', color:'#fff' }}>Misogyny of the Day</p>
               </div>
               <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, color:'rgba(255,255,255,0.7)', fontStyle:'italic' }}>
-                {new Date().toLocaleDateString('en-KE',{weekday:'short',day:'numeric',month:'short'})}
+                {new Date().toLocaleDateString(['en-KE','en-GB'],{weekday:'short',day:'numeric',month:'short'})}
               </span>
             </div>
             <div style={{ padding:'4px 16px 6px', background:'rgba(204,16,16,0.08)', borderBottom:`1px solid ${BD}` }}>
@@ -527,7 +527,7 @@ export default function SocialsSentimentTab() {
                       {h.reach && <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, color:MUT }}>{h.reach}</span>}
                     </div>
                     <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, color:MUT }}>
-                      {h.highlight_date && new Date(h.highlight_date).toLocaleDateString('en-KE',{day:'numeric',month:'short'})}
+                      {h.highlight_date && new Date(h.highlight_date).toLocaleDateString(['en-KE','en-GB'],{day:'numeric',month:'short'})}
                     </span>
                   </div>
                   <p style={{ fontFamily:"'Lora',serif", fontSize: featured?14:12,
@@ -870,7 +870,7 @@ export default function SocialsSentimentTab() {
                             @{a.source_name?.replace('X / @','').replace('@','')}
                           </span>
                           <span style={{ fontSize:9, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>
-                            {a.scanned_at ? new Date(a.scanned_at).toLocaleDateString('en-KE',{day:'numeric',month:'short'}) : ''}
+                            {a.scanned_at ? new Date(a.scanned_at).toLocaleDateString(['en-KE','en-GB'],{day:'numeric',month:'short'}) : ''}
                           </span>
                           {a.misogyny_score >= 7 && (
                             <span style={{ fontSize:9, padding:'1px 6px', background:'#CC1010', color:'#fff',

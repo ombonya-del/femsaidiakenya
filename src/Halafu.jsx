@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { ArrowRight, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
 import { createClient } from '@supabase/supabase-js'
+import ProjectStories from './ProjectStories'
 
 const _sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY)
 
@@ -260,7 +261,7 @@ function CrisisCounter() {
   const critical = pct > 75
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:2, minWidth:220 }}>
+    <div style={{ display:'flex', flexDirection:'column', gap:2, minWidth:0 }}>
       {/* 47-hour counter */}
       <div style={{ background:'#1E2D40', border:`1px solid rgba(138,16,48,0.3)`,
         padding:'20px 18px' }}>
@@ -392,7 +393,7 @@ function FieldIntelligence() {
         counties:    new Set(cData.map(c => c.county)).size,
         convicted:   cData.filter(c => c.status === 'convicted').length,
         motd:        motd.count || 0,
-        lastUpdated: latest.date ? new Date(latest.date).toLocaleDateString('en-KE', { day:'numeric', month:'short' }) : 'today',
+        lastUpdated: latest.date ? new Date(latest.date).toLocaleDateString(['en-KE','en-GB'], { day:'numeric', month:'short' }) : 'today',
       })
     })
   }, [])
@@ -852,6 +853,9 @@ function ProjectCard({ p, isMobile }) {
               )}
             </div>
 
+            {/* Real-life stories */}
+            <ProjectStories projectId={p.id}/>
+
             {/* Actions */}
             <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
               {/* Fund this project */}
@@ -993,9 +997,9 @@ export default function HalaFuTab({ isMobile }) {
             Updated every two weeks. Share with policymakers, funders and researchers.
           </p>
         </div>
-        <div style={{display:"flex",gap:2,alignItems:"flex-start"}}>
-          <div style={{flex:"0 0 60%",minWidth:0}}><FieldIntelligence/></div>
-          <div style={{flex:"0 0 calc(40% - 2px)"}}><CrisisCounter/></div>
+        <div style={{display:"flex",flexDirection:isMobile?"column":"row",gap:2,alignItems:isMobile?"stretch":"flex-start",width:isMobile?"100%":undefined,minWidth:0,flex:isMobile?"1 1 100%":undefined}}>
+          <div style={{flex:isMobile?"1 1 auto":"0 0 60%",minWidth:0}}><FieldIntelligence/></div>
+          <div style={{flex:isMobile?"1 1 auto":"0 0 calc(40% - 2px)",minWidth:0}}><CrisisCounter/></div>
         </div>
 
           {/* Download Intel Brief */}

@@ -307,7 +307,7 @@ function NormCard({norm}) {
           <div style={{fontFamily:"'Lora',serif",fontSize:18,fontWeight:700,color:TXT,marginBottom:6}}>{norm.title}</div>
           <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT}}>
             {norm.submitted_by||'Anonymous'} · {norm.context||'General'}
-            {norm.created_at&&` · ${new Date(norm.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}`}
+            {norm.created_at&&` · ${new Date(norm.created_at).toLocaleDateString(['en-KE','en-GB'],{day:'numeric',month:'short',year:'numeric'})}`}
           </div>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:4,flexShrink:0,fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT}}>

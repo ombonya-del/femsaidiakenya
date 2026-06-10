@@ -385,7 +385,7 @@ function VictimCard({ v, accentColor='#8A1030', mutedColor='#7A4A60' }) {
         <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4,flexShrink:0}}>
           <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,
             color:accentColor,fontWeight:700}}>
-            {v.incident_date ? new Date(v.incident_date).toLocaleDateString('en-KE',
+            {v.incident_date ? new Date(v.incident_date).toLocaleDateString(['en-KE','en-GB'],
               {day:'numeric',month:'short',year:'numeric'}) : ''}
           </div>
           <span style={{fontSize:12,color:'#5A2030'}}>{open ? '▲' : '▼'}</span>
@@ -397,7 +397,7 @@ function VictimCard({ v, accentColor='#8A1030', mutedColor='#7A4A60' }) {
           {[
             ['County', v.county],
             ['Age', v.age || '—'],
-            ['Date', v.incident_date ? new Date(v.incident_date).toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'}) : '—'],
+            ['Date', v.incident_date ? new Date(v.incident_date).toLocaleDateString(['en-KE','en-GB'],{day:'numeric',month:'long',year:'numeric'}) : '—'],
             ['Note', v.note || 'Femicide'],
           ].filter(([,val])=>val&&val!=='—').map(([label, val], j) => (
             <div key={j} style={{marginBottom:8}}>
@@ -447,7 +447,7 @@ function VoiceCard({ voice, accentColor='#8A1030' }) {
         </div>
         <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:'#B89AAA',
           flexShrink:0}}>
-          {voice.created_at && new Date(voice.created_at).toLocaleDateString('en-KE',
+          {voice.created_at && new Date(voice.created_at).toLocaleDateString(['en-KE','en-GB'],
             {month:'short',year:'numeric'})}
         </div>
       </div>
@@ -1003,7 +1003,7 @@ function NormCard({norm}) {
       <div style={{fontFamily:"'Lora',serif",fontSize:16,fontWeight:700,color:TXT,marginBottom:6}}>{norm.title}</div>
       <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT,marginBottom:10}}>
         {norm.submitted_by||'Anonymous'} · {norm.context||'General'}
-        {norm.created_at&&` · ${new Date(norm.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short'})}`}
+        {norm.created_at&&` · ${new Date(norm.created_at).toLocaleDateString(['en-KE','en-GB'],{day:'numeric',month:'short'})}`}
       </div>
       <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:14,color:TXT,lineHeight:1.7,margin:0}}>
         {long&&!exp?`${norm.story?.slice(0,180)}…`:norm.story}

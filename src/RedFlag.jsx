@@ -301,7 +301,7 @@ function ArchetypeCard({a, getContent}) {
                   <div>
                     <div style={{fontFamily:"'Lora',serif",fontSize:17,fontWeight:700,color:TXT,marginBottom:4}}>{m.victim_name||'Name withheld'}</div>
                     <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT,marginBottom:m.note?8:0}}>
-                      {[m.county, m.incident_date ? new Date(m.incident_date).toLocaleDateString('en-KE',{year:'numeric',month:'long'}) : ''].filter(Boolean).join(' · ')}
+                      {[m.county, m.incident_date ? new Date(m.incident_date).toLocaleDateString(['en-KE','en-GB'],{year:'numeric',month:'long'}) : ''].filter(Boolean).join(' · ')}
                     </div>
                     {m.note&&<p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'#5A2030',lineHeight:1.7,fontStyle:'italic',margin:0}}>"{m.note}"</p>}
                   </div>
@@ -429,7 +429,7 @@ function NormCard({norm}) {
           <div style={{fontFamily:"'Lora',serif",fontSize:18,fontWeight:700,color:TXT,marginBottom:6}}>{norm.title}</div>
           <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT}}>
             {norm.submitted_by||'Anonymous'} · {norm.context||'General'}
-            {norm.created_at&&` · ${new Date(norm.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}`}
+            {norm.created_at&&` · ${new Date(norm.created_at).toLocaleDateString(['en-KE','en-GB'],{day:'numeric',month:'short',year:'numeric'})}`}
           </div>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>

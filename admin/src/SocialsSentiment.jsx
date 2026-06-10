@@ -435,7 +435,7 @@ export default function SocialsSentimentTab() {
               </div>
               <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'rgba(255,255,255,0.3)',
                 fontStyle:'italic', flexShrink:0 }}>
-                {new Date().toLocaleDateString('en-KE',{weekday:'long',day:'numeric',month:'long'})}
+                {new Date().toLocaleDateString(['en-KE','en-GB'],{weekday:'long',day:'numeric',month:'long'})}
               </span>
             </div>
 
@@ -459,7 +459,7 @@ export default function SocialsSentimentTab() {
                       {h.reach && <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'rgba(255,255,255,0.4)' }}>{h.reach}</span>}
                     </div>
                     <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'rgba(255,255,255,0.3)' }}>
-                      {h.highlight_date && new Date(h.highlight_date).toLocaleDateString('en-KE',{day:'numeric',month:'short'})}
+                      {h.highlight_date && new Date(h.highlight_date).toLocaleDateString(['en-KE','en-GB'],{day:'numeric',month:'short'})}
                     </span>
                   </div>
                   <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize: dimmed?12:13,
