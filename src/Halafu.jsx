@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { ArrowRight, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
 import { createClient } from '@supabase/supabase-js'
-import ProjectStories from './ProjectStories'
+import ProjectStories, { MbonaSection } from './ProjectStories'
 
 const _sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY)
 
@@ -358,8 +358,8 @@ function CrisisCounter() {
 
 function FieldIntelligence() {
   const [intel, setIntel]         = useState(null)
-  const [synthesis, setSynthesis] = useState('')
-  const [generating, setGenerating] = useState(false)
+  const [syntheses, setSyntheses] = useState([])   // newest first, from saint_synthesis
+  const [showPast, setShowPast]   = useState(false)
   const [expanded, setExpanded]   = useState(true)  // open by default
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 
@@ -398,39 +398,16 @@ function FieldIntelligence() {
     })
   }, [])
 
-  const generateSynthesis = async () => {
-    if (!intel) return
-    setGenerating(true)
-    try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [{ role:'user', content:
-            `You are the FemSaidia Kenya intelligence desk. A potential funder or partner is reading our ThinkTank project proposals right now. Write 3 sharp, specific sentences explaining why our live data makes these 10 projects not just useful but urgent. Do not be polite. Be precise.
-
-Live data:
-- Misogyny Index: ${intel.score}/100 (${intel.delta > 0 ? '+' : ''}${intel.delta} from last week). Alert threshold is 60.
-- ${intel.articles} articles classified in our scanner. ${intel.kibe} tagged as manosphere/Kibe content. ${intel.protest} protest/march articles.
-- ${intel.techGBV} tech-facilitated GBV cases documented. ${intel.highScore} articles scored 8+/10 for misogyny.
-- ${intel.femicides} femicide cases documented across ${intel.counties} counties. ${intel.convicted} convictions.
-- ${intel.motd} active MOTD highlights in the queue.
-
-Projects span: research (misogyny pipeline, economics of violence, intergenerational transmission), interruption (content lab, curriculum, crisis line, baraza network), and building (fathers programme, perpetrator intervention, intelligence brief).
-
-3 sentences. No fluff. For a funder who has seen too many vague proposals.`
-          }]
-        })
-      })
-      const data = await res.json()
-      setSynthesis(data.content?.[0]?.text || 'Unable to generate synthesis.')
-    } catch(e) {
-      setSynthesis('Intelligence synthesis temporarily unavailable.')
-    }
-    setGenerating(false)
-  }
+  // Syntheses are generated server-side (saint-synthesis edge function) — daily by
+  // the health-check pipeline, or on demand from the admin portal. Public users
+  // read the cached results here.
+  useEffect(() => {
+    _sb.from('saint_synthesis')
+      .select('synthesis,score,generated_at')
+      .order('generated_at', { ascending:false })
+      .limit(6)
+      .then(({ data }) => setSyntheses(data || []))
+  }, [])
 
   const LANE_METRICS = [
     {
@@ -588,34 +565,52 @@ Projects span: research (misogyny pipeline, economics of violence, intergenerati
             </a>
           </div>
 
-          {!synthesis && (
-              <button onClick={generateSynthesis} disabled={generating || !intel}
-                style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
-                  padding:'10px 20px', background:'rgba(138,16,48,0.2)',
-                  border:'1px solid rgba(138,16,48,0.4)', color:'#F0D0D8',
-                  cursor:'pointer', display:'flex', alignItems:'center', gap:8 }}>
-                {generating
-                  ? '⟳ Generating intelligence synthesis...'
-                  : '⚡ Generate intelligence synthesis for funders'}
-              </button>
-            )}
-            {synthesis && (
+          {syntheses.length === 0 ? (
+              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                color:'rgba(255,255,255,0.4)', fontStyle:'italic', margin:0 }}>
+                Intelligence synthesis updating — the pipeline regenerates it daily.
+              </p>
+            ) : (
               <div>
-                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
-                  letterSpacing:'.15em', textTransform:'uppercase',
-                  color:'#8A1030', marginBottom:10 }}>
-                  Intelligence Synthesis · Generated from live data
-                </p>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
+                  flexWrap:'wrap', gap:6, marginBottom:10 }}>
+                  <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+                    letterSpacing:'.15em', textTransform:'uppercase',
+                    color:'#8A1030', margin:0 }}>
+                    Intelligence Synthesis · Auto-generated from live data
+                  </p>
+                  <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
+                    color:'rgba(255,255,255,0.35)' }}>
+                    {new Date(syntheses[0].generated_at).toLocaleDateString(['en-KE','en-GB'],
+                      { day:'numeric', month:'short' })} · regenerated daily
+                  </span>
+                </div>
                 <p style={{ fontFamily:"'Lora',serif", fontSize:14, fontStyle:'italic',
-                  color:'rgba(240,208,216,0.9)', lineHeight:1.8, margin:0 }}>
-                  {synthesis}
+                  color:'rgba(240,208,216,0.9)', lineHeight:1.8, margin:0, whiteSpace:'pre-wrap' }}>
+                  {syntheses[0].synthesis}
                 </p>
-                <button onClick={()=>{ setSynthesis(''); }}
-                  style={{ marginTop:10, fontFamily:"'Nunito Sans',sans-serif",
-                    fontSize:10, color:'rgba(255,255,255,0.3)', background:'none',
-                    border:'none', cursor:'pointer', padding:0 }}>
-                  Regenerate
-                </button>
+                {syntheses.length > 1 && (
+                  <button onClick={()=>setShowPast(p=>!p)}
+                    style={{ marginTop:10, fontFamily:"'Nunito Sans',sans-serif",
+                      fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', background:'none',
+                      border:'none', cursor:'pointer', padding:0, letterSpacing:'.05em' }}>
+                    {showPast ? '▲ Hide past syntheses' : `▼ View ${syntheses.length - 1} past synthesis${syntheses.length - 1 === 1 ? '' : 'es'}`}
+                  </button>
+                )}
+                {showPast && syntheses.slice(1).map((s,i) => (
+                  <div key={i} style={{ marginTop:12, paddingTop:12,
+                    borderTop:'1px solid rgba(138,16,48,0.2)' }}>
+                    <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
+                      color:'rgba(255,255,255,0.35)', marginBottom:6 }}>
+                      {new Date(s.generated_at).toLocaleDateString(['en-KE','en-GB'],
+                        { day:'numeric', month:'short', year:'numeric' })}{s.score ? ` · index ${s.score}/100` : ''}
+                    </p>
+                    <p style={{ fontFamily:"'Lora',serif", fontSize:12, fontStyle:'italic',
+                      color:'rgba(240,208,216,0.6)', lineHeight:1.7, margin:0, whiteSpace:'pre-wrap' }}>
+                      {s.synthesis}
+                    </p>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -1080,6 +1075,11 @@ export default function HalaFuTab({ isMobile }) {
       {/* Projects */}
       <div style={{ marginTop:2 }}>
         {filtered.map(p => <ProjectCard key={p.id} p={p} isMobile={isMobile}/>)}
+      </div>
+
+      {/* MBONA: REAL STORIES — the lives behind the projects */}
+      <div style={{ marginTop:2 }}>
+        <MbonaSection projectTitles={Object.fromEntries(PROJECTS.map(p => [p.id, p.title]))}/>
       </div>
 
       {/* Submit */}

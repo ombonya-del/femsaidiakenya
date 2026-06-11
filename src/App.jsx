@@ -103,7 +103,7 @@ const NAV_GROUPS = [
     id:    'data',
     label: 'Intel',
     icon:  <TrendingUp size={19}/>,
-    tabs:  ['data', 'silencing-women', 'tech-tracker', 'sentiment', 'cases', 'remember'],
+    tabs:  ['data', 'silencing-women', 'tech-tracker', 'sentiment', 'cases'],
   },
   {
     id:    'safety',
