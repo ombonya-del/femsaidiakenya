@@ -8,15 +8,23 @@ const sb = createClient(
 )
 
 // ── PALETTE ──────────────────────────────────────────────────────────────────
-const BG   = '#0F020A'
-const SURF = '#1A0510'
-const CARD = '#2A0818'
-const RED  = '#CC1010'
+// Backdrop colours are CSS variables so they can change per language (see PALETTES).
+const BG   = 'var(--rf-bg)'
+const SURF = 'var(--rf-surf)'
+const CARD = 'var(--rf-card)'
+const BD   = 'var(--rf-bd)'
+const RED  = '#CC1010'   // brand red — constant across languages
 const BRED = '#FF4040'
 const TXT  = '#F5E8ED'
 const MUT  = '#B89AAA'
-const BD   = '#4A1828'
 const GRN  = '#1A5A2A'
+
+// Per-language colour schemes — the red brand stays, the backdrop hue shifts.
+const PALETTES = {
+  en:    { '--rf-bg':'#0F020A', '--rf-surf':'#1A0510', '--rf-card':'#2A0818', '--rf-bd':'#4A1828' }, // crimson
+  sw:    { '--rf-bg':'#07120D', '--rf-surf':'#0E2118', '--rf-card':'#163021', '--rf-bd':'#2A4A33' }, // evergreen
+  sheng: { '--rf-bg':'#0A0716', '--rf-surf':'#150F2A', '--rf-card':'#20183A', '--rf-bd':'#38305A' }, // indigo
+}
 
 // ── EMERGENCY NUMBERS (shared with the hepa safety app) ───────────────────────
 const EMERGENCY_NUMBERS = [
@@ -245,7 +253,7 @@ function ItikaSOSButton() {
 
   return (
     <div style={{
-      position: 'fixed', bottom: 24, right: 20, zIndex: 999,
+      position: 'fixed', top: 'calc(env(safe-area-inset-top, 0px) + 100px)', right: 14, zIndex: 999,
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
     }}>
       {sent && (
@@ -1193,8 +1201,9 @@ export default function App() {
     setShowCountyPrompt(false)
   }
 
+  const pal = PALETTES[lang] || PALETTES.en
   return (
-    <div style={{background:BG,minHeight:'100vh',color:TXT,
+    <div style={{...pal, background:BG,minHeight:'100vh',color:TXT,
       fontFamily:"'Nunito Sans',sans-serif",
       paddingBottom:'calc(65px + env(safe-area-inset-bottom))'}}>
 
