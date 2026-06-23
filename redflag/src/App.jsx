@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { useLang, LANGS } from './i18n'
-import { ARCHETYPE_CONTENT } from './content-i18n'
+import { ARCHETYPE_CONTENT, ECOSYSTEM_CONTENT } from './content-i18n'
 
 const sb = createClient(
   'https://uuluuhltphgwfblcghlp.supabase.co',
@@ -876,7 +876,7 @@ function JiJueScreen({ setTab: goHome }) {
 
 // ── JITUME SCREEN ─────────────────────────────────────────────────────────────
 function JiTumeScreen({ setTab: goHome }) {
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const [open, setOpen] = useState(null)
   const [tab, setTab]   = useState('signs')
 
@@ -895,14 +895,16 @@ function JiTumeScreen({ setTab: goHome }) {
         </p>
       </div>
 
-      {ECOSYSTEM.map((role, i) => (
+      {ECOSYSTEM.map((role, i) => {
+        const r = lang !== 'en' ? { ...role, ...(ECOSYSTEM_CONTENT[lang]?.[i] || {}) } : role
+        return (
         <div key={i} style={{marginBottom:8}}>
           <div onClick={() => { setOpen(open===i?null:i); setTab('signs') }}
-            style={{background:role.color,padding:'14px 16px',cursor:'pointer',
+            style={{background:r.color,padding:'14px 16px',cursor:'pointer',
               display:'flex',justifyContent:'space-between',alignItems:'center'}}>
             <div style={{display:'flex',alignItems:'center',gap:12}}>
-              <span style={{fontSize:24}}>{role.emoji}</span>
-              <div style={{fontFamily:"'Lora',serif",fontSize:16,fontWeight:700,color:'#fff'}}>{role.role}</div>
+              <span style={{fontSize:24}}>{r.emoji}</span>
+              <div style={{fontFamily:"'Lora',serif",fontSize:16,fontWeight:700,color:'#fff'}}>{r.role}</div>
             </div>
             <span style={{color:'rgba(255,255,255,0.7)',fontSize:20}}>{open===i?'▲':'▼'}</span>
           </div>
@@ -910,19 +912,19 @@ function JiTumeScreen({ setTab: goHome }) {
           {open===i && (
             <div style={{background:'#faf4f7',border:'1px solid #e8dde4',borderTop:'none'}}>
               <div style={{display:'flex',gap:2,padding:'12px 12px 0'}}>
-                {[{id:'signs',label:t('jt_watch')},{id:'actions',label:t('jt_do')}].map(t => (
-                  <button key={t.id} onClick={() => setTab(t.id)}
+                {[{id:'signs',label:t('jt_watch')},{id:'actions',label:t('jt_do')}].map(st => (
+                  <button key={st.id} onClick={() => setTab(st.id)}
                     style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
                       padding:'7px 14px',border:'none',cursor:'pointer',
-                      background:tab===t.id?role.color:'#f0e8ed',color:tab===t.id?'#fff':'#7A4A60'}}>
-                    {t.label}
+                      background:tab===st.id?r.color:'#f0e8ed',color:tab===st.id?'#fff':'#7A4A60'}}>
+                    {st.label}
                   </button>
                 ))}
               </div>
               <div style={{padding:'12px'}}>
-                {(tab==='signs'?role.signs:role.actions).map((item,j) => (
+                {(tab==='signs'?r.signs:r.actions).map((item,j) => (
                   <div key={j} style={{display:'flex',gap:12,padding:'12px 14px',
-                    background:'#F5E8ED',border:'1px solid #D4BEC4',borderLeft:`3px solid ${tab==='signs'?role.color:GRN}`,
+                    background:'#F5E8ED',border:'1px solid #D4BEC4',borderLeft:`3px solid ${tab==='signs'?r.color:GRN}`,
                     marginBottom:6}}>
                     <span style={{flexShrink:0,fontSize:16}}>{tab==='signs'?'👁':'→'}</span>
                     <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,
@@ -933,7 +935,7 @@ function JiTumeScreen({ setTab: goHome }) {
             </div>
           )}
         </div>
-      ))}
+      )})}
     </div>
   )
 }
