@@ -21,7 +21,7 @@ const GRN  = '#1A5A2A'
 
 // Per-language colour schemes — the red brand stays, the backdrop hue shifts.
 const PALETTES = {
-  en:    { '--rf-bg':'#0F020A', '--rf-surf':'#1A0510', '--rf-card':'#2A0818', '--rf-bd':'#4A1828' }, // crimson
+  en:    { '--rf-bg':'#2B1A2E', '--rf-surf':'#3A2440', '--rf-card':'#46304A', '--rf-bd':'#5E4060' }, // rose / lilac
   sw:    { '--rf-bg':'#07120D', '--rf-surf':'#0E2118', '--rf-card':'#163021', '--rf-bd':'#2A4A33' }, // evergreen
   sheng: { '--rf-bg':'#0A0716', '--rf-surf':'#150F2A', '--rf-card':'#20183A', '--rf-bd':'#38305A' }, // indigo
 }
@@ -246,16 +246,20 @@ function ItikaSOSButton() {
   }
 
   // Floating button — always visible
-  const SIZE = 56
+  const SIZE = 62
   const R = (SIZE / 2) - 4
   const CIRC = 2 * Math.PI * R
   const dash = (progress / 100) * CIRC
 
   return (
     <div style={{
-      position: 'fixed', top: 'calc(env(safe-area-inset-top, 0px) + 100px)', right: 14, zIndex: 999,
+      position: 'fixed', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', right: 14, zIndex: 999,
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
     }}>
+      <style>{`@keyframes sosPulse {
+        0%,100% { box-shadow: 0 0 0 0 rgba(255,48,48,0.55), 0 2px 12px rgba(204,16,16,0.55); }
+        50%     { box-shadow: 0 0 18px 7px rgba(255,48,48,0.5), 0 2px 12px rgba(204,16,16,0.65); }
+      }`}</style>
       {sent && (
         <div style={{
           background: '#1A5A2A', color: '#fff', padding: '4px 10px',
@@ -287,19 +291,23 @@ function ItikaSOSButton() {
           borderRadius: '50%',
           background: sent ? '#1A5A2A' : pressing ? '#FF2020' : '#CC1010',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 20, transition: 'background 0.15s',
-          boxShadow: pressing ? '0 0 20px rgba(255,40,40,0.7)' : '0 2px 12px rgba(204,16,16,0.5)',
+          fontSize: 24, transition: 'background 0.15s',
+          boxShadow: pressing ? '0 0 24px rgba(255,40,40,0.85)' : '0 2px 12px rgba(204,16,16,0.5)',
+          animation: (!sent && !pressing) ? 'sosPulse 1.6s ease-in-out infinite' : 'none',
         }}>
           {sent ? '✓' : '🆘'}
         </div>
       </div>
-      <p style={{
-        fontFamily: "'Nunito Sans',sans-serif", fontSize: 8, fontWeight: 700,
-        color: 'rgba(255,255,255,0.6)', textAlign: 'center', margin: 0,
-        letterSpacing: '.08em',
+      <div style={{
+        fontFamily: "'Nunito Sans',sans-serif", fontSize: 9.5, fontWeight: 800,
+        color: '#fff', textAlign: 'center', marginTop: 2, letterSpacing: '.05em',
+        background: sent ? '#1A5A2A' : 'rgba(204,16,16,0.95)', padding: '3px 9px',
+        borderRadius: 12, boxShadow: '0 1px 6px rgba(0,0,0,0.45)', whiteSpace: 'nowrap',
       }}>
-        {sent ? 'SENT' : pressing ? 'HOLD...' : 'HOLD SOS'}
-      </p>
+        {sent ? '✓ SENT'
+          : pressing ? `${Math.max(1, Math.ceil((100 - progress) / 100 * (HOLD_MS / 1000)))}s…`
+          : `HOLD ${HOLD_MS / 1000}s`}
+      </div>
     </div>
   )
 }
