@@ -385,20 +385,18 @@ function HomeScreen({ setTab }) {
 
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:24}}>
         {[
-          {id:'jijue',    emoji:'🌱', sw:'JiJue',      sub:t('tile_jijue_sub'),  color:'#1A3F6F', desc:t('tile_jijue_desc')},
-          {id:'jitume',   emoji:'🛡️', sw:'JiTume',     sub:t('tile_jitume_sub'), color:'#1A5A2A', desc:t('tile_jitume_desc')},
-          {id:'linda',    emoji:'💬', sw:'LindaLinda', sub:t('tile_linda_sub'),  color:'#8A4010', desc:t('tile_linda_desc')},
-          {id:'database', emoji:'🚩', sw:'Red Flag',   sub:t('tile_db_sub'),     color:'#8A1030', desc:t('tile_db_desc')},
+          {id:'jijue',    emoji:'🌱', sw:'JiJue',      sub:t('tile_jijue_sub'),  color:'#1A3F6F', light:'#7FB2E8', desc:t('tile_jijue_desc')},
+          {id:'jitume',   emoji:'🛡️', sw:'JiTume',     sub:t('tile_jitume_sub'), color:'#1A5A2A', light:'#5FC489', desc:t('tile_jitume_desc')},
+          {id:'linda',    emoji:'💬', sw:'LindaLinda', sub:t('tile_linda_sub'),  color:'#8A4010', light:'#E89A52', desc:t('tile_linda_desc')},
+          {id:'database', emoji:'🚩', sw:'Red Flag',   sub:t('tile_db_sub'),     color:'#8A1030', light:'#FF6B82', desc:t('tile_db_desc')},
         ].map(tile => (
           <div key={tile.id} onClick={() => setTab(tile.id)}
-            style={{background:CARD,border:`1px solid ${BD}`,borderTop:`3px solid ${tile.color}`,
-              padding:16,cursor:'pointer',transition:'background .15s'}}
-            onTouchStart={e => e.currentTarget.style.background='#3A0820'}
-            onTouchEnd={e => e.currentTarget.style.background=CARD}>
+            style={{background:CARD,border:`1px solid ${BD}`,borderTop:`3px solid ${tile.light}`,
+              padding:16,cursor:'pointer',transition:'background .15s'}}>
             <div style={{fontSize:22,marginBottom:6}}>{tile.emoji}</div>
             <div style={{fontFamily:"'Lora',serif",fontSize:16,fontWeight:700,color:TXT,marginBottom:2}}>{tile.sw}</div>
-            <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:tile.color,
-              fontWeight:700,letterSpacing:'.06em',textTransform:'uppercase',marginBottom:6}}>{tile.sub}</div>
+            <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10.5,color:tile.light,
+              fontWeight:800,letterSpacing:'.06em',textTransform:'uppercase',marginBottom:6}}>{tile.sub}</div>
             <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT,lineHeight:1.5}}>{tile.desc}</div>
           </div>
         ))}
