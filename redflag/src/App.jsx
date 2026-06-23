@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { useLang, LANGS } from './i18n'
+import { ARCHETYPE_CONTENT } from './content-i18n'
 
 const sb = createClient(
   'https://uuluuhltphgwfblcghlp.supabase.co',
@@ -627,7 +628,7 @@ function VoiceForm({ archetypeId, accentColor, onClose, onSubmit }) {
 
 // ── JIJUE SCREEN ──────────────────────────────────────────────────────────────
 function JiJueScreen({ setTab: goHome }) {
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const [active, setActive]   = useState(0)
   const [tab, setTab]         = useState('intro')
   const [dbContent, setDbContent] = useState({})
@@ -672,7 +673,9 @@ function JiJueScreen({ setTab: goHome }) {
       })
   }, [])
 
-  const a = ARCHETYPES[active]
+  const base = ARCHETYPES[active]
+  const tc = lang !== 'en' ? (ARCHETYPE_CONTENT[lang]?.[base.id] || {}) : {}
+  const a = { ...base, ...tc }   // sw/sheng text overrides the English base
   const getC = (id, sec, fallback) => dbContent[`${id}_${sec}`]?.length ? dbContent[`${id}_${sec}`] : fallback
 
   return (
@@ -685,7 +688,9 @@ function JiJueScreen({ setTab: goHome }) {
       </div>
       {/* Archetype selector */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(2,2fr)',gap:2,marginBottom:0}}>
-        {ARCHETYPES.map((arch, i) => (
+        {ARCHETYPES.map((arch, i) => {
+          const archLabel = (lang !== 'en' && ARCHETYPE_CONTENT[lang]?.[arch.id]?.label) || arch.label
+          return (
           <button key={arch.id} onClick={() => { setActive(i); setTab('intro'); loadVoices(arch.id) }}
             style={{fontFamily:"'Nunito Sans',sans-serif",border:'none',cursor:'pointer',
               padding:'14px 8px',
@@ -694,13 +699,13 @@ function JiJueScreen({ setTab: goHome }) {
               display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
             <span style={{fontSize:20}}>{arch.emoji}</span>
             <span style={{fontSize:12,fontWeight:700,color:active===i?arch.color:'#7A4A60',
-              letterSpacing:'-.01em'}}>{arch.label}</span>
+              letterSpacing:'-.01em'}}>{archLabel}</span>
             <span style={{fontSize:9,color:active===i?arch.muted||'#B89AAA':'#B89AAA',
               textTransform:'uppercase',letterSpacing:'.06em'}}>
               {arch.age.split('·')[0].trim()}
             </span>
           </button>
-        ))}
+        )})}
       </div>
 
       {/* Content area — archetype-specific background */}
@@ -741,7 +746,7 @@ function JiJueScreen({ setTab: goHome }) {
         {/* Red flags */}
         {tab==='redflags' && (
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
-            {(getC(a.id,'redflags',null)
+            {((lang==='en' && getC(a.id,'redflags',null))
               ? getC(a.id,'redflags',null).map((text,i) => {
                   const [flag,...rest] = text.split(' — ')
                   const why = rest.join(' — ')
@@ -765,7 +770,7 @@ function JiJueScreen({ setTab: goHome }) {
         {/* Protect yourself */}
         {tab==='protect' && (
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
-            {(getC(a.id,'protective',null) || a.protective).map((p,i) => {
+            {((lang==='en' && getC(a.id,'protective',null)) || a.protective).map((p,i) => {
               const isDigital = p.includes('hepa')||p.includes('Salmin')||p.includes('Red Flag')||p.includes('femsaidiakenya')
               return (
                 <div key={i} style={{background:isDigital?'#F0FFF4':a.card||'#fff',padding:'16px',
@@ -787,7 +792,7 @@ function JiJueScreen({ setTab: goHome }) {
               borderLeft:`4px solid ${a.color}`,padding:'20px 16px',marginBottom:16}}>
               <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
                 letterSpacing:'.15em',textTransform:'uppercase',color:a.color,marginBottom:12}}>
-                From someone who has seen this
+                {t('jj_seen_this')}
               </div>
               <p style={{fontFamily:"'Lora',serif",fontSize:16,color:'#180410',
                 lineHeight:1.9,fontStyle:'italic',margin:0}}>
@@ -799,17 +804,17 @@ function JiJueScreen({ setTab: goHome }) {
               <div>
                 <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
                   letterSpacing:'.1em',textTransform:'uppercase',color:a.color,marginBottom:2}}>
-                  Community voices
+                  {t('jj_voices')}
                 </div>
                 <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:'#B89AAA'}}>
-                  Survivors · Those left behind · Witnesses
+                  {t('jj_voices_sub')}
                 </div>
               </div>
               <button onClick={()=>setShowVoiceForm(true)}
                 style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
                   padding:'8px 14px',background:a.color,color:'#fff',
                   border:'none',cursor:'pointer',flexShrink:0}}>
-                + Share yours
+                {t('share_yours')}
               </button>
             </div>
             {voices.length===0?(
@@ -817,13 +822,13 @@ function JiJueScreen({ setTab: goHome }) {
                 padding:'24px 16px',textAlign:'center'}}>
                 <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,
                   color:'#B89AAA',marginBottom:10}}>
-                  No voices shared yet for this archetype.
+                  {t('jj_no_voices')}
                 </p>
                 <button onClick={()=>setShowVoiceForm(true)}
                   style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,
                     padding:'8px 16px',background:a.color,color:'#fff',
                     border:'none',cursor:'pointer'}}>
-                  Be the first
+                  {t('jj_be_first')}
                 </button>
               </div>
             ):voices.map((v,i)=>(
@@ -846,8 +851,7 @@ function JiJueScreen({ setTab: goHome }) {
             <div style={{background:a.surf||'#f8f4f6',border:'1px solid #e8dde4',
               borderLeft:`4px solid ${a.color}`,padding:'14px 16px',marginBottom:12}}>
               <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:a.muted||MUT,lineHeight:1.8}}>
-                These are women and girls whose lives were taken. They are not cautionary tales.
-                They are not statistics. They were here. We say their names.
+                {t('jj_remember_intro')}
               </p>
             </div>
             {(victims[a.id] || []).length === 0 ? (
@@ -860,8 +864,7 @@ function JiJueScreen({ setTab: goHome }) {
             <div style={{marginTop:20,paddingTop:16,borderTop:`1px solid #2A0818`}}>
               <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:'#5A2030',
                 lineHeight:1.7,fontStyle:'italic'}}>
-                🕯 Curated from the FemSaidia Kenya femicide database. To add a name,
-                contact us at femsaidiakenya.org
+                {t('jj_memorial_footer')}
               </p>
             </div>
           </div>
