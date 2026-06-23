@@ -95,8 +95,16 @@ async function checkFemicideCases(): Promise<Check> {
 }
 
 async function checkIntelBriefs(): Promise<Check> {
-  const { data } = await sb.from("intel_briefs").select("id").eq("active",true)
-  return { name:"Intel Briefs", ok:(data?.length??0)>0, detail:`${data?.length??0} active brief(s)` }
+  // Intel brief is produced biweekly (~14 days). Flag if the newest one is stale.
+  const { data } = await sb.from("intel_briefs")
+    .select("period_end").order("period_end",{ascending:false}).limit(1)
+  if (!data?.[0]?.period_end)
+    return { name:"Intel Brief Production", ok:false, detail:"No briefs on record — generator may never have run" }
+  const daysAgo = (Date.now() - new Date(data[0].period_end).getTime()) / 86400000
+  if (daysAgo > 16)
+    return { name:"Intel Brief Production", ok:false,
+      detail:`Newest brief is ${daysAgo.toFixed(0)} days old — biweekly generation may have stalled` }
+  return { name:"Intel Brief Production", ok:true, detail:`Newest brief ${daysAgo.toFixed(0)}d ago` }
 }
 
 // ── CLAUDE DIAGNOSIS ──────────────────────────────────────────────────────────
