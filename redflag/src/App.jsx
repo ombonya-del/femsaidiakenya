@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@supabase/supabase-js'
+import { useLang, LANGS } from './i18n'
 
 const sb = createClient(
   'https://uuluuhltphgwfblcghlp.supabase.co',
@@ -296,7 +297,8 @@ function ItikaSOSButton() {
 }
 
 // ── EMERGENCY BAR ─────────────────────────────────────────────────────────────
-function EmergencyBar({ t }) {
+function EmergencyBar() {
+  const { t } = useLang()
   const [showNumbers, setShowNumbers] = useState(false)
   return (
     <div>
@@ -348,28 +350,29 @@ function EmergencyBar({ t }) {
 
 // ── HOME SCREEN ───────────────────────────────────────────────────────────────
 function HomeScreen({ setTab }) {
+  const { t } = useLang()
   return (
     <div style={{padding:'24px 16px',paddingBottom:32}}>
       <div style={{marginBottom:32}}>
         <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
           letterSpacing:'.2em',textTransform:'uppercase',color:RED,marginBottom:12}}>
-          FemSaidia Kenya · Safety Intelligence
+          {t('home_kicker')}
         </p>
         <h1 style={{fontFamily:"'Lora',serif",fontSize:42,fontWeight:700,lineHeight:1.1,marginBottom:14}}>
           <span style={{color:RED}}>Red</span><br/>
           <span style={{color:TXT}}>Flag</span>
         </h1>
         <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:14,color:MUT,lineHeight:1.7,maxWidth:340}}>
-          Community intelligence. Safety education. Survivor knowledge. For young women in Kenya — and everyone around them.
+          {t('home_tagline')}
         </p>
       </div>
 
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:24}}>
         {[
-          {id:'jijue',    emoji:'🌱', sw:'JiJue',      en:'Know Yourself',        color:'#1A3F6F', desc:'Find your archetype. Know your red flags.'},
-          {id:'jitume',   emoji:'🛡️', sw:'JiTume',     en:'Take Action',          color:'#1A5A2A', desc:'For the ecosystem around her.'},
-          {id:'linda',    emoji:'💬', sw:'LindaLinda', en:'Protect & Share',      color:'#8A4010', desc:'Real safety norms from real people.'},
-          {id:'database', emoji:'🚩', sw:'Red Flag',   en:'Perpetrator Profiles', color:'#8A1030', desc:'Community-sourced database.'},
+          {id:'jijue',    emoji:'🌱', sw:'JiJue',      sub:t('tile_jijue_sub'),  color:'#1A3F6F', desc:t('tile_jijue_desc')},
+          {id:'jitume',   emoji:'🛡️', sw:'JiTume',     sub:t('tile_jitume_sub'), color:'#1A5A2A', desc:t('tile_jitume_desc')},
+          {id:'linda',    emoji:'💬', sw:'LindaLinda', sub:t('tile_linda_sub'),  color:'#8A4010', desc:t('tile_linda_desc')},
+          {id:'database', emoji:'🚩', sw:'Red Flag',   sub:t('tile_db_sub'),     color:'#8A1030', desc:t('tile_db_desc')},
         ].map(tile => (
           <div key={tile.id} onClick={() => setTab(tile.id)}
             style={{background:CARD,border:`1px solid ${BD}`,borderTop:`3px solid ${tile.color}`,
@@ -379,7 +382,7 @@ function HomeScreen({ setTab }) {
             <div style={{fontSize:22,marginBottom:6}}>{tile.emoji}</div>
             <div style={{fontFamily:"'Lora',serif",fontSize:16,fontWeight:700,color:TXT,marginBottom:2}}>{tile.sw}</div>
             <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:tile.color,
-              fontWeight:700,letterSpacing:'.06em',textTransform:'uppercase',marginBottom:6}}>{tile.en}</div>
+              fontWeight:700,letterSpacing:'.06em',textTransform:'uppercase',marginBottom:6}}>{tile.sub}</div>
             <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT,lineHeight:1.5}}>{tile.desc}</div>
           </div>
         ))}
@@ -387,13 +390,13 @@ function HomeScreen({ setTab }) {
 
       <div style={{background:CARD,border:`1px solid ${BD}`,borderLeft:`3px solid ${RED}`,padding:16}}>
         <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
-          letterSpacing:'.1em',textTransform:'uppercase',color:RED,marginBottom:8}}>Salama Salmin</p>
+          letterSpacing:'.1em',textTransform:'uppercase',color:RED,marginBottom:8}}>{t('salmin_title')}</p>
         <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:MUT,lineHeight:1.7,marginBottom:10}}>
-          Safe and sound. This platform, hepa, Salmin (*384*89056#) and Red Flag are part of one safety ecosystem built for Kenyan women.
+          {t('salmin_body')}
         </p>
         <a href="https://femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
           style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:RED,fontWeight:700,textDecoration:'none'}}>
-          Learn more at femsaidiakenya.org →
+          {t('learn_more')}
         </a>
       </div>
     </div>
@@ -610,6 +613,7 @@ function VoiceForm({ archetypeId, accentColor, onClose, onSubmit }) {
 
 // ── JIJUE SCREEN ──────────────────────────────────────────────────────────────
 function JiJueScreen({ setTab: goHome }) {
+  const { t } = useLang()
   const [active, setActive]   = useState(0)
   const [tab, setTab]         = useState('intro')
   const [dbContent, setDbContent] = useState({})
@@ -662,7 +666,7 @@ function JiJueScreen({ setTab: goHome }) {
       <div style={{display:'flex',alignItems:'center',padding:'10px 16px',borderBottom:'1px solid rgba(184,154,170,0.2)',background:'rgba(0,0,0,0.2)',position:'sticky',top:0,zIndex:10}}>
         <button onClick={()=>goHome&&goHome('home')}
           style={{background:'none',border:'none',cursor:'pointer',color:'#B89AAA',fontFamily:"'Nunito Sans',sans-serif",fontSize:13,fontWeight:600,display:'flex',alignItems:'center',gap:4,padding:0}}>
-          ← Home
+          {t('back_home')}
         </button>
       </div>
       {/* Archetype selector */}
@@ -689,7 +693,7 @@ function JiJueScreen({ setTab: goHome }) {
       <div style={{padding:'0 16px',background:'#fff',minHeight:'60vh'}}>
         {/* Sub-tabs */}
         <div style={{display:'flex',gap:2,margin:'16px 0'}}>
-          {[{id:'intro',label:'Who is this?'},{id:'redflags',label:'🚩 Red flags'},{id:'protect',label:'🛡️ Protect yourself'},{id:'talk',label:'💬 Real talk'},{id:'remember',label:'🕯 We remember'}].map(t => (
+          {[{id:'intro',label:t('jj_intro')},{id:'redflags',label:t('jj_redflags')},{id:'protect',label:t('jj_protect')},{id:'talk',label:t('jj_talk')},{id:'remember',label:t('jj_remember')}].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
                 padding:'7px 10px',border:'none',cursor:'pointer',flex:1,
@@ -855,6 +859,7 @@ function JiJueScreen({ setTab: goHome }) {
 
 // ── JITUME SCREEN ─────────────────────────────────────────────────────────────
 function JiTumeScreen({ setTab: goHome }) {
+  const { t } = useLang()
   const [open, setOpen] = useState(null)
   const [tab, setTab]   = useState('signs')
 
@@ -863,13 +868,13 @@ function JiTumeScreen({ setTab: goHome }) {
       <div style={{display:'flex',alignItems:'center',padding:'10px 16px',borderBottom:'1px solid rgba(184,154,170,0.2)',background:'rgba(0,0,0,0.2)',position:'sticky',top:0,zIndex:10}}>
         <button onClick={()=>goHome&&goHome('home')}
           style={{background:'none',border:'none',cursor:'pointer',color:'#B89AAA',fontFamily:"'Nunito Sans',sans-serif",fontSize:13,fontWeight:600,display:'flex',alignItems:'center',gap:4,padding:0}}>
-          ← Home
+          {t('back_home')}
         </button>
       </div>
       <div style={{padding:'20px 0 16px'}}>
         <h2 style={{fontFamily:"'Lora',serif",fontSize:28,fontWeight:700,color:TXT,marginBottom:6}}>JiTume</h2>
         <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:MUT,lineHeight:1.7}}>
-          Most femicides do not happen without warning signs that other people saw. This section is for everyone around her. Tap your role.
+          {t('jt_tagline')}
         </p>
       </div>
 
@@ -888,7 +893,7 @@ function JiTumeScreen({ setTab: goHome }) {
           {open===i && (
             <div style={{background:'#faf4f7',border:'1px solid #e8dde4',borderTop:'none'}}>
               <div style={{display:'flex',gap:2,padding:'12px 12px 0'}}>
-                {[{id:'signs',label:'What to watch for'},{id:'actions',label:'What to do'}].map(t => (
+                {[{id:'signs',label:t('jt_watch')},{id:'actions',label:t('jt_do')}].map(t => (
                   <button key={t.id} onClick={() => setTab(t.id)}
                     style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
                       padding:'7px 14px',border:'none',cursor:'pointer',
@@ -918,6 +923,7 @@ function JiTumeScreen({ setTab: goHome }) {
 
 // ── LINDALINDA SCREEN ─────────────────────────────────────────────────────────
 function LindaLindaScreen({ setTab: goHome }) {
+  const { t } = useLang()
   const [norms,   setNorms]   = useState([])
   const [loading, setLoading] = useState(true)
   const [showing, setShowing] = useState(false)
@@ -951,20 +957,20 @@ function LindaLindaScreen({ setTab: goHome }) {
       <div style={{display:'flex',alignItems:'center',padding:'10px 16px',borderBottom:'1px solid rgba(184,154,170,0.2)',background:'rgba(0,0,0,0.2)',position:'sticky',top:0,zIndex:10}}>
         <button onClick={()=>goHome&&goHome('home')}
           style={{background:'none',border:'none',cursor:'pointer',color:'#B89AAA',fontFamily:"'Nunito Sans',sans-serif",fontSize:13,fontWeight:600,display:'flex',alignItems:'center',gap:4,padding:0}}>
-          ← Home
+          {t('back_home')}
         </button>
       </div>
       <div style={{padding:'20px 0 16px',display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
         <div>
           <h2 style={{fontFamily:"'Lora',serif",fontSize:28,fontWeight:700,color:TXT,marginBottom:6}}>LindaLinda</h2>
           <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:MUT,lineHeight:1.6,maxWidth:280}}>
-            Real safety practices from real people. First person. Unfiltered. Like the stranger at the parking lot.
+            {t('ll_tagline')}
           </p>
         </div>
         <button onClick={() => setShowing(!showing)}
           style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
             padding:'10px 14px',background:RED,color:'#fff',border:'none',cursor:'pointer',flexShrink:0}}>
-          + Share yours
+          {t('share_yours')}
         </button>
       </div>
 
@@ -1058,6 +1064,7 @@ function NormCard({norm}) {
 
 // ── DATABASE SCREEN ───────────────────────────────────────────────────────────
 function DatabaseScreen({ setTab: goHome }) {
+  const { t } = useLang()
   const [profiles, setProfiles] = useState([])
   const [loading,  setLoading]  = useState(true)
   const [search,   setSearch]   = useState('')
@@ -1079,19 +1086,19 @@ function DatabaseScreen({ setTab: goHome }) {
       <div style={{display:'flex',alignItems:'center',padding:'10px 16px',borderBottom:'1px solid rgba(184,154,170,0.2)',background:'rgba(0,0,0,0.2)',position:'sticky',top:0,zIndex:10}}>
         <button onClick={()=>goHome&&goHome('home')}
           style={{background:'none',border:'none',cursor:'pointer',color:'#B89AAA',fontFamily:"'Nunito Sans',sans-serif",fontSize:13,fontWeight:600,display:'flex',alignItems:'center',gap:4,padding:0}}>
-          ← Home
+          {t('back_home')}
         </button>
       </div>
       <div style={{padding:'20px 0 12px'}}>
         <h2 style={{fontFamily:"'Lora',serif",fontSize:28,fontWeight:700,marginBottom:4}}>
           <span style={{color:RED}}>Red</span>
           <span style={{color:TXT}}> Flag</span>
-          <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:MUT,fontWeight:400,display:'block',marginTop:4}}>Community-sourced · Admin verified</span>
+          <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:MUT,fontWeight:400,display:'block',marginTop:4}}>{t('db_subtitle')}</span>
         </h2>
       </div>
 
       <input value={search} onChange={e=>setSearch(e.target.value)}
-        placeholder="Search by name, alias, county, modus operandi…"
+        placeholder={t('db_search_ph')}
         style={{width:'100%',padding:'10px 14px',fontFamily:"'Nunito Sans',sans-serif",
           fontSize:13,background:CARD,border:`1px solid ${BD}`,color:TXT,
           outline:'none',marginBottom:12,boxSizing:'border-box'}}/>
@@ -1101,7 +1108,7 @@ function DatabaseScreen({ setTab: goHome }) {
       ) : filtered.length===0 ? (
         <div style={{background:CARD,border:`1px solid ${BD}`,padding:32,textAlign:'center'}}>
           <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:MUT}}>
-            {search ? 'No results for that search.' : 'No approved profiles yet.'}
+            {search ? t('db_no_results') : t('db_no_profiles')}
           </p>
         </div>
       ) : filtered.map((p,i) => (
@@ -1113,15 +1120,15 @@ function DatabaseScreen({ setTab: goHome }) {
             <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,fontWeight:700,
               letterSpacing:'.08em',textTransform:'uppercase',padding:'2px 8px',
               background:RED,color:'#fff',flexShrink:0}}>
-              {p.tier===1?'Confirmed':p.tier===2?'Multiple reports':'Flagged'}
+              {p.tier===1?t('db_tier1'):p.tier===2?t('db_tier2'):t('db_tier3')}
             </span>
           </div>
-          {p.aliases&&<p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,marginBottom:4}}>Also: {p.aliases}</p>}
+          {p.aliases&&<p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,marginBottom:4}}>{t('db_also')} {p.aliases}</p>}
           <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT}}>{p.county&&`${p.county} · `}{p.modus_operandi?.slice(0,80)}…</p>
 
           {selected===p.id && (
             <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${BD}`}}>
-              {[['County',p.county],['Social media',p.social_handles],['How they operate',p.modus_operandi],['Additional details',p.details]].filter(([,v])=>v).map(([label,val],j)=>(
+              {[[t('db_county'),p.county],[t('db_social'),p.social_handles],[t('db_how'),p.modus_operandi],[t('db_details'),p.details]].filter(([,v])=>v).map(([label,val],j)=>(
                 <div key={j} style={{marginBottom:10}}>
                   <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,fontWeight:700,
                     letterSpacing:'.1em',textTransform:'uppercase',color:MUT,marginBottom:3}}>{label}</div>
@@ -1130,7 +1137,7 @@ function DatabaseScreen({ setTab: goHome }) {
               ))}
               <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,
                 borderTop:`1px solid ${BD}`,paddingTop:10,marginTop:10,lineHeight:1.6}}>
-                ⚠️ Community-submitted, admin-reviewed. Not a conviction.
+                {t('db_disclaimer')}
               </p>
             </div>
           )}
@@ -1142,8 +1149,9 @@ function DatabaseScreen({ setTab: goHome }) {
 
 // ── BOTTOM NAV ────────────────────────────────────────────────────────────────
 function BottomNav({ tab, setTab }) {
+  const { t } = useLang()
   const tabs = [
-    {id:'home',     emoji:'🏠', label:'Home'},
+    {id:'home',     emoji:'🏠', label:t('nav_home')},
     {id:'jijue',    emoji:'🌱', label:'JiJue'},
     {id:'jitume',   emoji:'🛡️', label:'JiTume'},
     {id:'linda',    emoji:'💬', label:'LindaLinda'},
@@ -1174,6 +1182,7 @@ function BottomNav({ tab, setTab }) {
 
 // ── ROOT APP ──────────────────────────────────────────────────────────────────
 export default function App() {
+  const { t, lang, setLang } = useLang()
   const [tab,    setTab]    = useState(localStorage.getItem('redflag_tab')||'home')
   const [county, setCounty] = useState(localStorage.getItem('redflag_county')||'')
   const [showCountyPrompt, setShowCountyPrompt] = useState(!localStorage.getItem('redflag_county'))
@@ -1194,18 +1203,17 @@ export default function App() {
           display:'flex',alignItems:'center',justifyContent:'center',padding:24}}>
           <div style={{background:'#fff',width:'100%',maxWidth:340,padding:24}}>
             <h2 style={{fontFamily:"'Lora',serif",fontSize:20,fontWeight:700,
-              color:'#180410',marginBottom:8}}>What county are you in?</h2>
+              color:'#180410',marginBottom:8}}>{t('cp_title')}</h2>
             <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'#7A4A60',
               lineHeight:1.6,marginBottom:16}}>
-              Used to route emergency alerts to Itika community responders near you.
-              Stays on your phone only.
+              {t('cp_body')}
             </p>
             <select onChange={e=>e.target.value&&saveCounty(e.target.value)}
               defaultValue=""
               style={{width:'100%',padding:'12px 14px',fontFamily:"'Nunito Sans',sans-serif",
                 fontSize:14,background:'#f8f4f6',border:'1px solid #D4BEC4',
                 color:'#180410',outline:'none',marginBottom:12,boxSizing:'border-box'}}>
-              <option value="" disabled>Select your county...</option>
+              <option value="" disabled>{t('cp_select')}</option>
               {['Baringo','Bomet','Bungoma','Busia','Elegeyo-Marakwet','Embu','Garissa',
                 'Homa Bay','Isiolo','Kajiado','Kakamega','Kericho','Kiambu','Kilifi',
                 'Kirinyaga','Kisii','Kisumu','Kitui','Kwale','Laikipia','Lamu','Machakos',
@@ -1218,11 +1226,24 @@ export default function App() {
             <button onClick={()=>setShowCountyPrompt(false)}
               style={{width:'100%',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,
                 color:'#B89AAA',background:'none',border:'none',cursor:'pointer',marginTop:4}}>
-              Skip for now
+              {t('cp_skip')}
             </button>
           </div>
         </div>
       )}
+
+      {/* Language toggle */}
+      <div style={{background:BG,display:'flex',justifyContent:'flex-end',gap:4,
+        padding:'6px 12px',borderBottom:`1px solid ${BD}`}}>
+        {LANGS.map(([code,label]) => (
+          <button key={code} onClick={()=>setLang(code)}
+            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,cursor:'pointer',
+              padding:'3px 10px',borderRadius:14,border:`1px solid ${lang===code?RED:BD}`,
+              background:lang===code?RED:'transparent',color:lang===code?'#fff':MUT}}>
+            {label}
+          </button>
+        ))}
+      </div>
       <EmergencyBar/>
 
       <div style={{overflowY:'auto'}}>
