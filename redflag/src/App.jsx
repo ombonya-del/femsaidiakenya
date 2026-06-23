@@ -236,6 +236,8 @@ function ItikaSOSButton() {
       } catch(e) {}
       setSent(true)
       setPressing(false)
+      // Re-arm after a few seconds so the page returns to normal on its own
+      setTimeout(() => { setSent(false); setProgress(0) }, 6000)
     }, HOLD_MS)
   }
 
