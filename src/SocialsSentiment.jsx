@@ -1,6 +1,7 @@
 const stripHtml = (v) => !v ? '' : String(v).replace(/<[^>]*>/g, '').replace(/&[a-z#0-9]+;/gi, ' ').trim()
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { createClient } from '@supabase/supabase-js'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { ExternalLink, AlertTriangle, TrendingUp, TrendingDown, Minus,
@@ -64,7 +65,10 @@ function MisogynyGauge({ score }) {
 function ArticleModal({ article, onClose }) {
   if (!article) return null
   const mColor = scoreColor(article.misogyny_score)
-  return (
+  // Render via a portal to <body> so the fixed overlay anchors to the viewport,
+  // not to the .fade-up container (whose `forwards` transform would otherwise
+  // capture position:fixed and push the dialog off-screen).
+  return createPortal(
     <div style={{ position:'fixed', inset:0, background:'rgba(24,4,16,0.7)', zIndex:1000,
       display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}
       onClick={onClose}>
@@ -196,7 +200,8 @@ function ArticleModal({ article, onClose }) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -303,6 +308,8 @@ export default function SocialsSentimentTab() {
   const [showAllHighlights, setShowAllHighlights] = useState(false)
   const [activeBreak, setActiveBreak] = useState(null) // clicked breakdown metric
   const [showAllPulse, setShowAllPulse] = useState(false)
+  const [dbTotal,    setDbTotal]    = useState(null)  // true row count (not the capped fetch)
+  const [todayCount, setTodayCount] = useState(null)  // true count scanned today
 
   const today       = index[index.length - 1]
   const yesterday   = index[index.length - 2]
@@ -329,6 +336,16 @@ export default function SocialsSentimentTab() {
     setArticles(merged)
     setHighlights(hlRes.data || [])
     setLoading(false)
+
+    // True counts (the fetch above is capped at 200 for performance, so the
+    // displayed array length plateaus ~205 — these queries report the real totals)
+    const todayStr = new Date().toISOString().slice(0, 10)
+    const [totalRes, todayRes] = await Promise.all([
+      supabase.from('sentiment_articles').select('id', { count:'exact', head:true }),
+      supabase.from('sentiment_articles').select('id', { count:'exact', head:true }).gte('scanned_at', todayStr),
+    ])
+    setDbTotal(totalRes.count ?? null)
+    setTodayCount(todayRes.count ?? null)
   }
 
   // ── INTELLIGENCE BREAKDOWN METRICS ─────────────────────────────────────────
@@ -419,12 +436,13 @@ export default function SocialsSentimentTab() {
             </h1>
             {(() => {
               const todayStr = new Date().toISOString().slice(0,10)
-              const scannedToday = articles.filter(a => (a.scanned_at||'').startsWith(todayStr)).length
+              const scannedToday = todayCount ?? articles.filter(a => (a.scanned_at||'').startsWith(todayStr)).length
+              const totalInDb = dbTotal ?? total
               return (
                 <p style={{ fontSize:13, color:MUT, marginTop:6, fontFamily:"'Nunito Sans',sans-serif",
                   fontWeight:300 }}>
                   <strong style={{ color:A }}>{scannedToday} items scanned today</strong>
-                  {' '}&nbsp;·&nbsp; {total} total in database &nbsp;·&nbsp; Real-time misogyny and GBV intelligence
+                  {' '}&nbsp;·&nbsp; {totalInDb} total in database &nbsp;·&nbsp; Real-time misogyny and GBV intelligence
                 </p>
               )
             })()}

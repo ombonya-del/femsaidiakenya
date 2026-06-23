@@ -200,20 +200,18 @@ async function sendEmail(checks: Check[], diagnosis: string) {
 
 // ── ADVISORY CHECKS (cannot auto-fix — provide exact commands) ────────────────
 async function checkVapidKeyConsistency(): Promise<Check & {fixCmd?:string}> {
-  // Check if VAPID_PUBLIC_KEY secret matches what we expect
   const expected = "BOcENhE48dHNQuPWaxsV1rvT_vH7HwRAO6u_CThCP1068nWP5MvDYwQeI43yhEnq6x7SgdpR4mxXqTwPXfYPau0"
-  // We can't read secrets directly but we can test send-push with a known-bad sub
-  // Instead just verify push_subscriptions exist and are recent
-  const { data } = await sb.from("push_subscriptions")
-    .select("created_at").order("created_at",{ascending:false}).limit(1)
-  if (!data?.[0]) return { name:"VAPID / Push Config", ok:false,
-    detail:"No active subscriptions — VAPID key may be misconfigured",
-    fixCmd:`supabase secrets set VAPID_PUBLIC_KEY=${expected}\nsupabase secrets set VAPID_PRIVATE_KEY=_XRjISaGITl1XFslRjIubswLque4Wo9xChlJqWvLb2k\nsupabase functions deploy send-push` }
-  const hoursOld = (Date.now() - new Date(data[0].created_at).getTime()) / 3600000
-  if (hoursOld > 168) return { name:"VAPID / Push Config", ok:false,
-    detail:`Subscriptions are ${Math.floor(hoursOld/24)} days old — may be stale`,
-    fixCmd:"DELETE FROM push_subscriptions; -- Run in Supabase SQL Editor\n-- Then ask responders to reopen Itika" }
-  return { name:"VAPID / Push Config", ok:true, detail:`Subscriptions active (newest: ${hoursOld.toFixed(0)}h ago)` }
+  const { count } = await sb.from("push_subscriptions").select("id",{count:"exact",head:true})
+  const n = count ?? 0
+  // Only a genuine problem worth flagging: NO subscriptions at all (keys unset, or
+  // nobody has subscribed). Age is NOT staleness — push subscriptions stay valid for
+  // months, and any that actually stop working return 404/410 and are auto-pruned by
+  // send-push. So we no longer nag to DELETE the table on age.
+  if (n === 0) return { name:"VAPID / Push Config", ok:false,
+    detail:"No active push subscriptions — VAPID keys may be unset, or responders haven't subscribed yet",
+    fixCmd:`supabase secrets set VAPID_PUBLIC_KEY=${expected}\nsupabase secrets set VAPID_PRIVATE_KEY=<your-private-key>\nsupabase functions deploy send-push\n# then ask responders to reopen Itika so it re-subscribes` }
+  return { name:"VAPID / Push Config", ok:true,
+    detail:`${n} active subscription${n!==1?"s":""} · dead ones auto-prune on send (404/410)` }
 }
 
 async function checkResendConfig(): Promise<Check & {fixCmd?:string}> {

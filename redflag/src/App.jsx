@@ -17,6 +17,16 @@ const MUT  = '#B89AAA'
 const BD   = '#4A1828'
 const GRN  = '#1A5A2A'
 
+// ── EMERGENCY NUMBERS (shared with the hepa safety app) ───────────────────────
+const EMERGENCY_NUMBERS = [
+  { name:'Police emergency',   phone:'999'         },
+  { name:'DCI Gender Desk',    phone:'0800722203'  },
+  { name:'GVRC Kenya',         phone:'0800723253'  },
+  { name:'Usikimye',           phone:'0800723253'  },
+  { name:'FIDA Kenya',         phone:'0719638006'  },
+  { name:'Kituo Cha Sheria',   phone:'0800720434'  },
+]
+
 // ── ARCHETYPE DATA ────────────────────────────────────────────────────────────
 // Age ranges map to femicide_cases.victim_age_range DB values
 const ARCH_AGE_RANGES = {
@@ -286,29 +296,52 @@ function ItikaSOSButton() {
 }
 
 // ── EMERGENCY BAR ─────────────────────────────────────────────────────────────
-function EmergencyBar() {
+function EmergencyBar({ t }) {
+  const [showNumbers, setShowNumbers] = useState(false)
   return (
-    <div style={{background:'#1A0008',borderBottom:`1px solid ${RED}`,padding:'10px 16px',
-      display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,flexWrap:'wrap'}}>
-      <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
-        letterSpacing:'.12em',textTransform:'uppercase',color:RED}}>⚡ Emergency</span>
-      <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
-        <ItikaSOSButton/>
-        <a href="https://hepa.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
-          style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
-            padding:'5px 10px',background:GRN,color:'#fff',textDecoration:'none',display:'inline-flex',alignItems:'center',gap:4}}>
-          📱 Install hepa
-        </a>
-        <a href="tel:*384*89056%23" style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
-          padding:'5px 10px',background:'#8A1030',color:'#fff',textDecoration:'none',display:'inline-block'}}>
-          📞 Salmin *384*89056#
-        </a>
-        <ItikaSOSButton/>
-        <a href="https://femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
-          style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,textDecoration:'none'}}>
-          femsaidiakenya.org
-        </a>
+    <div>
+      <div style={{background:'#1A0008',borderBottom:`1px solid ${RED}`,padding:'10px 16px',
+        display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,flexWrap:'wrap'}}>
+        <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
+          letterSpacing:'.12em',textTransform:'uppercase',color:RED}}>⚡ {t ? t('emergency') : 'Emergency'}</span>
+        <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+          <ItikaSOSButton/>
+          <button onClick={()=>setShowNumbers(v=>!v)}
+            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,cursor:'pointer',
+              padding:'5px 10px',background:RED,color:'#fff',border:'none',display:'inline-flex',alignItems:'center',gap:4}}>
+            ☎ {t ? t('helplines') : 'Helplines'} {showNumbers ? '▲' : '▼'}
+          </button>
+          <a href="https://hepa.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
+            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
+              padding:'5px 10px',background:GRN,color:'#fff',textDecoration:'none',display:'inline-flex',alignItems:'center',gap:4}}>
+            📱 {t ? t('install_hepa') : 'Install hepa'}
+          </a>
+          <a href="tel:*384*89056%23" style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,
+            padding:'5px 10px',background:'#8A1030',color:'#fff',textDecoration:'none',display:'inline-block'}}>
+            📞 Salmin *384*89056#
+          </a>
+          <a href="https://femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
+            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,textDecoration:'none'}}>
+            femsaidiakenya.org
+          </a>
+        </div>
       </div>
+      {showNumbers && (
+        <div style={{background:SURF,borderBottom:`1px solid ${BD}`,padding:'10px 16px'}}>
+          <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,letterSpacing:'.1em',
+            textTransform:'uppercase',color:MUT,margin:'0 0 8px'}}>{t ? t('emergency_numbers') : 'Emergency numbers'}</p>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))',gap:6}}>
+            {EMERGENCY_NUMBERS.map((c,i)=>(
+              <a key={i} href={`tel:${c.phone}`}
+                style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,
+                  padding:'8px 12px',background:CARD,border:`1px solid ${BD}`,textDecoration:'none'}}>
+                <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:TXT}}>{c.name}</span>
+                <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:800,color:BRED}}>{c.phone}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

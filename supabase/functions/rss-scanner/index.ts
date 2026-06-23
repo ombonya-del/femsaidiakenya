@@ -5,6 +5,75 @@ const SUPABASE_URL     = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 const supabase         = createClient(SUPABASE_URL, SUPABASE_SERVICE)
 
+// ── Case-alert email (Resend) ────────────────────────────────────────────────
+// Fires when the scanner inserts a high-probability case (gbv_relevance >= 8),
+// so new cases are never missed between manual admin checks.
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || ''
+const ALERT_TO       = Deno.env.get('CASE_ALERT_TO')   || 'ombonya@gmail.com'
+const ALERT_FROM     = Deno.env.get('CASE_ALERT_FROM') || 'FemSaidia Alert <alerts@femsaidiakenya.org>'
+const ADMIN_URL      = 'https://admin.femsaidiakenya.org'
+const ALERT_THRESHOLD = 8
+
+function esc(s: string): string {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+}
+
+async function sendCaseAlert(a: any): Promise<boolean> {
+  if (!RESEND_API_KEY) { console.log('Case alert skipped — RESEND_API_KEY not set'); return false }
+  const title = esc(stripHtml(a.article_title || a.title || 'Untitled'))
+  const source = esc(a.source_name || a.source || 'Unknown source')
+  const snippet = esc(stripHtml((a.article_snippet || a.snippet || '').slice(0, 300)))
+  const link = a.article_url || a.url || '#'
+  const cat = esc(a.content_category || 'general')
+  const html = `<!DOCTYPE html><html><body style="margin:0;background:#f4f4f5;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+  <div style="max-width:560px;margin:0 auto;padding:24px">
+    <div style="background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e4e4e7">
+      <div style="background:#B3261E;padding:16px 22px">
+        <p style="margin:0;color:#fff;font-size:12px;font-weight:800;letter-spacing:.08em">🚨 HIGH-PROBABILITY CASE DETECTED</p>
+      </div>
+      <div style="padding:22px">
+        <h1 style="margin:0 0 6px;font-size:19px;line-height:1.3;color:#18181b">${title}</h1>
+        <p style="margin:0 0 14px;font-size:13px;color:#71717a">${source} · ${cat}</p>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
+          <tr>
+            <td style="padding:8px 10px;background:#fef2f2;border-radius:8px;text-align:center">
+              <div style="font-size:22px;font-weight:800;color:#B3261E">${a.gbv_relevance ?? '—'}</div>
+              <div style="font-size:10px;color:#71717a">GBV relevance</div>
+            </td>
+            <td style="width:8px"></td>
+            <td style="padding:8px 10px;background:#fff7ed;border-radius:8px;text-align:center">
+              <div style="font-size:22px;font-weight:800;color:#c2410c">${a.misogyny_score ?? '—'}</div>
+              <div style="font-size:10px;color:#71717a">Misogyny</div>
+            </td>
+            <td style="width:8px"></td>
+            <td style="padding:8px 10px;background:#f4f4f5;border-radius:8px;text-align:center">
+              <div style="font-size:15px;font-weight:800;color:#3f3f46;padding-top:4px">${esc(a.sentiment || '—')}</div>
+              <div style="font-size:10px;color:#71717a">Sentiment</div>
+            </td>
+          </tr>
+        </table>
+        ${snippet ? `<p style="margin:0 0 18px;font-size:13.5px;line-height:1.6;color:#3f3f46">${snippet}…</p>` : ''}
+        <a href="${ADMIN_URL}" style="display:inline-block;background:#B3261E;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 22px;border-radius:10px">Log this case in Admin →</a>
+        <p style="margin:14px 0 0;font-size:12px"><a href="${esc(link)}" style="color:#71717a">Read the source article</a></p>
+      </div>
+    </div>
+    <p style="text-align:center;color:#a1a1aa;font-size:11px;margin:16px 0 0">FemSaidia Kenya · automated case alert</p>
+  </div></body></html>`
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: ALERT_FROM, to: [ALERT_TO],
+        subject: `🚨 New case (GBV ${a.gbv_relevance}/10): ${stripHtml(a.article_title || a.title || '').slice(0, 70)}`,
+        html,
+      }),
+    })
+    if (!res.ok) { console.error('Resend error:', res.status, await res.text()); return false }
+    return true
+  } catch (e: any) { console.error('sendCaseAlert error:', e.message); return false }
+}
+
 // Strip HTML tags and decode common entities
 function stripHtml(str: string): string {
   return (str || '')
@@ -210,6 +279,28 @@ async function updateMisogynyIndex() {
 // ── MAIN ──────────────────────────────────────────────────────────────────────
 Deno.serve(async (req: Request) => {
   if (req.method === 'GET') return new Response(JSON.stringify({status:'ok'}), {headers:{'Content-Type':'application/json'}})
+
+  // ── Manual test path: POST {"test_alert": true} sends one sample case alert ──
+  // Lets you verify the Resend pipeline end-to-end without waiting for a real case.
+  try {
+    const body = await req.clone().json().catch(() => ({}))
+    if (body?.test_alert) {
+      const sample = {
+        article_title: 'TEST — Woman killed in Nairobi, partner in custody',
+        source_name: 'Manual test trigger',
+        article_snippet: 'This is a test of the FemSaidia case-alert email pipeline. Not a real case — you can ignore it.',
+        article_url: 'https://femsaidiakenya.org',
+        gbv_relevance: 9, misogyny_score: 8, sentiment: 'alarming', content_category: 'femicide',
+      }
+      const ok = await sendCaseAlert(sample)
+      return new Response(JSON.stringify({
+        test_alert: true, sent: ok, to: ALERT_TO,
+        note: ok ? 'Sample case alert sent — check the inbox (and spam).'
+                 : 'Send failed — confirm RESEND_API_KEY is set and the sending domain is verified in Resend.',
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    }
+  } catch { /* not a test request — fall through to a normal scan */ }
+
   try {
     // 1. Fetch all feeds in parallel batches
     const allArticles: any[] = []
@@ -270,10 +361,17 @@ Deno.serve(async (req: Request) => {
         scanned_at:new Date().toISOString(),
       }))
 
+    let alertsSent = 0
     if (toInsert.length) {
       const { error } = await supabase.from('sentiment_articles').insert(toInsert)
       if (error) console.error('Insert error:', error.message)
-      else console.log(`Inserted ${toInsert.length} articles`)
+      else {
+        console.log(`Inserted ${toInsert.length} articles`)
+        // Fire a case alert for every newly-inserted high-probability case
+        const highCases = toInsert.filter(a => (a.gbv_relevance ?? 0) >= ALERT_THRESHOLD)
+        for (const a of highCases) { if (await sendCaseAlert(a)) alertsSent++ }
+        if (highCases.length) console.log(`Case alerts: ${alertsSent}/${highCases.length} sent`)
+      }
     }
 
     await updateMisogynyIndex()
@@ -281,7 +379,7 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({
       success:true, total:allArticles.length, unique:unique.length,
       kenya_gbv:relevant.length, new:newItems.length, classified:classified.length,
-      inserted:toInsert.length,
+      inserted:toInsert.length, case_alerts_sent:alertsSent,
       kibe_hits:toInsert.filter(a=>a.is_kibe_related).length,
       protest_hits:toInsert.filter(a=>a.is_protest).length,
     }), {status:200, headers:{'Content-Type':'application/json'}})

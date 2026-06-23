@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, Component } from 'react'
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 const EMERGENCY_CONTACTS = [
@@ -67,6 +67,14 @@ function Calculator({ onReveal }) {
   const [longPressInterval, setLongPressInterval] = useState(null)
   const [pressProgress, setPressProgress] = useState(0)
   const progressRef = useRef(0)
+  // One-time first-open instructions (shown once, then never again)
+  const [showFirstHint, setShowFirstHint] = useState(() => {
+    try { return localStorage.getItem('hepa_hint_seen') !== '1' } catch { return true }
+  })
+  const dismissHint = () => {
+    setShowFirstHint(false)
+    try { localStorage.setItem('hepa_hint_seen', '1') } catch {}
+  }
 
   const inputDigit = (digit) => {
     if (waitingForOperand) {
@@ -186,6 +194,23 @@ function Calculator({ onReveal }) {
 
   return (
     <div className="calc-root">
+      {showFirstHint && (
+        <div onClick={dismissHint} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.82)', zIndex:60,
+          display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:28,
+          textAlign:'center', fontFamily:"'Nunito Sans',sans-serif" }}>
+          <div style={{ fontSize:12, fontWeight:800, letterSpacing:'.14em', textTransform:'uppercase',
+            color:'#FF9F45', marginBottom:14 }}>Welcome to hepa</div>
+          <div style={{ fontSize:21, fontWeight:800, color:'#fff', lineHeight:1.35, maxWidth:300, marginBottom:14 }}>
+            This looks like a calculator on purpose.
+          </div>
+          <div style={{ fontSize:15, color:'rgba(255,255,255,0.85)', lineHeight:1.6, maxWidth:320, marginBottom:26 }}>
+            To open your safety tools, <strong style={{ color:'#FF9F45' }}>press and hold the&nbsp;=&nbsp;key for 3 seconds</strong>. Anyone else who picks up your phone just sees a calculator.
+          </div>
+          <button onClick={dismissHint} style={{ background:'#FF5C28', color:'#fff', border:'none', fontWeight:800,
+            fontSize:15, padding:'13px 34px', borderRadius:12, cursor:'pointer' }}>Got it</button>
+          <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', marginTop:14 }}>You won't see this again</div>
+        </div>
+      )}
       <div className="calc-display">
         <div className="calc-expr">{expression}</div>
         <div className={`calc-value${isLong?' small':''}`}>{display}</div>
@@ -224,16 +249,16 @@ function Calculator({ onReveal }) {
           <span style={{position:'relative',zIndex:1}}>=</span>
         </button>
       </div>
-      {/* Hint below calculator */}
+      {/* Hint below calculator — visible reminder of the hidden gesture */}
       <div style={{
-        display:'flex', alignItems:'center', justifyContent:'center',
-        gap:6, marginTop:10,
-        fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
-        color:'rgba(255,255,255,0.45)',
-        animation:'hintBlink 2.5s ease-in-out infinite',
+        display:'flex', alignItems:'center', justifyContent:'center', gap:7,
+        margin:'14px auto 0', padding:'8px 16px', width:'fit-content', maxWidth:'92%',
+        background:'rgba(255,149,0,0.13)', border:'1px solid rgba(255,149,0,0.3)', borderRadius:22,
+        fontFamily:"'Nunito Sans',sans-serif", fontSize:12.5, fontWeight:600,
+        color:'rgba(255,255,255,0.8)', textAlign:'center', lineHeight:1.4,
       }}>
-        <span style={{fontSize:14}}>👆</span>
-        <span>Hold <strong style={{color:'rgba(255,149,0,0.8)',fontWeight:700}}>=</strong> for 3 seconds to access safety tools</span>
+        <span style={{fontSize:15}}>👆</span>
+        <span>Hold <strong style={{color:'#FF9F45',fontWeight:800}}>=</strong> for 3 seconds to open safety tools</span>
       </div>
     </div>
   )
@@ -243,6 +268,10 @@ function Calculator({ onReveal }) {
 function PanicScreen({ contacts, onDismiss }) {
   const [location, setLocation] = useState(null)
   const [sent, setSent] = useState(false)
+  // Defined at component scope so the SMS link in the render can use it.
+  // (Previously `phone` only existed inside sendAlert, so the render threw a
+  // ReferenceError and the panic screen went blank.)
+  const phone = (contacts[0]?.phone || '').replace(/\s+/g, '')
 
   useEffect(() => {
     // Get GPS location
@@ -362,8 +391,7 @@ function PanicScreen({ contacts, onDismiss }) {
         }).catch(() => {})
     } catch(e) { /* silent fail — never block the alert */ }
     // 2. Open WhatsApp AFTER Supabase insert completes
-    if (contacts.length > 0) {
-      const phone = contacts[0].phone.replace(/\s+/g, '')
+    if (phone) {
       const wa = `https://wa.me/${phone.startsWith('0') ? '254' + phone.slice(1) : phone}?text=${encodeURIComponent(message)}`
       window.open(wa, '_blank')
     }
@@ -729,7 +757,7 @@ function ContactsScreen({ data, onBack, onUpdate }) {
 }
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
-export default function App() {
+function App() {
   const [screen, setScreen] = useState('calc') // calc | reveal | setup | home | panic | checkin | guide | contacts
   const [userData, setUserData] = useState(null)
   const [shakeEnabled, setShakeEnabled] = useState(false)
@@ -904,5 +932,47 @@ export default function App() {
 
       <div style={{height:32}}/>
     </div>
+  )
+}
+
+// ── SAFETY FALLBACK + ERROR BOUNDARY ──────────────────────────────────────────
+// A safety app must never go fully blank. If any screen throws while rendering,
+// we show emergency numbers and a reload button instead of a white screen.
+function SafeFallback() {
+  return (
+    <div style={{minHeight:'100vh',background:'#0A2D1A',color:'#fff',display:'flex',flexDirection:'column',
+      alignItems:'center',justifyContent:'center',padding:24,textAlign:'center',fontFamily:"'Nunito Sans',sans-serif"}}>
+      <div style={{fontSize:40,marginBottom:12}}>🛟</div>
+      <div style={{fontSize:18,fontWeight:800,marginBottom:14}}>Help is still here</div>
+      <a href="tel:999" style={{background:'#fff',color:'#CC1010',fontWeight:800,fontSize:18,padding:'14px 28px',
+        borderRadius:14,textDecoration:'none',marginBottom:18,letterSpacing:'.04em'}}>CALL 999 NOW</a>
+      <div style={{width:'100%',maxWidth:320,marginBottom:20}}>
+        {EMERGENCY_CONTACTS.map((c,i)=>(
+          <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',
+            padding:'9px 0',borderBottom:'1px solid rgba(255,255,255,0.1)'}}>
+            <span style={{color:'rgba(255,255,255,0.7)',fontSize:13}}>{c.name}</span>
+            <a href={`tel:${c.phone}`} style={{color:'#FF9F45',fontWeight:700,fontSize:13,textDecoration:'none'}}>{c.phone}</a>
+          </div>
+        ))}
+      </div>
+      <button onClick={()=>window.location.reload()} style={{background:'rgba(255,255,255,0.12)',
+        border:'1px solid rgba(255,255,255,0.25)',color:'#fff',padding:'10px 24px',borderRadius:10,
+        cursor:'pointer',fontSize:13,fontFamily:"'Nunito Sans',sans-serif"}}>Reload</button>
+    </div>
+  )
+}
+
+class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { hasError:false } }
+  static getDerivedStateFromError() { return { hasError:true } }
+  componentDidCatch(err, info) { console.error('hepa render error:', err, info) }
+  render() { return this.state.hasError ? <SafeFallback/> : this.props.children }
+}
+
+export default function HepaApp() {
+  return (
+    <ErrorBoundary>
+      <App/>
+    </ErrorBoundary>
   )
 }
