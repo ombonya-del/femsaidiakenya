@@ -1,9 +1,18 @@
 name: Generate Intel Brief PDF
 
+# Builds the public Intel Brief PDF when an editor PUBLISHES a brief: the
+# intel-brief edge function fires a repository_dispatch (event: publish-brief)
+# with the approved brief's id. Biweekly DRAFT generation is handled separately
+# by the Supabase pg_cron job that calls the intel-brief edge function.
 on:
-  schedule:
-    - cron: '30 3 1,15 * *'
+  repository_dispatch:
+    types: [publish-brief]
   workflow_dispatch:
+    inputs:
+      brief_id:
+        description: 'Brief UUID to render (blank = latest active)'
+        required: false
+        default: ''
 
 jobs:
   build:
@@ -23,12 +32,20 @@ jobs:
         run: pip install reportlab requests
 
       - name: Generate PDF
-        run: python3 scripts/generate_brief.py
+        run: |
+          BRIEF_ID="${{ github.event.client_payload.brief_id || github.event.inputs.brief_id }}"
+          if [ -n "$BRIEF_ID" ]; then
+            echo "Rendering brief $BRIEF_ID"
+            python3 scripts/generate_brief.py --id "$BRIEF_ID"
+          else
+            echo "Rendering latest brief"
+            python3 scripts/generate_brief.py
+          fi
 
       - name: Commit and push
         run: |
           git config user.name "FemSaidia Bot"
           git config user.email "bot@femsaidiakenya.org"
-          git add public/intel-brief-latest.pdf
-          git diff --staged --quiet || git commit -m "brief: auto $(date +%Y-%m-%d)"
+          git add public/intel-brief-latest.pdf public/intel-brief-latest-viewer.html
+          git diff --staged --quiet || git commit -m "brief: publish $(date +%Y-%m-%d)"
           git push

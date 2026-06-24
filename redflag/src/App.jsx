@@ -195,6 +195,10 @@ function ItikaSOSButton() {
     timerRef.current = setTimeout(async () => {
       clearInterval(intervalRef.current)
       setProgress(100)
+      // Confirm immediately at the 2s mark — GPS + alert fire in the background
+      setSent(true)
+      setPressing(false)
+      setTimeout(() => { setSent(false); setProgress(0) }, 6000)
       // Get GPS
       let lat = null, lng = null
       try {
@@ -234,10 +238,6 @@ function ItikaSOSButton() {
           }),
         }).catch(() => {})
       } catch(e) {}
-      setSent(true)
-      setPressing(false)
-      // Re-arm after a few seconds so the page returns to normal on its own
-      setTimeout(() => { setSent(false); setProgress(0) }, 6000)
     }, HOLD_MS)
   }
 
@@ -248,68 +248,39 @@ function ItikaSOSButton() {
     setProgress(0)
   }
 
-  // Floating button — always visible
-  const SIZE = 62
-  const R = (SIZE / 2) - 4
-  const CIRC = 2 * Math.PI * R
-  const dash = (progress / 100) * CIRC
+  // Floating SOS — white pill in the top-right header zone
+  const remain = Math.max(1, Math.ceil((100 - progress) / 100 * (HOLD_MS / 1000)))
 
   return (
-    <div style={{
-      position: 'fixed', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', right: 14, zIndex: 999,
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-    }}>
+    <div style={{ position: 'fixed', top: 'calc(env(safe-area-inset-top, 0px) + 8px)', right: 12, zIndex: 1000 }}>
       <style>{`@keyframes sosPulse {
-        0%,100% { box-shadow: 0 0 0 0 rgba(255,48,48,0.55), 0 2px 12px rgba(204,16,16,0.55); }
-        50%     { box-shadow: 0 0 18px 7px rgba(255,48,48,0.5), 0 2px 12px rgba(204,16,16,0.65); }
+        0%,100% { box-shadow: 0 0 0 0 rgba(204,16,16,0.45), 0 2px 10px rgba(204,16,16,0.30); }
+        50%     { box-shadow: 0 0 16px 6px rgba(255,40,40,0.40), 0 2px 10px rgba(204,16,16,0.45); }
       }`}</style>
-      {sent && (
-        <div style={{
-          background: '#1A5A2A', color: '#fff', padding: '4px 10px',
-          fontFamily: "'Nunito Sans',sans-serif", fontSize: 10, fontWeight: 700,
-          marginBottom: 4, textAlign: 'center', maxWidth: 80,
-        }}>✓ Sent</div>
-      )}
       <div
         onMouseDown={startPress} onTouchStart={startPress}
         onMouseUp={cancelPress} onMouseLeave={cancelPress}
         onTouchEnd={cancelPress} onTouchCancel={cancelPress}
-        style={{ position: 'relative', width: SIZE, height: SIZE, cursor: 'pointer', userSelect: 'none' }}
-      >
-        {/* Progress ring */}
-        <svg width={SIZE} height={SIZE} style={{ position: 'absolute', top: 0, left: 0, transform: 'rotate(-90deg)' }}>
-          <circle cx={SIZE/2} cy={SIZE/2} r={R} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={3}/>
-          <circle cx={SIZE/2} cy={SIZE/2} r={R} fill="none"
-            stroke={sent ? '#2A9A5A' : '#FF4040'}
-            strokeWidth={3}
-            strokeDasharray={CIRC}
-            strokeDashoffset={CIRC - dash}
-            style={{ transition: pressing ? 'none' : 'stroke-dashoffset 0.2s' }}
-          />
-        </svg>
-        {/* Button face */}
-        <div style={{
-          position: 'absolute', top: 4, left: 4,
-          width: SIZE - 8, height: SIZE - 8,
-          borderRadius: '50%',
-          background: sent ? '#1A5A2A' : pressing ? '#FF2020' : '#CC1010',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 24, transition: 'background 0.15s',
-          boxShadow: pressing ? '0 0 24px rgba(255,40,40,0.85)' : '0 2px 12px rgba(204,16,16,0.5)',
-          animation: (!sent && !pressing) ? 'sosPulse 1.6s ease-in-out infinite' : 'none',
+        style={{
+          position: 'relative', overflow: 'hidden', cursor: 'pointer', userSelect: 'none',
+          minWidth: 96, padding: '7px 18px', borderRadius: 14, textAlign: 'center',
+          background: sent ? '#1A5A2A' : '#fff',
+          border: `2px solid ${sent ? '#1A5A2A' : '#CC1010'}`,
+          boxShadow: '0 2px 10px rgba(0,0,0,0.20)',
+          animation: (!sent && !pressing) ? 'sosPulse 1.7s ease-in-out infinite' : 'none',
         }}>
-          {sent ? '✓' : '🆘'}
-        </div>
-      </div>
-      <div style={{
-        fontFamily: "'Nunito Sans',sans-serif", fontSize: 9.5, fontWeight: 800,
-        color: '#fff', textAlign: 'center', marginTop: 2, letterSpacing: '.05em',
-        background: sent ? '#1A5A2A' : 'rgba(204,16,16,0.95)', padding: '3px 9px',
-        borderRadius: 12, boxShadow: '0 1px 6px rgba(0,0,0,0.45)', whiteSpace: 'nowrap',
-      }}>
-        {sent ? '✓ SENT'
-          : pressing ? `${Math.max(1, Math.ceil((100 - progress) / 100 * (HOLD_MS / 1000)))}s…`
-          : `HOLD ${HOLD_MS / 1000}s`}
+        {sent ? (
+          <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:14, fontWeight:800, color:'#fff', letterSpacing:'.04em' }}>✓ SENT</div>
+        ) : (
+          <>
+            <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:16, fontWeight:900, color:'#CC1010', lineHeight:1.05, letterSpacing:'.02em' }}>🆘 SOS</div>
+            <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9.5, fontWeight:700, color:'#CC1010', marginTop:1, whiteSpace:'nowrap' }}>
+              {pressing ? `Keep holding ${remain}s…` : 'Hold for 2s'}
+            </div>
+            <div style={{ position:'absolute', left:0, bottom:0, height:4, width:`${progress}%`,
+              background:'#CC1010', transition: pressing ? 'none' : 'width .2s' }}/>
+          </>
+        )}
       </div>
     </div>
   )
@@ -1255,7 +1226,7 @@ export default function App() {
       )}
 
       {/* Language toggle */}
-      <div style={{background:BG,display:'flex',justifyContent:'flex-end',gap:4,
+      <div style={{background:BG,display:'flex',justifyContent:'flex-start',gap:4,
         padding:'6px 12px',borderBottom:`1px solid ${BD}`}}>
         {LANGS.map(([code,label]) => (
           <button key={code} onClick={()=>setLang(code)}
