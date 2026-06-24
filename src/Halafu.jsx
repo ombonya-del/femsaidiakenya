@@ -8,6 +8,8 @@ const _sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE
 // Intel Brief: the repo-committed PDF (regenerated biweekly by the GitHub Action)
 // with a date cache-buster so it's never served stale.
 const BRIEF_URL = `/intel-brief-latest.pdf?v=${new Date().toISOString().slice(0,10)}`
+// Branded inline viewer (top bar + embedded PDF), regenerated alongside the PDF.
+const BRIEF_VIEWER_URL = `/intel-brief-latest-viewer.html?v=${new Date().toISOString().slice(0,10)}`
 
 const A   = '#8A1030'
 const BD  = '#B89AAA'
@@ -365,6 +367,7 @@ function FieldIntelligence() {
   const [syntheses, setSyntheses] = useState([])   // newest first, from saint_synthesis
   const [showPast, setShowPast]   = useState(false)
   const [expanded, setExpanded]   = useState(true)  // open by default
+  const [previewOpen, setPreviewOpen] = useState(false)  // Intel Brief inline preview modal
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 
   useEffect(() => {
@@ -550,6 +553,14 @@ function FieldIntelligence() {
           <div style={{ padding:'16px 24px' }}>
             {/* Action buttons */}
           <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:16 }}>
+            <button
+              onClick={e => { e.stopPropagation(); setPreviewOpen(true) }}
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                padding:'8px 14px', background:'rgba(138,16,48,0.5)',
+                border:'1px solid rgba(138,16,48,0.6)', color:'#fff', cursor:'pointer',
+                display:'inline-flex', alignItems:'center', gap:6 }}>
+              👁 Preview Intel Brief
+            </button>
             <a href={BRIEF_URL}
               target="_blank" rel="noopener noreferrer"
               style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
@@ -568,6 +579,38 @@ function FieldIntelligence() {
               ⚡ Open SaInt Intelligence →
             </a>
           </div>
+
+          {previewOpen && (
+            <div
+              onClick={e => { e.stopPropagation(); setPreviewOpen(false) }}
+              style={{ position:'fixed', inset:0, zIndex:9999, background:'rgba(8,2,6,0.85)',
+                display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:16 }}>
+              <div onClick={e => e.stopPropagation()}
+                style={{ width:'100%', maxWidth:900, height:'90vh', background:'#111827',
+                  display:'flex', flexDirection:'column', boxShadow:'0 20px 60px rgba(0,0,0,0.5)' }}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+                  gap:12, padding:'10px 14px', background:'#180410', borderBottom:'2px solid #8A1030' }}>
+                  <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                    letterSpacing:'.1em', textTransform:'uppercase', color:'#F0D0D8' }}>
+                    Intel Brief — Preview
+                  </span>
+                  <div style={{ display:'flex', gap:8 }}>
+                    <a href={BRIEF_URL} target="_blank" rel="noopener noreferrer"
+                      onClick={e => e.stopPropagation()}
+                      style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                        padding:'6px 12px', background:'rgba(138,16,48,0.5)', color:'#fff',
+                        textDecoration:'none' }}>📄 Download</a>
+                    <button onClick={() => setPreviewOpen(false)}
+                      style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                        padding:'6px 12px', background:'none', border:'1px solid rgba(240,208,216,0.4)',
+                        color:'#F0D0D8', cursor:'pointer' }}>✕ Close</button>
+                  </div>
+                </div>
+                <iframe title="Intel Brief preview" src={BRIEF_VIEWER_URL}
+                  style={{ flex:1, width:'100%', border:'none', background:'#111827' }}/>
+              </div>
+            </div>
+          )}
 
           {syntheses.length === 0 ? (
               <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,

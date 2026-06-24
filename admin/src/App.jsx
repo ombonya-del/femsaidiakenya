@@ -3004,6 +3004,7 @@ const TAB_GROUPS = [
   { id:'intelligence', label:'Intelligence', color:'#1A3F6F', standalone:false, tabs:[
       { id:'cases',      label:'Case tracker',    icon:<FileText size={14}/> },
       { id:'highlights', label:'Misogyny of Day', icon:<AlertTriangle size={14}/> },
+      { id:'pulse',      label:'Community Pulse',  icon:<MessageSquare size={14}/> },
   ]},
   { id:'redflag', label:'Red Flag', color:'#8A1030', standalone:false, tabs:[
       { id:'kaarada',    label:'KaaRada',      icon:<Shield size={14}/> },
@@ -3027,6 +3028,142 @@ const TABS = TAB_GROUPS.flatMap(g => g.tabs)
 
 // ── ROOT APP ──────────────────────────────────────────────────────────────────
 
+// ── Community Pulse — manual social-post entry ────────────────────────────────
+function CommunityPulseTab() {
+  const A = '#1A5A2A', MUT = '#7A4A60', TXT = '#180410', BD = '#B89AAA', CRD = '#C4AABB'
+  const labelSt = { fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT, display:'block', marginBottom:4 }
+  const inputSt = { width:'100%', padding:'6px 8px', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, border:`1px solid ${BD}`, background:'#fff', color:TXT, boxSizing:'border-box' }
+  const PLATFORMS = { 'X':'x', 'TikTok':'tiktok', 'Facebook':'facebook', 'YouTube':'youtube', 'Instagram':'instagram', 'News':'news' }
+  const SENTIMENTS = ['alarming','negative','neutral','positive','hope']
+  const CATEGORIES = ['march','community','podcast','video','testimony','statement']
+
+  const [items, setItems]   = useState([])
+  const [saving, setSaving] = useState(false)
+  const [f, setF] = useState({
+    platform:'X', handle:'', content:'', source_url:'',
+    post_date:'', sentiment:'alarming', category:'community', is_protest:false
+  })
+
+  const load = () => {
+    supabase.from('sentiment_articles').select('*')
+      .eq('content_type','social_post').order('scanned_at',{ascending:false}).limit(20)
+      .then(({data})=>setItems(data||[]))
+  }
+  useEffect(()=>{ load() },[])
+
+  const add = async () => {
+    if (!f.content.trim()) return
+    setSaving(true)
+    const plat = PLATFORMS[f.platform] || 'x'
+    const handle = f.handle.trim()
+    const row = {
+      platform: plat, content_type:'social_post',
+      source_name: handle ? `${f.platform} / ${handle.startsWith('@')?handle:'@'+handle}` : f.platform,
+      source: handle || f.platform,
+      article_title: f.content.trim(),
+      article_snippet: f.content.trim(),
+      summary: f.content.trim(),
+      article_url: f.source_url.trim()||null,
+      source_url: f.source_url.trim()||null,
+      published_at: f.post_date||null,
+      scanned_at: new Date().toISOString(),
+      sentiment: f.sentiment,
+      gbv_relevance: 7, misogyny_score: 0,
+      verified: true, published: true,
+      is_protest: f.is_protest, is_kibe_related: false,
+      content_category: f.category, tech_facilitated: false
+    }
+    const { error } = await supabase.from('sentiment_articles').insert(row)
+    setSaving(false)
+    if (error) { window.alert('Could not save: '+error.message); return }
+    setF({ platform:'X', handle:'', content:'', source_url:'', post_date:'', sentiment:'alarming', category:'community', is_protest:false })
+    load()
+  }
+
+  const del = async (id) => {
+    if (!window.confirm('Remove this pulse post?')) return
+    await supabase.from('sentiment_articles').delete().eq('id', id)
+    load()
+  }
+
+  return (
+    <div>
+      <div style={{marginBottom:20}}>
+        <h2 style={{fontFamily:"'Lora',serif",fontSize:22,fontWeight:700,color:TXT,marginBottom:4}}>Community Pulse</h2>
+        <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT}}>
+          Hand-pick street-level posts — marches, testimonies, CSO statements — to surface in the Community Pulse feed on Socials &amp; Sentiment.
+        </p>
+      </div>
+
+      <div style={{background:'#E8F5E9',border:`1px solid ${A}`,borderLeft:`4px solid ${A}`,padding:16,marginBottom:16}}>
+        <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,color:A,marginBottom:12}}>Add a pulse post</div>
+        <div style={{marginBottom:8}}>
+          <label style={labelSt}>POST TEXT *</label>
+          <textarea value={f.content} onChange={e=>setF({...f,content:e.target.value})} rows={3}
+            style={{...inputSt,resize:'vertical'}} placeholder="Paste the post / quote..."/>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
+          <div>
+            <label style={labelSt}>PLATFORM</label>
+            <select value={f.platform} onChange={e=>setF({...f,platform:e.target.value})} style={inputSt}>
+              {Object.keys(PLATFORMS).map(p=><option key={p}>{p}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={labelSt}>HANDLE / SOURCE</label>
+            <input value={f.handle} onChange={e=>setF({...f,handle:e.target.value})} style={inputSt} placeholder="@handle"/>
+          </div>
+          <div style={{gridColumn:'span 2'}}>
+            <label style={labelSt}>SOURCE URL</label>
+            <input value={f.source_url} onChange={e=>setF({...f,source_url:e.target.value})} style={inputSt} placeholder="https://..."/>
+          </div>
+          <div>
+            <label style={labelSt}>DATE POSTED (optional)</label>
+            <input type="date" value={f.post_date} onChange={e=>setF({...f,post_date:e.target.value})} style={inputSt}/>
+          </div>
+          <div>
+            <label style={labelSt}>TONE</label>
+            <select value={f.sentiment} onChange={e=>setF({...f,sentiment:e.target.value})} style={inputSt}>
+              {SENTIMENTS.map(s=><option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={labelSt}>CATEGORY</label>
+            <select value={f.category} onChange={e=>setF({...f,category:e.target.value})} style={inputSt}>
+              {CATEGORIES.map(c=><option key={c}>{c}</option>)}
+            </select>
+          </div>
+          <div style={{display:'flex',alignItems:'flex-end',gap:6}}>
+            <label style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:TXT,display:'flex',alignItems:'center',gap:6,cursor:'pointer'}}>
+              <input type="checkbox" checked={f.is_protest} onChange={e=>setF({...f,is_protest:e.target.checked})}/>
+              Protest / march
+            </label>
+          </div>
+        </div>
+        <button onClick={add} disabled={saving}
+          style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,padding:'8px 16px',background:A,color:'#fff',border:'none',cursor:'pointer'}}>
+          {saving?'Adding...':'Add to pulse'}
+        </button>
+      </div>
+
+      <div style={{display:'flex',flexDirection:'column',gap:6}}>
+        {items.map(it=>(
+          <div key={it.id} style={{display:'flex',alignItems:'flex-start',gap:8,padding:'8px 12px',background:CRD,border:`1px solid ${BD}`}}>
+            <span style={{fontSize:9,fontWeight:700,padding:'2px 6px',background:'#1A3F6F',color:'#fff',flexShrink:0,textTransform:'uppercase'}}>{it.platform||'—'}</span>
+            <div style={{flex:1,minWidth:0}}>
+              <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:TXT,margin:0}}>{(it.article_title||it.summary||'').slice(0,160)}</p>
+              <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT,margin:'2px 0 0'}}>
+                {it.source_name||it.source||'—'} · {it.sentiment||'—'}{it.is_protest?' · protest':''}{it.content_category?' · '+it.content_category:''}
+              </p>
+            </div>
+            <button onClick={()=>del(it.id)} style={{fontSize:10,padding:'2px 8px',background:'#8A1030',color:'#fff',border:'none',cursor:'pointer',flexShrink:0}}>Del</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── Manual MOTD creation ──────────────────────────────────────────────────────
 function ManualMOTD({ supabase, onSaved }) {
   const [open, setOpen]           = useState(false)
@@ -3041,6 +3178,8 @@ function ManualMOTD({ supabase, onSaved }) {
   const [uploading, setUploading] = useState(false)
   const [editId, setEditId]       = useState(null)
   const [highlights, setHighlights] = useState([])
+  const [scheduledFor, setScheduledFor] = useState('')
+  const [reach, setReach]         = useState('')
 
   const A = '#8A1030', MUT = '#7A4A60', TXT = '#180410', BD = '#B89AAA', CRD = '#C4AABB'
   const labelSt = { fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT, display:'block', marginBottom:4 }
@@ -3054,39 +3193,57 @@ function ManualMOTD({ supabase, onSaved }) {
   const reset = () => {
     setContent(''); setContext(''); setPlatform('X'); setHandle('')
     setSourceUrl(''); setMediaUrl(''); setMediaType(''); setEditId(null)
+    setScheduledFor(''); setReach('')
   }
 
   const uploadMedia = async (file) => {
     if (!file) return
     setUploading(true)
-    const name = `motd-${Date.now()}.${file.name.split('.').pop()}`
-    const { error } = await supabase.storage.from('public-assets').upload(name, file, { upsert:true })
-    if (!error) {
-      const { data:pub } = supabase.storage.from('public-assets').getPublicUrl(name)
-      setMediaUrl(pub.publicUrl)
-      setMediaType(file.type.startsWith('video') ? 'video' : 'image')
-    }
+    const name = `highlight_${Date.now()}.${file.name.split('.').pop()}`
+    const { error } = await supabase.storage.from('highlights-media').upload(name, file, { upsert:true })
+    if (error) { window.alert('Media upload failed: ' + error.message); setUploading(false); return }
+    const { data:pub } = supabase.storage.from('highlights-media').getPublicUrl(name)
+    setMediaUrl(pub.publicUrl)
+    setMediaType(file.type.startsWith('video') ? 'video' : 'image')
     setUploading(false)
   }
 
-  const save = async (publish) => {
+  // mode: 'publish' (live now) | 'queue' (auto-fires on scheduled_for) | 'draft' (parked, no date)
+  const save = async (mode) => {
     if (!content.trim()) return
+    if (mode === 'queue' && !scheduledFor) { window.alert('Pick a date to schedule this post for.'); return }
+    const today = new Date().toISOString().split('T')[0]
     setSaving(true)
     const row = { platform, handle: handle||'manual', content: content.trim(),
-      context: context.trim()||'Manually submitted.', active: publish,
-      highlight_date: new Date().toISOString().split('T')[0],
+      context: context.trim()||'Manually submitted.',
+      active: mode === 'publish',
+      scheduled_for: mode === 'queue' ? scheduledFor : null,
+      highlight_date: mode === 'publish' ? today : (scheduledFor || today),
+      reach: reach.trim()||null,
       auto_scraped: false, misogyny_score: 8,
-      source_url: sourceUrl.trim()||null, media_url: mediaUrl||null, media_type: mediaType||null }
-    if (editId) await supabase.from('misogyny_highlights').update(row).eq('id', editId)
-    else await supabase.from('misogyny_highlights').insert(row)
-    reset(); setSaving(false); if (onSaved) onSaved(); loadHighlights()
+      source_url: sourceUrl.trim()||null, embed_url: sourceUrl.trim()||null,
+      media_url: mediaUrl||null, media_type: mediaType||null }
+    let err = null
+    if (editId) ({ error: err } = await supabase.from('misogyny_highlights').update(row).eq('id', editId))
+    else ({ error: err } = await supabase.from('misogyny_highlights').insert(row))
+    setSaving(false)
+    if (err) { window.alert('Could not save: ' + err.message); return }
+    reset(); if (onSaved) onSaved(); loadHighlights()
   }
 
   const startEdit = (h) => {
     setEditId(h.id); setContent(h.content||''); setContext(h.context||'')
     setPlatform(h.platform||'X'); setHandle(h.handle||'')
     setSourceUrl(h.source_url||''); setMediaUrl(h.media_url||'')
-    setMediaType(h.media_type||''); setOpen(true)
+    setMediaType(h.media_type||''); setScheduledFor(h.scheduled_for||'')
+    setReach(h.reach||''); setOpen(true)
+  }
+
+  const publishNow = async (h) => {
+    await supabase.from('misogyny_highlights')
+      .update({ active:true, scheduled_for:null, highlight_date:new Date().toISOString().split('T')[0] })
+      .eq('id', h.id)
+    loadHighlights(); if (onSaved) onSaved()
   }
 
   const toggleActive = async (h) => {
@@ -3112,22 +3269,31 @@ function ManualMOTD({ supabase, onSaved }) {
           Manage highlights
         </button>
       </div>
-      {highlights.length > 0 && highlights.map(h=>(
+      {highlights.length > 0 && highlights.map(h=>{
+        const state = h.active ? 'LIVE' : (h.scheduled_for ? 'QUEUED' : 'DRAFT')
+        const badgeBg = h.active ? '#1A5A2A' : (h.scheduled_for ? '#1A3F6F' : '#CA8A04')
+        return (
         <div key={h.id} style={{display:'flex',alignItems:'center',gap:6,padding:'7px 10px',marginBottom:4,
-          background:h.active?'#E8F5E9':'#F5E8EC',border:`1px solid ${BD}`}}>
-          <span style={{fontSize:9,fontWeight:700,padding:'2px 5px',background:h.active?'#1A5A2A':'#CA8A04',color:'#fff',flexShrink:0}}>
-            {h.active?'LIVE':'DRAFT'}
+          background:h.active?'#E8F5E9':(h.scheduled_for?'#E8EEF5':'#F5E8EC'),border:`1px solid ${BD}`}}>
+          <span style={{fontSize:9,fontWeight:700,padding:'2px 5px',background:badgeBg,color:'#fff',flexShrink:0}}>
+            {state}
           </span>
+          {h.scheduled_for && !h.active && (
+            <span style={{fontSize:9,fontWeight:700,color:'#1A3F6F',flexShrink:0,whiteSpace:'nowrap'}}>📅 {h.scheduled_for}</span>
+          )}
           <span style={{flex:1,fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:TXT,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
             [{h.platform}] {(h.content||'').slice(0,70)}
           </span>
           <button onClick={()=>startEdit(h)} style={{fontSize:10,padding:'2px 7px',background:CRD,color:TXT,border:`1px solid ${BD}`,cursor:'pointer'}}>Edit</button>
-          <button onClick={()=>toggleActive(h)} style={{fontSize:10,padding:'2px 7px',background:h.active?'#CA8A04':'#1A5A2A',color:'#fff',border:'none',cursor:'pointer'}}>
-            {h.active?'Unpublish':'Publish'}
-          </button>
+          {!h.active && (
+            <button onClick={()=>publishNow(h)} style={{fontSize:10,padding:'2px 7px',background:'#1A5A2A',color:'#fff',border:'none',cursor:'pointer'}}>Publish now</button>
+          )}
+          {h.active && (
+            <button onClick={()=>toggleActive(h)} style={{fontSize:10,padding:'2px 7px',background:'#CA8A04',color:'#fff',border:'none',cursor:'pointer'}}>Unpublish</button>
+          )}
           <button onClick={()=>del(h.id)} style={{fontSize:10,padding:'2px 7px',background:A,color:'#fff',border:'none',cursor:'pointer'}}>Del</button>
         </div>
-      ))}
+      )})}
     </div>
   )
 
@@ -3152,7 +3318,11 @@ function ManualMOTD({ supabase, onSaved }) {
           <label style={labelSt}>HANDLE / SOURCE</label>
           <input value={handle} onChange={e=>setHandle(e.target.value)} style={inputSt} placeholder="@handle or source"/>
         </div>
-        <div style={{gridColumn:'span 2'}}>
+        <div>
+          <label style={labelSt}>REACH / ENGAGEMENT</label>
+          <input value={reach} onChange={e=>setReach(e.target.value)} style={inputSt} placeholder="e.g. 190K views · 3K likes"/>
+        </div>
+        <div>
           <label style={labelSt}>SOURCE URL</label>
           <input value={sourceUrl} onChange={e=>setSourceUrl(e.target.value)} style={inputSt} placeholder="https://..."/>
         </div>
@@ -3179,14 +3349,23 @@ function ManualMOTD({ supabase, onSaved }) {
         {!mediaUrl && <input value={mediaUrl} onChange={e=>setMediaUrl(e.target.value)}
           style={{...inputSt,marginTop:4}} placeholder="Or paste media URL: https://..."/>}
       </div>
+      <div style={{marginBottom:12}}>
+        <label style={labelSt}>SCHEDULE FOR (optional — auto-publishes on this date)</label>
+        <input type="date" value={scheduledFor} min={new Date().toISOString().split('T')[0]}
+          onChange={e=>setScheduledFor(e.target.value)} style={{...inputSt,maxWidth:200}}/>
+      </div>
       <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-        <button onClick={()=>save(false)} disabled={saving||uploading}
+        <button onClick={()=>save('publish')} disabled={saving||uploading}
+          style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,padding:'8px 16px',background:A,color:'#F0D0D8',border:'none',cursor:'pointer'}}>
+          {editId?'Update + publish now':'Publish now'}
+        </button>
+        <button onClick={()=>save('queue')} disabled={saving||uploading}
+          style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,padding:'8px 16px',background:'#1A3F6F',color:'#fff',border:'none',cursor:'pointer'}}>
+          {scheduledFor ? `Add to queue → ${scheduledFor}` : 'Add to queue'}
+        </button>
+        <button onClick={()=>save('draft')} disabled={saving||uploading}
           style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,padding:'8px 16px',background:'#E8D0C0',color:TXT,border:`1px solid ${BD}`,cursor:'pointer'}}>
           Save as draft
-        </button>
-        <button onClick={()=>save(true)} disabled={saving||uploading}
-          style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,padding:'8px 16px',background:A,color:'#F0D0D8',border:'none',cursor:'pointer'}}>
-          {editId?'Update + publish':'Publish immediately'}
         </button>
         <button onClick={()=>{reset();setOpen(false)}}
           style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,padding:'8px 12px',background:'transparent',color:MUT,border:`1px solid ${BD}`,cursor:'pointer'}}>
@@ -3288,6 +3467,7 @@ export default function App() {
         {tab==='codes'       && <AccessCodesTab/>}
         {tab==='responders'  && <RespondersTab/>}
         {tab==='highlights'  && <HighlightsTab/>}
+        {tab==='pulse'       && <CommunityPulseTab/>}
         {tab==='donors'      && <DonorInterestTab/>}
         {tab==='contacts'    && <ContactsTab/>}
         {tab==='intel-briefs' && <IntelBriefsTab/>}
