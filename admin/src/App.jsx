@@ -2284,7 +2284,7 @@ function IntelBriefsTab() {
         body: '{}'
       })
       const data = await res.json()
-      if (data.success) { alert('Brief generated and published!'); load() }
+      if (data.success) { alert('Draft generated. Review it below, edit if needed, then click Publish.'); load() }
       else alert('Error: ' + data.error)
     } catch (e) { alert('Error: ' + e.message) }
     setTriggering(false)
@@ -2301,11 +2301,20 @@ function IntelBriefsTab() {
     setEditing(null)
     setSaving(false)
     load()
-    alert('Brief updated. Re-generate PDF by triggering a new brief or uploading manually.')
+    alert('Saved. Click Publish to put it live and rebuild the PDF with your edits.')
   }
 
-  const toggleActive = async (id, active) => {
-    await supabase.from('intel_briefs').update({ active: !active }).eq('id', id)
+  const publishBrief = async (id) => {
+    if (!confirm('Publish this brief? It will appear on the public site and the PDF will rebuild from the current content.')) return
+    const token = import.meta.env.VITE_BRIEF_PUBLISH_TOKEN || ''
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/intel-brief?publish=${id}&token=${encodeURIComponent(token)}`)
+      alert(res.ok ? 'Published — the public PDF will rebuild in about a minute.' : 'Publish request failed (status ' + res.status + ').')
+    } catch (e) { alert('Error: ' + e.message) }
+    load()
+  }
+  const hideBrief = async (id) => {
+    await supabase.from('intel_briefs').update({ active: false }).eq('id', id)
     load()
   }
 
@@ -2387,7 +2396,7 @@ function IntelBriefsTab() {
                           padding:'4px 10px', background:BD, color:TXT, border:'none', cursor:'pointer' }}>
                         Edit content
                       </button>
-                      <button onClick={() => toggleActive(b.id, b.active)}
+                      <button onClick={() => b.active ? hideBrief(b.id) : publishBrief(b.id)}
                         style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
                           padding:'4px 10px', background:b.active?A:'#1A5A2A', color:'#fff', border:'none', cursor:'pointer' }}>
                         {b.active ? 'Hide' : 'Publish'}
@@ -2396,7 +2405,7 @@ function IntelBriefsTab() {
                         <a href={b.pdf_url} target="_blank" rel="noopener noreferrer"
                           style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
                             padding:'4px 10px', background:'#1A3F6F', color:'#fff', textDecoration:'none' }}>
-                          View PDF
+                          Preview (draft)
                         </a>
                       )}
                       <button onClick={() => del(b.id)}
