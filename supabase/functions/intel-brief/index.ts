@@ -9,9 +9,11 @@ const ANTHROPIC_KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? ''
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? ''
 const REVIEW_EMAIL   = Deno.env.get('BRIEF_REVIEW_EMAIL') ?? 'ombonya@gmail.com'
 const REVIEW_FROM    = Deno.env.get('BRIEF_FROM') ?? 'FemSaidia Intel <alerts@femsaidiakenya.org>'
-const PUBLISH_TOKEN  = Deno.env.get('BRIEF_PUBLISH_TOKEN') ?? ''
 const GH_TOKEN       = Deno.env.get('GH_DISPATCH_TOKEN') ?? ''
 const GH_REPO        = Deno.env.get('GH_REPO') ?? 'ombonya-del/femsaidiakenya'
+const ADMIN_URL      = Deno.env.get('ADMIN_URL') ?? 'https://admin.femsaidiakenya.org'
+const BRIEF_PUBLISHERS = (Deno.env.get('BRIEF_PUBLISHERS') ?? 'ombonya@gmail.com')
+  .split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
 
 function resultPage(emoji: string, color: string, msg: string): Response {
   return new Response(
@@ -25,14 +27,21 @@ function resultPage(emoji: string, color: string, msg: string): Response {
   )
 }
 
-// Publish a draft brief: mark it active and trigger the PDF generator (GitHub Action).
-async function handlePublish(briefId: string, token: string): Promise<Response> {
-  if (!PUBLISH_TOKEN || token !== PUBLISH_TOKEN)
-    return resultPage('⚠️', '#8A1030', 'Invalid or missing publish token.')
+function jsonResp(obj: Record<string, unknown>, status = 200): Response {
+  return new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } })
+}
+
+// Publish a draft brief — only an authenticated, allow-listed admin may do this.
+async function handlePublish(briefId: string, authHeader: string): Promise<Response> {
+  const token = (authHeader || '').replace(/^Bearer\s+/i, '').trim()
+  if (!token) return jsonResp({ error: 'Not authorised — publish from the signed-in admin.' }, 401)
+  const { data: { user }, error: authErr } = await supabase.auth.getUser(token)
+  if (authErr || !user) return jsonResp({ error: 'Session invalid or expired — sign in again.' }, 401)
+  if (!BRIEF_PUBLISHERS.includes((user.email || '').toLowerCase()))
+    return jsonResp({ error: 'Your account is not authorised to publish briefs.' }, 403)
   const { data: brief, error } = await supabase.from('intel_briefs')
     .update({ active: true }).eq('id', briefId).select().single()
-  if (error || !brief)
-    return resultPage('⚠️', '#8A1030', 'Could not find that brief.')
+  if (error || !brief) return jsonResp({ error: 'Brief not found.' }, 404)
   let dispatched = false
   if (GH_TOKEN) {
     try {
@@ -50,14 +59,11 @@ async function handlePublish(briefId: string, token: string): Promise<Response> 
       if (!r.ok) console.error('GitHub dispatch failed:', r.status, await r.text())
     } catch (e: any) { console.error('GitHub dispatch error:', e.message) }
   }
-  return resultPage('✅', '#1A5A2A',
-    `Published “${brief.title}”.` + (dispatched
-      ? ' The public PDF will refresh in about a minute.'
-      : ' (PDF build was not triggered — set GH_DISPATCH_TOKEN.)'))
+  return jsonResp({ success: true, title: brief.title, pdf_rebuild_triggered: dispatched, by: user.email })
 }
 
 // Email the freshly-generated DRAFT brief to the editor for review + one-click publish.
-async function emailBriefForReview(title: string, period: string, briefText: string, pdfUrl: string, publishUrl: string): Promise<boolean> {
+async function emailBriefForReview(title: string, period: string, briefText: string, pdfUrl: string): Promise<boolean> {
   if (!RESEND_API_KEY) { console.log('Review email skipped — RESEND_API_KEY not set'); return false }
   const esc = (s: string) => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
   const bodyHtml = esc(briefText)
@@ -73,7 +79,7 @@ async function emailBriefForReview(title: string, period: string, briefText: str
       <div style="background:#FFF8E1;border:1px solid #F2C75C;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;color:#7A5A00">
         This brief is a <strong>private draft</strong> — it will not appear on the site until you publish it.
       </div>
-      <a href="${esc(publishUrl)}" style="display:inline-block;background:#1A5A2A;color:#fff;text-decoration:none;font-weight:800;font-size:14px;padding:12px 24px;border-radius:8px">✅ Publish this brief</a>
+      <a href="${ADMIN_URL}" style="display:inline-block;background:#1A5A2A;color:#fff;text-decoration:none;font-weight:800;font-size:14px;padding:12px 24px;border-radius:8px">Review &amp; publish in the admin →</a>
       <br>
       <a href="${esc(pdfUrl)}" style="display:inline-block;color:#8A1030;text-decoration:none;font-weight:700;font-size:12.5px;margin:10px 0 16px">Preview the draft PDF →</a>
       <div style="font-size:13px;line-height:1.7;color:#222;border-top:1px solid #eee;padding-top:14px">${bodyHtml}</div>
@@ -327,7 +333,7 @@ Deno.serve(async (req: Request) => {
   // Publish endpoint: editor clicks the one-click link in the review email
   const u = new URL(req.url)
   const publishId = u.searchParams.get('publish')
-  if (publishId) return await handlePublish(publishId, u.searchParams.get('token') || '')
+  if (publishId) return await handlePublish(publishId, req.headers.get('Authorization') || '')
 
   try {
     const now    = new Date()
@@ -427,9 +433,8 @@ Deno.serve(async (req: Request) => {
     const pdfUrl = `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/public-assets/intel-brief-draft.pdf`
     await supabase.from('intel_briefs').update({ pdf_url: pdfUrl }).eq('id', saved.id)
 
-    const publishUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/intel-brief?publish=${saved.id}&token=${encodeURIComponent(PUBLISH_TOKEN)}`
-    // Email the DRAFT to the editor for review + one-click publish
-    const emailed = await emailBriefForReview(title, `${since.split('T')[0]} - ${today}`, briefText, pdfUrl, publishUrl)
+    // Email the DRAFT to the editor — review/edit/publish happens in the signed-in admin
+    const emailed = await emailBriefForReview(title, `${since.split('T')[0]} - ${today}`, briefText, pdfUrl)
 
     return new Response(JSON.stringify({
       success: true, brief_id: saved.id, title, draft: true, pdf_url: pdfUrl, review_email_sent: emailed,

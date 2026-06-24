@@ -2306,10 +2306,16 @@ function IntelBriefsTab() {
 
   const publishBrief = async (id) => {
     if (!confirm('Publish this brief? It will appear on the public site and the PDF will rebuild from the current content.')) return
-    const token = import.meta.env.VITE_BRIEF_PUBLISH_TOKEN || ''
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token
+    if (!token) { alert('Your session has expired — please sign in again.'); return }
     try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/intel-brief?publish=${id}&token=${encodeURIComponent(token)}`)
-      alert(res.ok ? 'Published — the public PDF will rebuild in about a minute.' : 'Publish request failed (status ' + res.status + ').')
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/intel-brief?publish=${id}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      })
+      const data = await res.json().catch(() => ({}))
+      alert(res.ok ? 'Published — the public PDF will rebuild in about a minute.' : ('Publish failed: ' + (data.error || res.status)))
     } catch (e) { alert('Error: ' + e.message) }
     load()
   }
