@@ -1105,82 +1105,79 @@ def write_viewer(pdf_path: str, label: str) -> str:
     """
     pdf_name  = os.path.basename(pdf_path)
     html_path = pdf_path.replace(".pdf", "-viewer.html")
-    html = f"""<!DOCTYPE html>
+    # PDF.js renderer (pages stacked, fit-to-width, scrollable) — renders inline
+    # on mobile too, unlike <embed type=application/pdf> which mobile browsers
+    # refuse to display. Placeholders avoid brace-escaping in the JS/CSS.
+    html = (VIEWER_TEMPLATE
+            .replace("__PDF__", pdf_name)
+            .replace("__LABEL__", label))
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write(html)
+    return html_path
+
+
+VIEWER_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FemSaidia Kenya Intel Brief — {label}</title>
+<title>FemSaidia Kenya Intel Brief — __LABEL__</title>
 <style>
-  *, *::before, *::after {{ margin: 0; padding: 0; box-sizing: border-box; }}
-  html, body {{ height: 100%; overflow: hidden; background: #111827; font-family: Helvetica, Arial, sans-serif; }}
-  .bar {{
-    height: 44px; background: #111827; border-bottom: 2px solid #C05010;
-    display: flex; align-items: center; gap: 14px; padding: 0 20px;
-    position: fixed; top: 0; left: 0; right: 0; z-index: 10;
-  }}
-  .bar-logo  {{ color: #fff; font-size: 12px; font-weight: bold; letter-spacing: .06em; }}
-  .bar-sep   {{ color: #C05010; font-size: 12px; }}
-  .bar-label {{ color: #8892B0; font-size: 11px; flex: 1; }}
-  .dl-btn {{
-    display: inline-flex; align-items: center; gap: 6px;
-    background: #8A1030; color: #fff; border: none; padding: 7px 16px;
-    border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer;
-    text-decoration: none; letter-spacing: .05em; white-space: nowrap;
-    transition: background .15s;
-  }}
-  .dl-btn:hover {{ background: #C05010; }}
-  .viewer {{
-    position: fixed; top: 44px; left: 0; right: 0; bottom: 0;
-  }}
-  .viewer embed,
-  .viewer iframe {{
-    width: 100%; height: 100%; border: none; display: block;
-  }}
-  /* Fallback message shown only when embed fails */
-  .fallback {{
-    display: none; position: absolute; inset: 0;
-    align-items: center; justify-content: center; flex-direction: column;
-    gap: 16px; color: #8892B0; font-size: 14px;
-  }}
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;background:#0e1320;font-family:Helvetica,Arial,sans-serif}
+  .bar{height:44px;background:#111827;border-bottom:2px solid #C05010;display:flex;align-items:center;gap:12px;padding:0 14px;position:fixed;top:0;left:0;right:0;z-index:10}
+  .bar-logo{color:#fff;font-size:12px;font-weight:bold;letter-spacing:.06em;white-space:nowrap}
+  .bar-sep{color:#C05010;font-size:12px}
+  .bar-label{color:#8892B0;font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dl-btn{display:inline-flex;align-items:center;gap:6px;background:#8A1030;color:#fff;border:none;padding:7px 14px;border-radius:4px;font-size:11px;font-weight:bold;cursor:pointer;text-decoration:none;letter-spacing:.05em;white-space:nowrap}
+  .dl-btn:hover{background:#C05010}
+  #pages{position:fixed;top:44px;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;align-items:center;gap:12px;padding:14px 10px 30px}
+  #pages canvas{max-width:100%;border-radius:3px;box-shadow:0 4px 18px rgba(0,0,0,.5);background:#fff}
+  .msg{color:#8892B0;font-size:14px;text-align:center;padding:48px 20px;display:flex;flex-direction:column;align-items:center;gap:16px}
 </style>
 </head>
 <body>
 <div class="bar">
   <span class="bar-logo">FEMSAIDIA KENYA</span>
   <span class="bar-sep">//</span>
-  <span class="bar-label">INTEL BRIEF &nbsp;·&nbsp; {label}</span>
-  <a class="dl-btn" href="{pdf_name}" download="{pdf_name}">&#8659;&nbsp;Download PDF</a>
+  <span class="bar-label">INTEL BRIEF &nbsp;&middot;&nbsp; __LABEL__</span>
+  <a class="dl-btn" href="__PDF__" download="__PDF__">&#8659;&nbsp;Download PDF</a>
 </div>
-<div class="viewer" id="viewer">
-  <embed id="embed" src="{pdf_name}#toolbar=1&navpanes=0&view=FitH"
-         type="application/pdf" width="100%" height="100%"
-         onerror="showFallback()">
-  <div class="fallback" id="fallback">
-    <p>Your browser cannot display the PDF inline.</p>
-    <a class="dl-btn" href="{pdf_name}" download="{pdf_name}">&#8659;&nbsp;Download PDF</a>
-  </div>
-</div>
+<div id="pages"><div class="msg" id="loading">Loading brief&hellip;</div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
-function showFallback() {{
-  document.getElementById('embed').style.display = 'none';
-  var fb = document.getElementById('fallback');
-  fb.style.display = 'flex';
-}}
-// Firefox / Safari fallback detection
-window.addEventListener('load', function() {{
-  var em = document.getElementById('embed');
-  // If embed rendered nothing (getSVGDocument null and no contentDocument)
-  try {{
-    if (!em.getSVGDocument && !em.contentDocument) showFallback();
-  }} catch(e) {{}}
-}});
+(function(){
+  var PDF = "__PDF__";
+  var cont = document.getElementById('pages');
+  function fallback(){
+    cont.innerHTML = '<div class="msg"><p>Preview unavailable on this device.</p>'
+      + '<a class="dl-btn" href="' + PDF + '" download="' + PDF + '">&#8659;&nbsp;Download PDF</a></div>';
+  }
+  if (!window.pdfjsLib) { fallback(); return; }
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  pdfjsLib.getDocument(PDF).promise.then(function(pdf){
+    var loading = document.getElementById('loading'); if (loading) loading.remove();
+    var dpr  = Math.min(window.devicePixelRatio || 1, 2);
+    var cssW = Math.min(cont.clientWidth - 20, 1000);
+    var chain = Promise.resolve();
+    for (var n = 1; n <= pdf.numPages; n++) { (function(num){
+      chain = chain.then(function(){ return pdf.getPage(num).then(function(page){
+        var v1 = page.getViewport({scale: 1});
+        var scale = cssW / v1.width;
+        var vp = page.getViewport({scale: scale * dpr});
+        var canvas = document.createElement('canvas');
+        canvas.width = vp.width; canvas.height = vp.height;
+        canvas.style.width = (vp.width / dpr) + 'px';
+        cont.appendChild(canvas);
+        return page.render({canvasContext: canvas.getContext('2d'), viewport: vp}).promise;
+      }); });
+    })(n); }
+    chain.catch(fallback);
+  }).catch(fallback);
+})();
 </script>
 </body>
 </html>"""
-    with open(html_path, "w", encoding="utf-8") as f:
-        f.write(html)
-    return html_path
 
 
 # ════════════════════════════════════════════════════════════════════════════

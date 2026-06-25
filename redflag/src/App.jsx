@@ -252,7 +252,7 @@ function ItikaSOSButton() {
   const remain = Math.max(1, Math.ceil((100 - progress) / 100 * (HOLD_MS / 1000)))
 
   return (
-    <div style={{ position: 'fixed', top: 'calc(env(safe-area-inset-top, 0px) + 8px)', right: 12, zIndex: 1000 }}>
+    <div style={{ display: 'inline-block' }}>
       <style>{`@keyframes sosPulse {
         0%,100% { box-shadow: 0 0 0 0 rgba(204,16,16,0.45), 0 2px 10px rgba(204,16,16,0.30); }
         50%     { box-shadow: 0 0 16px 6px rgba(255,40,40,0.40), 0 2px 10px rgba(204,16,16,0.45); }
@@ -297,7 +297,6 @@ function EmergencyBar() {
         <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
           letterSpacing:'.12em',textTransform:'uppercase',color:RED}}>⚡ {t ? t('emergency') : 'Emergency'}</span>
         <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
-          <ItikaSOSButton/>
           <button onClick={()=>setShowNumbers(v=>!v)}
             style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,cursor:'pointer',
               padding:'5px 10px',background:RED,color:'#fff',border:'none',display:'inline-flex',alignItems:'center',gap:4}}>
@@ -343,18 +342,21 @@ function HomeScreen({ setTab }) {
   const { t } = useLang()
   return (
     <div style={{padding:'24px 16px',paddingBottom:32}}>
-      <div style={{marginBottom:32}}>
-        <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
-          letterSpacing:'.2em',textTransform:'uppercase',color:RED,marginBottom:12}}>
-          {t('home_kicker')}
-        </p>
-        <h1 style={{fontFamily:"'Lora',serif",fontSize:42,fontWeight:700,lineHeight:1.1,marginBottom:14}}>
-          <span style={{color:RED}}>Red</span><br/>
-          <span style={{color:TXT}}>Flag</span>
-        </h1>
-        <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:14,color:MUT,lineHeight:1.7,maxWidth:340}}>
-          {t('home_tagline')}
-        </p>
+      <div style={{marginBottom:32,display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:14}}>
+        <div style={{minWidth:0}}>
+          <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
+            letterSpacing:'.2em',textTransform:'uppercase',color:RED,marginBottom:12}}>
+            {t('home_kicker')}
+          </p>
+          <h1 style={{fontFamily:"'Lora',serif",fontSize:42,fontWeight:700,lineHeight:1.1,marginBottom:14}}>
+            <span style={{color:RED}}>Red</span><br/>
+            <span style={{color:TXT}}>Flag</span>
+          </h1>
+          <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:14,color:MUT,lineHeight:1.7,maxWidth:340}}>
+            {t('home_tagline')}
+          </p>
+        </div>
+        <div style={{flexShrink:0,marginTop:4}}><ItikaSOSButton/></div>
       </div>
 
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:24}}>
