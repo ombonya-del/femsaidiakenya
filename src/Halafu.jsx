@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { ArrowRight, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
 import { createClient } from '@supabase/supabase-js'
 import ProjectStories, { MbonaSection } from './ProjectStories'
@@ -368,7 +368,57 @@ function FieldIntelligence() {
   const [showPast, setShowPast]   = useState(false)
   const [expanded, setExpanded]   = useState(true)  // open by default
   const [previewOpen, setPreviewOpen] = useState(false)  // Intel Brief inline preview modal
+  const [pdfState, setPdfState] = useState('idle')       // idle | loading | done | error
+  const pdfBoxRef = useRef(null)
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+
+  // Render the Intel Brief PDF straight into the modal with PDF.js — no iframe,
+  // no dependency on the cached static viewer.html. Pages fit modal width and
+  // stack from the top so the brief sits at eye level immediately.
+  useEffect(() => {
+    if (!previewOpen) return
+    let cancelled = false
+    const cont = pdfBoxRef.current
+    if (cont) cont.innerHTML = ''
+    setPdfState('loading')
+
+    const loadLib = () => new Promise((resolve, reject) => {
+      if (window.pdfjsLib) return resolve(window.pdfjsLib)
+      const s = document.createElement('script')
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'
+      s.onload = () => resolve(window.pdfjsLib); s.onerror = reject
+      document.head.appendChild(s)
+    })
+
+    loadLib().then(lib => {
+      if (cancelled || !lib) return
+      lib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+      return lib.getDocument(BRIEF_URL).promise.then(pdf => {
+        const box = pdfBoxRef.current
+        if (!box || cancelled) return
+        const dpr  = Math.min(window.devicePixelRatio || 1, 2)
+        const cssW = Math.min(box.clientWidth - 24, 1000)
+        let chain = Promise.resolve()
+        for (let n = 1; n <= pdf.numPages; n++) {
+          chain = chain.then(() => {
+            if (cancelled) return
+            return pdf.getPage(n).then(page => {
+              const v1 = page.getViewport({ scale: 1 })
+              const vp = page.getViewport({ scale: (cssW / v1.width) * dpr })
+              const c  = document.createElement('canvas')
+              c.width = vp.width; c.height = vp.height
+              c.style.cssText = 'width:' + (vp.width / dpr) + 'px;max-width:100%;border-radius:3px;box-shadow:0 4px 18px rgba(0,0,0,.5);background:#fff'
+              box.appendChild(c)
+              return page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise
+            })
+          })
+        }
+        return chain.then(() => { if (!cancelled) setPdfState('done') })
+      })
+    }).catch(() => { if (!cancelled) setPdfState('error') })
+
+    return () => { cancelled = true }
+  }, [previewOpen])
 
   useEffect(() => {
     Promise.all([
@@ -606,8 +656,21 @@ function FieldIntelligence() {
                         color:'#F0D0D8', cursor:'pointer' }}>✕ Close</button>
                   </div>
                 </div>
-                <iframe title="Intel Brief preview" src={BRIEF_VIEWER_URL}
-                  style={{ flex:1, width:'100%', border:'none', background:'#111827' }}/>
+                {pdfState === 'loading' && (
+                  <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12,
+                    color:'#9aa3b8', textAlign:'center', padding:'10px' }}>Loading brief…</div>
+                )}
+                {pdfState === 'error' && (
+                  <div style={{ textAlign:'center', padding:'28px' }}>
+                    <a href={BRIEF_URL} download style={{ fontFamily:"'Nunito Sans',sans-serif",
+                      fontSize:11, fontWeight:700, padding:'8px 14px', background:'#8A1030',
+                      color:'#fff', textDecoration:'none', borderRadius:4 }}>⇓ Download PDF</a>
+                  </div>
+                )}
+                <div ref={pdfBoxRef}
+                  style={{ flex:1, width:'100%', overflowY:'auto', WebkitOverflowScrolling:'touch',
+                    display:'flex', flexDirection:'column', alignItems:'center', gap:12,
+                    padding:'14px 12px 28px', background:'#0e1320' }}/>
               </div>
             </div>
           )}
