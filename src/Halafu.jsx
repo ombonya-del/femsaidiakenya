@@ -397,14 +397,18 @@ function FieldIntelligence() {
         const box = pdfBoxRef.current
         if (!box || cancelled) return
         const dpr  = Math.min(window.devicePixelRatio || 1, 2)
-        const cssW = Math.min(box.clientWidth - 24, 1000)
+        const cssW = box.clientWidth - 24
+        const cssH = box.clientHeight - 24   // fit each page to the viewport too
         let chain = Promise.resolve()
         for (let n = 1; n <= pdf.numPages; n++) {
           chain = chain.then(() => {
             if (cancelled) return
             return pdf.getPage(n).then(page => {
               const v1 = page.getViewport({ scale: 1 })
-              const vp = page.getViewport({ scale: (cssW / v1.width) * dpr })
+              let scale = cssW / v1.width
+              // so the whole page sits at eye level instead of an oversized scroll
+              if (cssH > 120) scale = Math.min(scale, cssH / v1.height)
+              const vp = page.getViewport({ scale: scale * dpr })
               const c  = document.createElement('canvas')
               c.width = vp.width; c.height = vp.height
               c.style.cssText = 'width:' + (vp.width / dpr) + 'px;max-width:100%;border-radius:3px;box-shadow:0 4px 18px rgba(0,0,0,.5);background:#fff'
