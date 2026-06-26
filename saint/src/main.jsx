@@ -12,4 +12,11 @@ if ("serviceWorker" in navigator) {
       .then(r => console.log("SaInt SW:", r.scope))
       .catch(e => console.log("SW error:", e))
   })
+  // Auto-refresh when a new deployment's service worker takes control.
+  const hadController = !!navigator.serviceWorker.controller
+  let reloaded = false
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (reloaded) return; reloaded = true
+    if (hadController) window.location.reload()
+  })
 }

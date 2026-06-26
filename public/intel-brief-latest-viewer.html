@@ -40,12 +40,13 @@
   pdfjsLib.getDocument(PDF).promise.then(function(pdf){
     var loading = document.getElementById('loading'); if (loading) loading.remove();
     var dpr  = Math.min(window.devicePixelRatio || 1, 2);
-    var cssW = Math.min(cont.clientWidth - 20, 1000);
+    var cssW = cont.clientWidth - 20;
+    var cssH = cont.clientHeight - 28;   // fit a whole page to the viewport (eye level)
     var chain = Promise.resolve();
     for (var n = 1; n <= pdf.numPages; n++) { (function(num){
       chain = chain.then(function(){ return pdf.getPage(num).then(function(page){
         var v1 = page.getViewport({scale: 1});
-        var scale = cssW / v1.width;
+        var scale = Math.min(cssW / v1.width, cssH / v1.height);
         var vp = page.getViewport({scale: scale * dpr});
         var canvas = document.createElement('canvas');
         canvas.width = vp.width; canvas.height = vp.height;
