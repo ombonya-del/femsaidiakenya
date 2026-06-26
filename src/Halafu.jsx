@@ -398,16 +398,16 @@ function FieldIntelligence() {
         if (!box || cancelled) return
         const dpr  = Math.min(window.devicePixelRatio || 1, 2)
         const cssW = box.clientWidth - 24
-        const cssH = box.clientHeight - 24   // fit each page to the viewport too
+        // fall back to viewport height if the box hasn't laid out yet
+        const cssH = (box.clientHeight > 120 ? box.clientHeight : Math.round(window.innerHeight * 0.82)) - 24
         let chain = Promise.resolve()
         for (let n = 1; n <= pdf.numPages; n++) {
           chain = chain.then(() => {
             if (cancelled) return
             return pdf.getPage(n).then(page => {
               const v1 = page.getViewport({ scale: 1 })
-              let scale = cssW / v1.width
-              // so the whole page sits at eye level instead of an oversized scroll
-              if (cssH > 120) scale = Math.min(scale, cssH / v1.height)
+              // fit each page within the modal so a whole page sits at eye level
+              const scale = Math.min(cssW / v1.width, cssH / v1.height)
               const vp = page.getViewport({ scale: scale * dpr })
               const c  = document.createElement('canvas')
               c.width = vp.width; c.height = vp.height
