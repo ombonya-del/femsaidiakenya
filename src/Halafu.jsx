@@ -366,7 +366,7 @@ function FieldIntelligence() {
   const [intel, setIntel]         = useState(null)
   const [syntheses, setSyntheses] = useState([])   // newest first, from saint_synthesis
   const [showPast, setShowPast]   = useState(false)
-  const [expanded, setExpanded]   = useState(true)  // open by default
+  const [expanded, setExpanded]   = useState(false)  // heavy dashboard/synthesis collapsed by default
   const [previewOpen, setPreviewOpen] = useState(false)  // Intel Brief inline preview modal
   const [pdfState, setPdfState] = useState('idle')       // idle | loading | done | error
   const pdfBoxRef = useRef(null)
@@ -548,40 +548,43 @@ function FieldIntelligence() {
         </div>
       </div>
 
+      {/* Always-visible actions — Preview + Download; the heavy dashboard/synthesis collapses below */}
+      <div style={{ display:'flex', gap:8, flexWrap:'wrap', padding:'14px 16px' }}>
+        <button
+          onClick={e => { e.stopPropagation(); setPreviewOpen(true) }}
+          style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+            padding:'10px 16px', background:'#8A1030',
+            border:'1px solid rgba(138,16,48,0.8)', color:'#fff', cursor:'pointer',
+            display:'inline-flex', alignItems:'center', gap:6, flex: isMobile ? '1 1 100%' : '0 0 auto',
+            justifyContent:'center' }}>
+          👁 Preview Intel Brief
+        </button>
+        <a href={BRIEF_URL}
+          target="_blank" rel="noopener noreferrer"
+          style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+            padding:'10px 16px', background:'rgba(138,16,48,0.3)',
+            border:'1px solid rgba(138,16,48,0.5)', color:'#F0D0D8',
+            textDecoration:'none', display:'inline-flex', alignItems:'center', gap:6,
+            flex: isMobile ? '1 1 auto' : '0 0 auto', justifyContent:'center' }}
+          onClick={e => e.stopPropagation()}>
+          📄 Download
+        </a>
+        <a href="https://saint.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
+          style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+            padding:'10px 16px', background:'rgba(10,13,20,0.6)',
+            border:'1px solid rgba(138,16,48,0.3)', color:'#F0D0D8',
+            textDecoration:'none', display:'inline-flex', alignItems:'center', gap:6,
+            flex: isMobile ? '1 1 auto' : '0 0 auto', justifyContent:'center' }}
+          onClick={e => e.stopPropagation()}>
+          ⚡ SaInt →
+        </a>
+      </div>
+      <div onClick={()=>setExpanded(v=>!v)} style={{ cursor:'pointer', padding:'0 16px 12px',
+        fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, color:'#B89AAA', letterSpacing:'.04em' }}>
+        {expanded ? '▲ Hide live intelligence' : '▾ View live intelligence — index, metrics & synthesis'}
+      </div>
       {expanded && (
         <div onClick={e=>e.stopPropagation()}>
-          {/* Action buttons — lifted to the top so Preview is reachable without scrolling (esp. mobile) */}
-          <div style={{ display:'flex', gap:8, flexWrap:'wrap', padding:'14px 16px',
-            borderBottom:'1px solid rgba(138,16,48,0.2)' }}>
-            <button
-              onClick={e => { e.stopPropagation(); setPreviewOpen(true) }}
-              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
-                padding:'10px 16px', background:'#8A1030',
-                border:'1px solid rgba(138,16,48,0.8)', color:'#fff', cursor:'pointer',
-                display:'inline-flex', alignItems:'center', gap:6, flex: isMobile ? '1 1 100%' : '0 0 auto',
-                justifyContent:'center' }}>
-              👁 Preview Intel Brief
-            </button>
-            <a href={BRIEF_URL}
-              target="_blank" rel="noopener noreferrer"
-              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
-                padding:'10px 16px', background:'rgba(138,16,48,0.3)',
-                border:'1px solid rgba(138,16,48,0.5)', color:'#F0D0D8',
-                textDecoration:'none', display:'inline-flex', alignItems:'center', gap:6,
-                flex: isMobile ? '1 1 auto' : '0 0 auto', justifyContent:'center' }}
-              onClick={e => e.stopPropagation()}>
-              📄 Download
-            </a>
-            <a href="https://saint.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
-              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
-                padding:'10px 16px', background:'rgba(10,13,20,0.6)',
-                border:'1px solid rgba(138,16,48,0.3)', color:'#F0D0D8',
-                textDecoration:'none', display:'inline-flex', alignItems:'center', gap:6,
-                flex: isMobile ? '1 1 auto' : '0 0 auto', justifyContent:'center' }}
-              onClick={e => e.stopPropagation()}>
-              ⚡ SaInt →
-            </a>
-          </div>
           {/* Top metrics row */}
           {intel && (
             <div style={{ display:'grid',
@@ -899,10 +902,11 @@ function ProjectCard({ p, isMobile }) {
   return (
     <>
       {fundOpen && <FundModal project={p} onClose={() => setFundOpen(false)}/>}
-      <div style={{ background:CRD, border:`1px solid ${BD}`, overflow:'hidden', marginBottom:2 }}>
+      <div style={{ background:CRD, border:`1px solid ${BD}`, overflow:'hidden',
+        gridColumn: open ? '1 / -1' : 'auto', alignSelf:'start' }}>
         {/* Header */}
         <div onClick={() => setOpen(o => !o)}
-          style={{ padding:'18px 20px', cursor:'pointer', display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12 }}>
+          style={{ padding: isMobile ? '14px 14px' : '18px 20px', cursor:'pointer', display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:10 }}>
           <div style={{ flex:1 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6, flexWrap:'wrap' }}>
               <span style={{ fontSize:10, padding:'2px 8px', background:statusStyle.bg, color:statusStyle.tc,
@@ -1192,8 +1196,10 @@ export default function HalaFuTab({ isMobile }) {
         </div>
       )}
 
-      {/* Projects */}
-      <div style={{ marginTop:2 }}>
+      {/* Projects — responsive tile grid; a card spans the full row when expanded */}
+      <div style={{ marginTop:2, display:'grid',
+        gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(3,1fr)',
+        gap:2, alignItems:'start', gridAutoFlow:'dense' }}>
         {filtered.map(p => <ProjectCard key={p.id} p={p} isMobile={isMobile}/>)}
       </div>
 
