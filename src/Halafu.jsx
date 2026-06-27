@@ -234,6 +234,64 @@ const PROJECTS = [
 
 // ── FIELD INTELLIGENCE COMPONENT ─────────────────────────────────────────────
 // ── 47-HOUR COUNTER + MOTD PANEL ─────────────────────────────────────────────
+function MotdCard({ m, label = 'Misogyny of the Day' }) {
+  if (!m) return null
+  return (
+    <div style={{ background:'#F9F0F4', border:'2px solid #8A1030', padding:'18px 20px', marginTop:2 }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:800,
+          letterSpacing:'.18em', color:'#8A1030', textTransform:'uppercase' }}>
+          ⚠ {label} · {m.platform || 'X'}
+        </p>
+        {m.misogyny_score && (
+          <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:800,
+            background:'#8A1030', color:'#fff', padding:'2px 8px' }}>
+            Score {m.misogyny_score}/10
+          </span>
+        )}
+      </div>
+      {m.handle && (
+        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+          color:'#5A1828', marginBottom:6 }}>
+          {m.handle}
+        </p>
+      )}
+      <p style={{ fontFamily:"'Lora',serif", fontSize:13, fontStyle:'italic',
+        color:'#2A0812', lineHeight:1.75, marginBottom:10,
+        borderLeft:'3px solid #8A1030', paddingLeft:10 }}>
+        "{m.content || ''}"
+      </p>
+      {m.context && (
+        <div style={{ background:'rgba(138,16,48,0.06)', padding:'10px 12px', marginBottom:10 }}>
+          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:800,
+            letterSpacing:'.12em', color:'#8A1030', marginBottom:4, textTransform:'uppercase' }}>
+            Why this matters
+          </p>
+          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+            color:'#3A1020', lineHeight:1.7 }}>
+            {m.context}
+          </p>
+        </div>
+      )}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:6 }}>
+        {m.reach && (
+          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
+            color:'#7A3050', fontWeight:600 }}>
+            📢 Reach: {m.reach}
+          </p>
+        )}
+        {m.source_url && (
+          <a href={m.source_url} target="_blank" rel="noopener noreferrer"
+            style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
+              color:'#8A1030', fontWeight:700, textDecoration:'none' }}>
+            View post →
+          </a>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function CrisisCounter({ part = 'both', previous = false }) {
   const [elapsed, setElapsed] = useState(0)
   const [motd, setMotd] = useState(null)
@@ -297,93 +355,12 @@ function CrisisCounter({ part = 'both', previous = false }) {
       )}
 
       {/* Latest MOTD */}
-      {part !== 'counter' && motd && (
-        <div style={{ background:'#F9F0F4', border:'2px solid #8A1030', padding:'18px 20px', marginTop:2 }}>
-          {/* Header */}
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:800,
-              letterSpacing:'.18em', color:'#8A1030', textTransform:'uppercase' }}>
-              ⚠ Misogyny of the Day · {motd.platform || 'X'}
-            </p>
-            {motd.misogyny_score && (
-              <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:800,
-                background:'#8A1030', color:'#fff', padding:'2px 8px' }}>
-                Score {motd.misogyny_score}/10
-              </span>
-            )}
-          </div>
+      {part !== 'counter' && <MotdCard m={motd} label="Misogyny of the Day"/>}
 
-          {/* Handle */}
-          {motd.handle && (
-            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-              color:'#5A1828', marginBottom:6 }}>
-              {motd.handle}
-            </p>
-          )}
-
-          {/* Quote */}
-          <p style={{ fontFamily:"'Lora',serif", fontSize:13, fontStyle:'italic',
-            color:'#2A0812', lineHeight:1.75, marginBottom:10,
-            borderLeft:'3px solid #8A1030', paddingLeft:10 }}>
-            "{motd.content || ''}"
-          </p>
-
-          {/* Context — the pipeline explanation */}
-          {motd.context && (
-            <div style={{ background:'rgba(138,16,48,0.06)', padding:'10px 12px', marginBottom:10 }}>
-              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:800,
-                letterSpacing:'.12em', color:'#8A1030', marginBottom:4, textTransform:'uppercase' }}>
-                Why this matters
-              </p>
-              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
-                color:'#3A1020', lineHeight:1.7 }}>
-                {motd.context}
-              </p>
-            </div>
-          )}
-
-          {/* Reach + Source */}
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:6 }}>
-            {motd.reach && (
-              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
-                color:'#7A3050', fontWeight:600 }}>
-                📢 Reach: {motd.reach}
-              </p>
-            )}
-            {motd.source_url && (
-              <a href={motd.source_url} target="_blank" rel="noopener noreferrer"
-                style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
-                  color:'#8A1030', fontWeight:700, textDecoration:'none' }}>
-                View post →
-              </a>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Earlier MOTDs — fill the column when the live signal is expanded */}
+      {/* Earlier MOTDs (full detail) — appear when the live signal is expanded */}
       {part !== 'counter' && previous && prevMotds.length > 0 && (
         <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
-          {prevMotds.map(pm => (
-            <div key={pm.id} style={{ background:'#F9F0F4', border:'1px solid #E0B8C8', padding:'12px 16px' }}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
-                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:8.5, fontWeight:800,
-                  letterSpacing:'.14em', color:'#8A1030', textTransform:'uppercase', margin:0 }}>
-                  ⚠ Earlier · {pm.platform || 'X'}{pm.handle ? ' · ' + pm.handle : ''}
-                </p>
-                {pm.misogyny_score && (
-                  <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:8.5, fontWeight:800,
-                    background:'#8A1030', color:'#fff', padding:'1px 6px' }}>
-                    {pm.misogyny_score}/10
-                  </span>
-                )}
-              </div>
-              <p style={{ fontFamily:"'Lora',serif", fontSize:12, fontStyle:'italic', color:'#3A1020',
-                lineHeight:1.6, margin:0, borderLeft:'3px solid #8A1030', paddingLeft:10 }}>
-                "{(pm.content || '').slice(0,160)}{(pm.content || '').length > 160 ? '…' : ''}"
-              </p>
-            </div>
-          ))}
+          {prevMotds.map(pm => <MotdCard key={pm.id} m={pm} label="Earlier · Misogyny of the Day"/>)}
         </div>
       )}
     </div>
@@ -938,9 +915,9 @@ function ProjectCard({ p, isMobile, kanban = false }) {
       {fundOpen && <FundModal project={p} onClose={() => setFundOpen(false)}/>}
       <div style={{ background:CRD, border:`1px solid ${BD}`, overflow:'hidden',
         gridColumn: open ? '1 / -1' : 'auto', display:'flex', flexDirection:'column',
-        flex: kanban && !open ? 1 : undefined,
-        justifyContent: kanban && !open ? 'center' : undefined,
-        minHeight: open ? 'auto' : (isMobile ? 152 : 0) }}>
+        flex: kanban && !open && !isMobile ? 1 : undefined,
+        justifyContent: kanban && !open && !isMobile ? 'center' : undefined,
+        minHeight: open ? 'auto' : 0 }}>
         {/* Header */}
         <div onClick={() => setOpen(o => !o)}
           style={{ padding:'14px 16px', cursor:'pointer', display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:10, flex: isMobile ? 1 : 'none' }}>
@@ -1119,73 +1096,8 @@ export default function HalaFuTab({ isMobile }) {
         </div>
       </div>
 
-      {/* Counter + MOTD — mobile only (desktop: counter in hero, MOTD in intelligence band) */}
-      {isMobile && (
-      <div style={{ order:7, marginTop:16, marginBottom:2 }}>
-        <CrisisCounter/>
-      </div>
-      )}
-
-      {/* Action band — mobile only (desktop funder CTA lives in the intelligence band) */}
-      {isMobile && (
-      <div style={{ order:8, background:'#1E2D40', border:`1px solid #3A1830`, padding: isMobile?'16px 14px':'20px 24px',
-        marginBottom:2, display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
-        <div>
-          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, letterSpacing:'.1em',
-            textTransform:'uppercase', color:A, marginBottom:6 }}>● Are you a funder? These projects need you.</p>
-          <p style={{ fontFamily:"'Lora',serif", fontSize:isMobile?14:17, fontWeight:700, color:'#F0D0D8', lineHeight:1.4 }}>
-            {[...new Set(PROJECTS.flatMap(p=>p.donors.map(d=>d.name)))].length} funding prospects identified across {PROJECTS.length} projects.
-            <br/><em style={{ fontWeight:400, color:'#B89AAA' }}>Are you one of them?</em>
-          </p>
-        </div>
-        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-          <a href="mailto:halafu@femsaidiakenya.org?subject=Funding interest — Halafu? project pipeline"
-            style={{ display:'inline-flex', alignItems:'center', gap:8, background:A, color:'#F0D0D8',
-              fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'10px 18px',
-              textDecoration:'none', letterSpacing:'.04em', whiteSpace:'nowrap' }}>
-            💰 I want to fund one of these
-          </a>
-          <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/halafu-brief.pdf" target="_blank" rel="noopener noreferrer"
-            style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.08)',
-              color:'#D4B0B8', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:600,
-              padding:'10px 18px', textDecoration:'none', border:'1px solid rgba(255,255,255,0.15)',
-              letterSpacing:'.04em', whiteSpace:'nowrap' }}>
-            📄 Download Halafu? brief
-          </a>
-          <a href="mailto:halafu@femsaidiakenya.org?subject=Project idea for Halafu?"
-            style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.08)',
-              color:'#D4B0B8', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:600,
-              padding:'10px 18px', textDecoration:'none', border:'1px solid rgba(255,255,255,0.15)',
-              letterSpacing:'.04em', whiteSpace:'nowrap' }}>
-            ✎ Submit a project
-          </a>
-        </div>
-      </div>
-      )}
-
-      {/* Intelligence gateway — mobile (full width) */}
-      {isMobile && (
-      <div style={{ order:2, marginBottom:2 }}>
-        <div style={{ background:'#EDE0E8', border:`1px solid #D4BEC4`, padding:'16px 20px' }}>
-          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-            letterSpacing:'.12em', textTransform:'uppercase', color:'#7A4A60', marginBottom:4 }}>
-            📊 FemSaidia Intelligence Brief
-          </p>
-          <p style={{ fontFamily:"'Lora',serif", fontSize:14, fontWeight:700, color:'#180410', marginBottom:4 }}>
-            Bi-weekly femicide & misogyny intelligence
-          </p>
-          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:'#7A4A60', lineHeight:1.6, marginBottom:10 }}>
-            AI-generated from live platform data — case tracker, misogyny index, scanner catches and community pulse.
-            Updated every two weeks. Share with policymakers, funders and researchers.
-          </p>
-          <FieldIntelligence/>
-        </div>
-      </div>
-      )}
-
-      {/* Command zone — desktop: left = funder CTA + gateway; right = counter + MOTD */}
-      {!isMobile && (
-      <div style={{ order:2, marginBottom:2, display:'grid', gridTemplateColumns:'1.5fr 1fr', gap:2, alignItems:'start' }}>
+      {/* Command zone — responsive: left = funder CTA + gateway; right = counter + MOTD (stacks on mobile) */}
+      <div style={{ order:2, marginBottom:2, display:'grid', gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr', gap:2, alignItems:'start' }}>
         {/* LEFT column */}
         <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
           {/* Are you a funder? CTA — immediately below the hero */}
@@ -1232,7 +1144,6 @@ export default function HalaFuTab({ isMobile }) {
           <CrisisCounter part="motd" previous={liveOpen}/>
         </div>
       </div>
-      )}
 
       {/* Brief archive */}
       {briefs.length > 1 && (
@@ -1270,53 +1181,23 @@ export default function HalaFuTab({ isMobile }) {
 
       {/* (stats moved into the hero ribbon) */}
 
-      {/* Lane filter — mobile only (desktop shows all three streams as kanban columns) */}
-      {isMobile && (
-      <div style={{ order:4, display:'flex', gap:2, marginBottom:2, flexWrap:'wrap' }}>
-        {['all','Understand','Interrupt','Build'].map(l => (
-          <button key={l} onClick={() => setLane(l)}
-            style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
-              padding:'8px 16px', border:`1px solid ${lane===l?A:BD}`,
-              background:lane===l?A:CRD, color:lane===l?'#F0D0D8':MUT,
-              cursor:'pointer', letterSpacing:'.04em' }}>
-            {l==='all' ? `All (${counts.all})` : `${LANE_STYLES[l].label} (${counts[l]})`}
-          </button>
+      {/* Projects — 3 kanban streams; columns stack on mobile */}
+      <div style={{ order:6, marginTop:2, display:'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', gap:8, alignItems:'stretch' }}>
+        {['Understand','Interrupt','Build'].map(laneKey => (
+          <div key={laneKey} style={{ display:'flex', flexDirection:'column', gap:2 }}>
+            <div style={{ background:LANE_STYLES[laneKey].bg, border:`1px solid ${LANE_STYLES[laneKey].border}`, padding:'10px 14px' }}>
+              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:800, letterSpacing:'.08em',
+                textTransform:'uppercase', color:'#F0D0D8', margin:0 }}>
+                {LANE_STYLES[laneKey].label} · {counts[laneKey]}
+              </p>
+              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10.5, color:'#C99FB0', margin:'4px 0 0', lineHeight:1.5 }}>
+                {LANE_STYLES[laneKey].desc}
+              </p>
+            </div>
+            {PROJECTS.filter(p=>p.lane===laneKey).map(p => <ProjectCard key={p.id} p={p} isMobile={isMobile} kanban/>)}
+          </div>
         ))}
       </div>
-      )}
-
-      {isMobile && lane !== 'all' && (
-        <div style={{ order:5, background:LANE_STYLES[lane].bg, border:`1px solid ${LANE_STYLES[lane].border}`,
-          padding:'12px 18px', marginBottom:2 }}>
-          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:'#D4B0B8', lineHeight:1.7 }}>
-            {LANE_STYLES[lane].desc}
-          </p>
-        </div>
-      )}
-
-      {/* Projects — mobile: filterable 2-up grid; desktop: 3 kanban streams */}
-      {isMobile ? (
-        <div style={{ order:6, marginTop:2, display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:2 }}>
-          {filtered.map(p => <ProjectCard key={p.id} p={p} isMobile={isMobile}/>)}
-        </div>
-      ) : (
-        <div style={{ order:6, marginTop:2, display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, alignItems:'stretch' }}>
-          {['Understand','Interrupt','Build'].map(laneKey => (
-            <div key={laneKey} style={{ display:'flex', flexDirection:'column', gap:2 }}>
-              <div style={{ background:LANE_STYLES[laneKey].bg, border:`1px solid ${LANE_STYLES[laneKey].border}`, padding:'10px 14px' }}>
-                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:800, letterSpacing:'.08em',
-                  textTransform:'uppercase', color:'#F0D0D8', margin:0 }}>
-                  {LANE_STYLES[laneKey].label} · {counts[laneKey]}
-                </p>
-                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10.5, color:'#C99FB0', margin:'4px 0 0', lineHeight:1.5 }}>
-                  {LANE_STYLES[laneKey].desc}
-                </p>
-              </div>
-              {PROJECTS.filter(p=>p.lane===laneKey).map(p => <ProjectCard key={p.id} p={p} isMobile={false} kanban/>)}
-            </div>
-          ))}
-        </div>
-      )}
 
       {/* MBONA: REAL STORIES — the lives behind the projects (kept inline) */}
       <div style={{ order:9, marginTop:2 }}>
