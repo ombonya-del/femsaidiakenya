@@ -550,6 +550,38 @@ function FieldIntelligence() {
 
       {expanded && (
         <div onClick={e=>e.stopPropagation()}>
+          {/* Action buttons — lifted to the top so Preview is reachable without scrolling (esp. mobile) */}
+          <div style={{ display:'flex', gap:8, flexWrap:'wrap', padding:'14px 16px',
+            borderBottom:'1px solid rgba(138,16,48,0.2)' }}>
+            <button
+              onClick={e => { e.stopPropagation(); setPreviewOpen(true) }}
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                padding:'10px 16px', background:'#8A1030',
+                border:'1px solid rgba(138,16,48,0.8)', color:'#fff', cursor:'pointer',
+                display:'inline-flex', alignItems:'center', gap:6, flex: isMobile ? '1 1 100%' : '0 0 auto',
+                justifyContent:'center' }}>
+              👁 Preview Intel Brief
+            </button>
+            <a href={BRIEF_URL}
+              target="_blank" rel="noopener noreferrer"
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                padding:'10px 16px', background:'rgba(138,16,48,0.3)',
+                border:'1px solid rgba(138,16,48,0.5)', color:'#F0D0D8',
+                textDecoration:'none', display:'inline-flex', alignItems:'center', gap:6,
+                flex: isMobile ? '1 1 auto' : '0 0 auto', justifyContent:'center' }}
+              onClick={e => e.stopPropagation()}>
+              📄 Download
+            </a>
+            <a href="https://saint.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                padding:'10px 16px', background:'rgba(10,13,20,0.6)',
+                border:'1px solid rgba(138,16,48,0.3)', color:'#F0D0D8',
+                textDecoration:'none', display:'inline-flex', alignItems:'center', gap:6,
+                flex: isMobile ? '1 1 auto' : '0 0 auto', justifyContent:'center' }}
+              onClick={e => e.stopPropagation()}>
+              ⚡ SaInt →
+            </a>
+          </div>
           {/* Top metrics row */}
           {intel && (
             <div style={{ display:'grid',
@@ -606,34 +638,7 @@ function FieldIntelligence() {
 
           {/* Claude synthesis */}
           <div style={{ padding:'16px 24px' }}>
-            {/* Action buttons */}
-          <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:16 }}>
-            <button
-              onClick={e => { e.stopPropagation(); setPreviewOpen(true) }}
-              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-                padding:'8px 14px', background:'rgba(138,16,48,0.5)',
-                border:'1px solid rgba(138,16,48,0.6)', color:'#fff', cursor:'pointer',
-                display:'inline-flex', alignItems:'center', gap:6 }}>
-              👁 Preview Intel Brief
-            </button>
-            <a href={BRIEF_URL}
-              target="_blank" rel="noopener noreferrer"
-              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-                padding:'8px 14px', background:'rgba(138,16,48,0.3)',
-                border:'1px solid rgba(138,16,48,0.5)', color:'#F0D0D8',
-                textDecoration:'none', display:'inline-flex', alignItems:'center', gap:6 }}
-              onClick={e => e.stopPropagation()}>
-              📄 Download Intel Brief
-            </a>
-            <a href="https://saint.femsaidiakenya.org" target="_blank" rel="noopener noreferrer"
-              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-                padding:'8px 14px', background:'rgba(10,13,20,0.6)',
-                border:'1px solid rgba(138,16,48,0.3)', color:'#F0D0D8',
-                textDecoration:'none', display:'inline-flex', alignItems:'center', gap:6 }}
-              onClick={e => e.stopPropagation()}>
-              ⚡ Open SaInt Intelligence →
-            </a>
-          </div>
+            {/* Action buttons moved to top of the section for reachability */}
 
           {previewOpen && (
             <div
