@@ -903,10 +903,11 @@ function ProjectCard({ p, isMobile }) {
     <>
       {fundOpen && <FundModal project={p} onClose={() => setFundOpen(false)}/>}
       <div style={{ background:CRD, border:`1px solid ${BD}`, overflow:'hidden',
-        gridColumn: open ? '1 / -1' : 'auto', alignSelf:'start' }}>
+        gridColumn: open ? '1 / -1' : 'auto', display:'flex', flexDirection:'column',
+        minHeight: open ? 'auto' : (isMobile ? 152 : 172) }}>
         {/* Header */}
         <div onClick={() => setOpen(o => !o)}
-          style={{ padding: isMobile ? '14px 14px' : '18px 20px', cursor:'pointer', display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:10 }}>
+          style={{ padding: isMobile ? '14px 14px' : '18px 20px', cursor:'pointer', display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:10, flex:1 }}>
           <div style={{ flex:1 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6, flexWrap:'wrap' }}>
               <span style={{ fontSize:10, padding:'2px 8px', background:statusStyle.bg, color:statusStyle.tc,
@@ -1078,9 +1079,14 @@ export default function HalaFuTab({ isMobile }) {
         </div>
       </div>
 
-      {/* Action band (fund · download · submit) — consolidated, placed after projects via order */}
-      <div style={{ order:5, background:'#1E2D40', border:`1px solid #3A1830`, padding: isMobile?'16px 14px':'20px 24px',
-        marginTop:16, marginBottom:2, display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
+      {/* Counter + Misogyny of the Day — batched with the action band for prominence */}
+      <div style={{ order:7, marginTop:16, marginBottom:2 }}>
+        <CrisisCounter/>
+      </div>
+
+      {/* Action band (fund · download · submit) — consolidated, batched under the counter/MOTD */}
+      <div style={{ order:8, background:'#1E2D40', border:`1px solid #3A1830`, padding: isMobile?'16px 14px':'20px 24px',
+        marginBottom:2, display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
         <div>
           <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, letterSpacing:'.1em',
             textTransform:'uppercase', color:A, marginBottom:6 }}>● Are you a funder? These projects need you.</p>
@@ -1114,7 +1120,7 @@ export default function HalaFuTab({ isMobile }) {
       </div>
 
       {/* Intel Brief strip (collapsed) — placed below projects via order */}
-      <div style={{ order:7, background:'#EDE0E8', border:`1px solid #D4BEC4`, padding:'16px 20px', marginBottom:2,
+      <div style={{ order:2, background:'#EDE0E8', border:`1px solid #D4BEC4`, padding:'16px 20px', marginBottom:2,
         display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
         <div>
           <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
@@ -1129,9 +1135,8 @@ export default function HalaFuTab({ isMobile }) {
             Updated every two weeks. Share with policymakers, funders and researchers.
           </p>
         </div>
-        <div style={{display:"flex",flexDirection:isMobile?"column":"row",gap:2,alignItems:isMobile?"stretch":"flex-start",width:isMobile?"100%":undefined,minWidth:0,flex:isMobile?"1 1 100%":undefined}}>
-          <div style={{flex:isMobile?"1 1 auto":"0 0 60%",minWidth:0}}><FieldIntelligence/></div>
-          <div style={{flex:isMobile?"1 1 auto":"0 0 calc(40% - 2px)",minWidth:0}}><CrisisCounter/></div>
+        <div style={{ flex: isMobile ? '1 1 100%' : '1 1 340px', minWidth:0 }}>
+          <FieldIntelligence/>
         </div>
 
           {/* Download Intel Brief */}
@@ -1140,7 +1145,7 @@ export default function HalaFuTab({ isMobile }) {
 
       {/* Brief archive */}
       {briefs.length > 1 && (
-        <div style={{ order:8, marginBottom:2 }}>
+        <div style={{ order:3, marginBottom:2 }}>
           <div style={{ background:'#EDE0E8', padding:'10px 20px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
             <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
               letterSpacing:'.1em', textTransform:'uppercase', color:A }}>📁 Previous briefs</span>
@@ -1175,7 +1180,7 @@ export default function HalaFuTab({ isMobile }) {
       {/* (stats moved into the hero ribbon) */}
 
       {/* Lane filter */}
-      <div style={{ order:2, display:'flex', gap:2, marginBottom:2, flexWrap:'wrap' }}>
+      <div style={{ order:4, display:'flex', gap:2, marginBottom:2, flexWrap:'wrap' }}>
         {['all','Understand','Interrupt','Build'].map(l => (
           <button key={l} onClick={() => setLane(l)}
             style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
@@ -1188,7 +1193,7 @@ export default function HalaFuTab({ isMobile }) {
       </div>
 
       {lane !== 'all' && (
-        <div style={{ order:3, background:LANE_STYLES[lane].bg, border:`1px solid ${LANE_STYLES[lane].border}`,
+        <div style={{ order:5, background:LANE_STYLES[lane].bg, border:`1px solid ${LANE_STYLES[lane].border}`,
           padding:'12px 18px', marginBottom:2 }}>
           <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:'#D4B0B8', lineHeight:1.7 }}>
             {LANE_STYLES[lane].desc}
@@ -1197,14 +1202,14 @@ export default function HalaFuTab({ isMobile }) {
       )}
 
       {/* Projects — responsive tile grid; a card spans the full row when expanded */}
-      <div style={{ order:4, marginTop:2, display:'grid',
+      <div style={{ order:6, marginTop:2, display:'grid',
         gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(3,1fr)',
-        gap:2, alignItems:'start', gridAutoFlow:'dense' }}>
+        gap:2 }}>
         {filtered.map(p => <ProjectCard key={p.id} p={p} isMobile={isMobile}/>)}
       </div>
 
       {/* MBONA: REAL STORIES — the lives behind the projects (kept inline) */}
-      <div style={{ order:6, marginTop:2 }}>
+      <div style={{ order:9, marginTop:2 }}>
         <MbonaSection projectTitles={Object.fromEntries(PROJECTS.map(p => [p.id, p.title]))}/>
       </div>
       {/* Submit folded into the action band above */}
