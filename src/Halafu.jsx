@@ -906,10 +906,10 @@ function ProjectCard({ p, isMobile }) {
       {fundOpen && <FundModal project={p} onClose={() => setFundOpen(false)}/>}
       <div style={{ background:CRD, border:`1px solid ${BD}`, overflow:'hidden',
         gridColumn: open ? '1 / -1' : 'auto', display:'flex', flexDirection:'column',
-        minHeight: open ? 'auto' : (isMobile ? 152 : 172) }}>
+        minHeight: open ? 'auto' : (isMobile ? 152 : 0) }}>
         {/* Header */}
         <div onClick={() => setOpen(o => !o)}
-          style={{ padding: isMobile ? '14px 14px' : '18px 20px', cursor:'pointer', display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:10, flex:1 }}>
+          style={{ padding:'14px 16px', cursor:'pointer', display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:10, flex: isMobile ? 1 : 'none' }}>
           <div style={{ flex:1 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6, flexWrap:'wrap' }}>
               <span style={{ fontSize:10, padding:'2px 8px', background:statusStyle.bg, color:statusStyle.tc,
@@ -1058,35 +1058,30 @@ export default function HalaFuTab({ isMobile }) {
 
   return (
     <div className="fade-up" style={{ width:'100%', display:'flex', flexDirection:'column' }}>
-      {/* Hero + stat ribbon; counter top-right on desktop */}
-      <div style={{ order:1, borderBottom:`1px solid ${BD}`, paddingBottom:16, marginBottom:2,
-        display: isMobile ? 'block' : 'flex', gap: isMobile?0:24, alignItems:'flex-start' }}>
-        <div style={{ flex:1, minWidth:0 }}>
-          <p className="label" style={{ marginBottom:8, color:A }}>FemSaidia Action Lab · From outrage to architecture</p>
-          <h1 className="serif" style={{ fontSize:isMobile?26:34, fontWeight:700, color:TXT, marginBottom:8 }}>
-            Halafu<span style={{ color:A }}>?</span>
-          </h1>
-          <p style={{ fontFamily:"'Lora',serif", fontSize:isMobile?13:15, color:MUT, lineHeight:1.6, fontStyle:'italic', marginBottom:14, maxWidth:680 }}>
-            "Too much admiration of the pink elephant and very little slaying of the dragon." — enough data, enough outrage; what Kenya needs now is <strong style={{ color:TXT, fontStyle:'normal' }}>architecture</strong>.
-          </p>
-          <div style={{ display:'flex', flexWrap:'wrap', gap:isMobile?'8px 14px':'8px 22px', alignItems:'baseline' }}>
-            {[
-              { v:PROJECTS.length, l:'projects' },
-              { v:PROJECTS.filter(p=>p.status==='In development').length, l:'in development' },
-              { v:[...new Set(PROJECTS.flatMap(p=>p.donors.map(d=>d.name)))].length, l:'funding prospects' },
-            ].map((s,i)=>(
-              <span key={i} style={{ display:'inline-flex', alignItems:'baseline', gap:5 }}>
-                <span style={{ fontFamily:"'Lora',serif", fontSize:isMobile?20:24, fontWeight:700, color:A }}>{s.v}</span>
-                <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT }}>{s.l}</span>
-              </span>
-            ))}
-          </div>
+      {/* Hero + manifesto + stat ribbon (full width) */}
+      <div style={{ order:1, borderBottom:`1px solid ${BD}`, paddingBottom:16, marginBottom:2 }}>
+        <p className="label" style={{ marginBottom:8, color:A }}>FemSaidia Action Lab · From outrage to architecture</p>
+        <h1 className="serif" style={{ fontSize:isMobile?26:34, fontWeight:700, color:TXT, marginBottom:10 }}>
+          Halafu<span style={{ color:A }}>?</span>
+        </h1>
+        <p style={{ fontFamily:"'Lora',serif", fontSize:isMobile?14:16, color:TXT, lineHeight:1.55, fontStyle:'italic', marginBottom:8, maxWidth:760 }}>
+          "Too much admiration of the pink elephant and very little slaying of the dragon."
+        </p>
+        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:isMobile?12.5:13.5, color:MUT, lineHeight:1.7, marginBottom:14, maxWidth:760 }}>
+          We have enough data. We have enough reports. We have enough outrage. What Kenya needs now is <strong style={{ color:TXT }}>architecture</strong> — specific, fundable, executable projects that interrupt the pipeline from misogyny to murder. This is where we build them.
+        </p>
+        <div style={{ display:'flex', flexWrap:'wrap', gap:isMobile?'8px 14px':'8px 22px', alignItems:'baseline' }}>
+          {[
+            { v:PROJECTS.length, l:'projects' },
+            { v:PROJECTS.filter(p=>p.status==='In development').length, l:'in development' },
+            { v:[...new Set(PROJECTS.flatMap(p=>p.donors.map(d=>d.name)))].length, l:'funding prospects' },
+          ].map((s,i)=>(
+            <span key={i} style={{ display:'inline-flex', alignItems:'baseline', gap:5 }}>
+              <span style={{ fontFamily:"'Lora',serif", fontSize:isMobile?20:24, fontWeight:700, color:A }}>{s.v}</span>
+              <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT }}>{s.l}</span>
+            </span>
+          ))}
         </div>
-        {!isMobile && (
-          <div style={{ width:300, flexShrink:0 }}>
-            <CrisisCounter part="counter"/>
-          </div>
-        )}
       </div>
 
       {/* Counter + MOTD — mobile only (desktop: counter in hero, MOTD in intelligence band) */}
@@ -1133,9 +1128,9 @@ export default function HalaFuTab({ isMobile }) {
       </div>
       )}
 
-      {/* Intelligence band (order 2) — gateway left; funder CTA + MOTD right on desktop */}
-      <div style={{ order:2, marginBottom:2, display:'grid',
-        gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr', gap:2, alignItems:'start' }}>
+      {/* Intelligence gateway — mobile (full width) */}
+      {isMobile && (
+      <div style={{ order:2, marginBottom:2 }}>
         <div style={{ background:'#EDE0E8', border:`1px solid #D4BEC4`, padding:'16px 20px' }}>
           <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
             letterSpacing:'.12em', textTransform:'uppercase', color:'#7A4A60', marginBottom:4 }}>
@@ -1150,33 +1145,59 @@ export default function HalaFuTab({ isMobile }) {
           </p>
           <FieldIntelligence/>
         </div>
-        {!isMobile && (
-          <div style={{ display:'flex', flexDirection:'column', gap:2, minWidth:0 }}>
-            <div style={{ background:'#1E2D40', border:`1px solid #3A1830`, padding:'16px 18px' }}>
-              <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, letterSpacing:'.1em',
-                textTransform:'uppercase', color:A, marginBottom:6 }}>● Are you a funder?</p>
-              <p style={{ fontFamily:"'Lora',serif", fontSize:16, fontWeight:700, color:'#F0D0D8', lineHeight:1.4, marginBottom:10 }}>
-                {[...new Set(PROJECTS.flatMap(p=>p.donors.map(d=>d.name)))].length} prospects across {PROJECTS.length} projects.
-              </p>
-              <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-                <a href="mailto:halafu@femsaidiakenya.org?subject=Funding interest — Halafu? project pipeline"
-                  style={{ display:'inline-flex', alignItems:'center', gap:6, background:A, color:'#F0D0D8',
-                    fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'9px 16px',
-                    textDecoration:'none', letterSpacing:'.04em' }}>💰 Fund a project</a>
-                <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/halafu-brief.pdf" target="_blank" rel="noopener noreferrer"
-                  style={{ display:'inline-flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.08)',
-                    color:'#D4B0B8', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:600, padding:'9px 16px',
-                    textDecoration:'none', border:'1px solid rgba(255,255,255,0.15)', letterSpacing:'.04em' }}>📄 Brief</a>
-                <a href="mailto:halafu@femsaidiakenya.org?subject=Project idea for Halafu?"
-                  style={{ display:'inline-flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.08)',
-                    color:'#D4B0B8', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:600, padding:'9px 16px',
-                    textDecoration:'none', border:'1px solid rgba(255,255,255,0.15)', letterSpacing:'.04em' }}>✎ Submit</a>
-              </div>
-            </div>
-            <CrisisCounter part="motd"/>
-          </div>
-        )}
       </div>
+      )}
+
+      {/* Command zone — desktop: left = funder CTA + gateway; right = counter + MOTD */}
+      {!isMobile && (
+      <div style={{ order:2, marginBottom:2, display:'grid', gridTemplateColumns:'1.5fr 1fr', gap:2, alignItems:'start' }}>
+        {/* LEFT column */}
+        <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
+          {/* Are you a funder? CTA — immediately below the hero */}
+          <div style={{ background:'#1E2D40', border:`1px solid #3A1830`, padding:'16px 20px' }}>
+            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, letterSpacing:'.1em',
+              textTransform:'uppercase', color:A, marginBottom:6 }}>● Are you a funder? These projects need you.</p>
+            <p style={{ fontFamily:"'Lora',serif", fontSize:17, fontWeight:700, color:'#F0D0D8', lineHeight:1.4, marginBottom:12 }}>
+              {[...new Set(PROJECTS.flatMap(p=>p.donors.map(d=>d.name)))].length} funding prospects identified across {PROJECTS.length} projects.
+            </p>
+            <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+              <a href="mailto:halafu@femsaidiakenya.org?subject=Funding interest — Halafu? project pipeline"
+                style={{ display:'inline-flex', alignItems:'center', gap:6, background:A, color:'#F0D0D8',
+                  fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'10px 18px',
+                  textDecoration:'none', letterSpacing:'.04em' }}>💰 I want to fund one of these</a>
+              <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/halafu-brief.pdf" target="_blank" rel="noopener noreferrer"
+                style={{ display:'inline-flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.08)',
+                  color:'#D4B0B8', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:600, padding:'10px 18px',
+                  textDecoration:'none', border:'1px solid rgba(255,255,255,0.15)', letterSpacing:'.04em' }}>📄 Download Halafu? brief</a>
+              <a href="mailto:halafu@femsaidiakenya.org?subject=Project idea for Halafu?"
+                style={{ display:'inline-flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.08)',
+                  color:'#D4B0B8', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:600, padding:'10px 18px',
+                  textDecoration:'none', border:'1px solid rgba(255,255,255,0.15)', letterSpacing:'.04em' }}>✎ Submit a project</a>
+            </div>
+          </div>
+          {/* Intelligence Brief + Field Intelligence gateway */}
+          <div style={{ background:'#EDE0E8', border:`1px solid #D4BEC4`, padding:'16px 20px' }}>
+            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+              letterSpacing:'.12em', textTransform:'uppercase', color:'#7A4A60', marginBottom:4 }}>
+              📊 FemSaidia Intelligence Brief
+            </p>
+            <p style={{ fontFamily:"'Lora',serif", fontSize:14, fontWeight:700, color:'#180410', marginBottom:4 }}>
+              Bi-weekly femicide & misogyny intelligence
+            </p>
+            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:'#7A4A60', lineHeight:1.6, marginBottom:10 }}>
+              AI-generated from live platform data — case tracker, misogyny index, scanner catches and community pulse.
+              Updated every two weeks. Share with policymakers, funders and researchers.
+            </p>
+            <FieldIntelligence/>
+          </div>
+        </div>
+        {/* RIGHT column: counter + MOTD */}
+        <div style={{ display:'flex', flexDirection:'column', gap:2, minWidth:0 }}>
+          <CrisisCounter part="counter"/>
+          <CrisisCounter part="motd"/>
+        </div>
+      </div>
+      )}
 
       {/* Brief archive */}
       {briefs.length > 1 && (
