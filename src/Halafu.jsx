@@ -234,9 +234,10 @@ const PROJECTS = [
 
 // ── FIELD INTELLIGENCE COMPONENT ─────────────────────────────────────────────
 // ── 47-HOUR COUNTER + MOTD PANEL ─────────────────────────────────────────────
-function CrisisCounter({ part = 'both' }) {
+function CrisisCounter({ part = 'both', previous = false }) {
   const [elapsed, setElapsed] = useState(0)
   const [motd, setMotd] = useState(null)
+  const [prevMotds, setPrevMotds] = useState([])
   const CYCLE = 47 * 3600  // 47 hours in seconds
 
   useEffect(() => {
@@ -256,8 +257,8 @@ function CrisisCounter({ part = 'both' }) {
     _sb.from('misogyny_highlights').select('*')
       .eq('active', true)
       .order('highlight_date', { ascending:false })
-      .limit(1)
-      .then(({ data }) => setMotd(data?.[0] || null))
+      .limit(3)
+      .then(({ data }) => { setMotd(data?.[0] || null); setPrevMotds((data || []).slice(1)) })
   }, [])
 
   const hrs  = Math.floor(elapsed / 3600)
@@ -359,16 +360,47 @@ function CrisisCounter({ part = 'both' }) {
           </div>
         </div>
       )}
+
+      {/* Earlier MOTDs — fill the column when the live signal is expanded */}
+      {part !== 'counter' && previous && prevMotds.length > 0 && (
+        <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
+          {prevMotds.map(pm => (
+            <div key={pm.id} style={{ background:'#F9F0F4', border:'1px solid #E0B8C8', padding:'12px 16px' }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:8.5, fontWeight:800,
+                  letterSpacing:'.14em', color:'#8A1030', textTransform:'uppercase', margin:0 }}>
+                  ⚠ Earlier · {pm.platform || 'X'}{pm.handle ? ' · ' + pm.handle : ''}
+                </p>
+                {pm.misogyny_score && (
+                  <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:8.5, fontWeight:800,
+                    background:'#8A1030', color:'#fff', padding:'1px 6px' }}>
+                    {pm.misogyny_score}/10
+                  </span>
+                )}
+              </div>
+              <p style={{ fontFamily:"'Lora',serif", fontSize:12, fontStyle:'italic', color:'#3A1020',
+                lineHeight:1.6, margin:0, borderLeft:'3px solid #8A1030', paddingLeft:10 }}>
+                "{(pm.content || '').slice(0,160)}{(pm.content || '').length > 160 ? '…' : ''}"
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
 
 
-function FieldIntelligence() {
+function FieldIntelligence({ open: openProp, onToggle } = {}) {
   const [intel, setIntel]         = useState(null)
   const [syntheses, setSyntheses] = useState([])   // newest first, from saint_synthesis
   const [showPast, setShowPast]   = useState(false)
-  const [expanded, setExpanded]   = useState(false)  // heavy dashboard/synthesis collapsed by default
+  const [openLocal, setOpenLocal] = useState(false)  // collapsed by default
+  const expanded = openProp !== undefined ? openProp : openLocal
+  const setExpanded = (u) => {
+    const next = typeof u === 'function' ? u(expanded) : u
+    if (onToggle) onToggle(next); else setOpenLocal(next)
+  }
   const [previewOpen, setPreviewOpen] = useState(false)  // Intel Brief inline preview modal
   const [pdfState, setPdfState] = useState('idle')       // idle | loading | done | error
   const pdfBoxRef = useRef(null)
@@ -894,7 +926,7 @@ function FundModal({ project, onClose }) {
   )
 }
 
-function ProjectCard({ p, isMobile }) {
+function ProjectCard({ p, isMobile, kanban = false }) {
   const [open,      setOpen]      = useState(false)
   const [donorOpen, setDonorOpen] = useState(false)
   const [joinType,  setJoinType]  = useState(null)
@@ -906,6 +938,8 @@ function ProjectCard({ p, isMobile }) {
       {fundOpen && <FundModal project={p} onClose={() => setFundOpen(false)}/>}
       <div style={{ background:CRD, border:`1px solid ${BD}`, overflow:'hidden',
         gridColumn: open ? '1 / -1' : 'auto', display:'flex', flexDirection:'column',
+        flex: kanban && !open ? 1 : undefined,
+        justifyContent: kanban && !open ? 'center' : undefined,
         minHeight: open ? 'auto' : (isMobile ? 152 : 0) }}>
         {/* Header */}
         <div onClick={() => setOpen(o => !o)}
@@ -1039,6 +1073,7 @@ function ProjectCard({ p, isMobile }) {
 
 export default function HalaFuTab({ isMobile }) {
   const [lane, setLane] = useState('all')
+  const [liveOpen, setLiveOpen] = useState(false)  // desktop: live-signal expand state, shared so earlier MOTDs only show when open
   const [briefs, setBriefs] = useState([])
   const [showPDF, setShowPDF] = useState(false)
   const [showPrevBriefs, setShowPrevBriefs] = useState(false)
@@ -1188,13 +1223,13 @@ export default function HalaFuTab({ isMobile }) {
               AI-generated from live platform data — case tracker, misogyny index, scanner catches and community pulse.
               Updated every two weeks. Share with policymakers, funders and researchers.
             </p>
-            <FieldIntelligence/>
+            <FieldIntelligence open={liveOpen} onToggle={setLiveOpen}/>
           </div>
         </div>
         {/* RIGHT column: counter + MOTD */}
         <div style={{ display:'flex', flexDirection:'column', gap:2, minWidth:0 }}>
           <CrisisCounter part="counter"/>
-          <CrisisCounter part="motd"/>
+          <CrisisCounter part="motd" previous={liveOpen}/>
         </div>
       </div>
       )}
@@ -1265,7 +1300,7 @@ export default function HalaFuTab({ isMobile }) {
           {filtered.map(p => <ProjectCard key={p.id} p={p} isMobile={isMobile}/>)}
         </div>
       ) : (
-        <div style={{ order:6, marginTop:2, display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, alignItems:'start' }}>
+        <div style={{ order:6, marginTop:2, display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, alignItems:'stretch' }}>
           {['Understand','Interrupt','Build'].map(laneKey => (
             <div key={laneKey} style={{ display:'flex', flexDirection:'column', gap:2 }}>
               <div style={{ background:LANE_STYLES[laneKey].bg, border:`1px solid ${LANE_STYLES[laneKey].border}`, padding:'10px 14px' }}>
@@ -1277,7 +1312,7 @@ export default function HalaFuTab({ isMobile }) {
                   {LANE_STYLES[laneKey].desc}
                 </p>
               </div>
-              {PROJECTS.filter(p=>p.lane===laneKey).map(p => <ProjectCard key={p.id} p={p} isMobile={false}/>)}
+              {PROJECTS.filter(p=>p.lane===laneKey).map(p => <ProjectCard key={p.id} p={p} isMobile={false} kanban/>)}
             </div>
           ))}
         </div>
