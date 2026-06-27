@@ -1054,26 +1054,33 @@ export default function HalaFuTab({ isMobile }) {
   }
 
   return (
-    <div className="fade-up" style={{ width:'100%' }}>
-      {/* Header */}
-      <div style={{ borderBottom:`1px solid ${BD}`, paddingBottom:20, marginBottom:2 }}>
-        <p className="label" style={{ marginBottom:10, color:A }}>FemSaidia Action Lab · From outrage to architecture</p>
-        <h1 className="serif" style={{ fontSize:isMobile?28:36, fontWeight:700, color:TXT }}>
+    <div className="fade-up" style={{ width:'100%', display:'flex', flexDirection:'column' }}>
+      {/* Hero (tightened) + stat ribbon */}
+      <div style={{ order:1, borderBottom:`1px solid ${BD}`, paddingBottom:16, marginBottom:2 }}>
+        <p className="label" style={{ marginBottom:8, color:A }}>FemSaidia Action Lab · From outrage to architecture</p>
+        <h1 className="serif" style={{ fontSize:isMobile?26:34, fontWeight:700, color:TXT, marginBottom:8 }}>
           Halafu<span style={{ color:A }}>?</span>
         </h1>
-        <div style={{ marginTop:12, background:'#1E2D40', padding:'16px 20px', borderLeft:`4px solid ${A}` }}>
-          <p style={{ fontFamily:"'Lora',serif", fontSize:isMobile?13:15, color:'#D4B0B8', lineHeight:1.8, fontStyle:'italic' }}>
-            "Too much admiration of the pink elephant and very little slaying of the dragon."
-          </p>
-          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:'#7A4A60', marginTop:8, lineHeight:1.7 }}>
-            We have enough data. We have enough reports. We have enough outrage. What Kenya needs now is <strong style={{ color:'#D4B0B8' }}>architecture</strong> — specific, fundable, executable projects that interrupt the pipeline from misogyny to murder. This is where we build them.
-          </p>
+        <p style={{ fontFamily:"'Lora',serif", fontSize:isMobile?13:15, color:MUT, lineHeight:1.6, fontStyle:'italic', marginBottom:14, maxWidth:680 }}>
+          "Too much admiration of the pink elephant and very little slaying of the dragon." — enough data, enough outrage; what Kenya needs now is <strong style={{ color:TXT, fontStyle:'normal' }}>architecture</strong>.
+        </p>
+        <div style={{ display:'flex', flexWrap:'wrap', gap:isMobile?'8px 14px':'8px 22px', alignItems:'baseline' }}>
+          {[
+            { v:PROJECTS.length, l:'projects' },
+            { v:PROJECTS.filter(p=>p.status==='In development').length, l:'in development' },
+            { v:[...new Set(PROJECTS.flatMap(p=>p.donors.map(d=>d.name)))].length, l:'funding prospects' },
+          ].map((s,i)=>(
+            <span key={i} style={{ display:'inline-flex', alignItems:'baseline', gap:5 }}>
+              <span style={{ fontFamily:"'Lora',serif", fontSize:isMobile?20:24, fontWeight:700, color:A }}>{s.v}</span>
+              <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT }}>{s.l}</span>
+            </span>
+          ))}
         </div>
       </div>
 
-      {/* Donor magnet strip */}
-      <div style={{ background:'#1E2D40', border:`1px solid #3A1830`, padding: isMobile?'16px 14px':'20px 24px',
-        marginBottom:2, display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
+      {/* Action band (fund · download · submit) — consolidated, placed after projects via order */}
+      <div style={{ order:5, background:'#1E2D40', border:`1px solid #3A1830`, padding: isMobile?'16px 14px':'20px 24px',
+        marginTop:16, marginBottom:2, display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
         <div>
           <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, letterSpacing:'.1em',
             textTransform:'uppercase', color:A, marginBottom:6 }}>● Are you a funder? These projects need you.</p>
@@ -1096,12 +1103,18 @@ export default function HalaFuTab({ isMobile }) {
               letterSpacing:'.04em', whiteSpace:'nowrap' }}>
             📄 Download Halafu? brief
           </a>
-
+          <a href="mailto:halafu@femsaidiakenya.org?subject=Project idea for Halafu?"
+            style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.08)',
+              color:'#D4B0B8', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:600,
+              padding:'10px 18px', textDecoration:'none', border:'1px solid rgba(255,255,255,0.15)',
+              letterSpacing:'.04em', whiteSpace:'nowrap' }}>
+            ✎ Submit a project
+          </a>
         </div>
       </div>
 
-      {/* Intel Brief strip */}
-      <div style={{ background:'#EDE0E8', border:`1px solid #D4BEC4`, padding:'16px 20px', marginBottom:2,
+      {/* Intel Brief strip (collapsed) — placed below projects via order */}
+      <div style={{ order:7, background:'#EDE0E8', border:`1px solid #D4BEC4`, padding:'16px 20px', marginBottom:2,
         display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
         <div>
           <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
@@ -1127,7 +1140,7 @@ export default function HalaFuTab({ isMobile }) {
 
       {/* Brief archive */}
       {briefs.length > 1 && (
-        <div style={{ marginBottom:2 }}>
+        <div style={{ order:8, marginBottom:2 }}>
           <div style={{ background:'#EDE0E8', padding:'10px 20px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
             <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
               letterSpacing:'.1em', textTransform:'uppercase', color:A }}>📁 Previous briefs</span>
@@ -1159,23 +1172,10 @@ export default function HalaFuTab({ isMobile }) {
         </div>
       )}
 
-      {/* Stats */}
-      <div style={{ display:'grid', gridTemplateColumns:isMobile?'1fr 1fr':'repeat(4,1fr)', gap:2, marginBottom:2 }}>
-        {[
-          { v:PROJECTS.length,                                        l:'Projects in pipeline' },
-          { v:PROJECTS.filter(p=>p.status==='In development').length, l:'In development' },
-          { v:PROJECTS.filter(p=>p.status==='Active').length,         l:'Active' },
-          { v:[...new Set(PROJECTS.flatMap(p=>p.donors.map(d=>d.name)))].length, l:'Funding prospects identified' },
-        ].map((s,i) => (
-          <div key={i} style={{ background:CRD, border:`1px solid ${BD}`, padding:'14px 18px', borderLeft:`3px solid ${A}` }}>
-            <div style={{ fontFamily:"'Lora',serif", fontSize:32, fontWeight:700, color:A }}>{s.v}</div>
-            <p style={{ fontSize:11, color:MUT, marginTop:4, fontFamily:"'Nunito Sans',sans-serif" }}>{s.l}</p>
-          </div>
-        ))}
-      </div>
+      {/* (stats moved into the hero ribbon) */}
 
       {/* Lane filter */}
-      <div style={{ display:'flex', gap:2, marginBottom:2, flexWrap:'wrap' }}>
+      <div style={{ order:2, display:'flex', gap:2, marginBottom:2, flexWrap:'wrap' }}>
         {['all','Understand','Interrupt','Build'].map(l => (
           <button key={l} onClick={() => setLane(l)}
             style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
@@ -1188,7 +1188,7 @@ export default function HalaFuTab({ isMobile }) {
       </div>
 
       {lane !== 'all' && (
-        <div style={{ background:LANE_STYLES[lane].bg, border:`1px solid ${LANE_STYLES[lane].border}`,
+        <div style={{ order:3, background:LANE_STYLES[lane].bg, border:`1px solid ${LANE_STYLES[lane].border}`,
           padding:'12px 18px', marginBottom:2 }}>
           <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:'#D4B0B8', lineHeight:1.7 }}>
             {LANE_STYLES[lane].desc}
@@ -1197,37 +1197,17 @@ export default function HalaFuTab({ isMobile }) {
       )}
 
       {/* Projects — responsive tile grid; a card spans the full row when expanded */}
-      <div style={{ marginTop:2, display:'grid',
+      <div style={{ order:4, marginTop:2, display:'grid',
         gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(3,1fr)',
         gap:2, alignItems:'start', gridAutoFlow:'dense' }}>
         {filtered.map(p => <ProjectCard key={p.id} p={p} isMobile={isMobile}/>)}
       </div>
 
-      {/* MBONA: REAL STORIES — the lives behind the projects */}
-      <div style={{ marginTop:2 }}>
+      {/* MBONA: REAL STORIES — the lives behind the projects (kept inline) */}
+      <div style={{ order:6, marginTop:2 }}>
         <MbonaSection projectTitles={Object.fromEntries(PROJECTS.map(p => [p.id, p.title]))}/>
       </div>
-
-      {/* Submit */}
-      <div style={{ marginTop:16, background:'#1E2D40', border:`1px solid #3A1830`,
-        padding:isMobile?'20px 16px':'24px 28px' }}>
-        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
-          letterSpacing:'.12em', textTransform:'uppercase', color:A, marginBottom:8 }}>
-          Have a project idea?
-        </p>
-        <h3 style={{ fontFamily:"'Lora',serif", fontSize:20, fontWeight:700, color:'#F0D0D8', marginBottom:8 }}>
-          Add it to the pipeline
-        </h3>
-        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:'#7A4A60', lineHeight:1.7, marginBottom:16 }}>
-          If you have a project idea that addresses the root causes of femicide and GBV in Kenya — whether you are a researcher, technologist, community organiser, policymaker or survivor — we want to hear it.
-        </p>
-        <a href="mailto:halafu@femsaidiakenya.org?subject=Project idea for Halafu?"
-          style={{ display:'inline-flex', alignItems:'center', gap:8, background:A, color:'#F0D0D8',
-            fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'11px 22px',
-            textDecoration:'none', letterSpacing:'.04em' }}>
-          Submit a project <ArrowRight size={13}/>
-        </a>
-      </div>
+      {/* Submit folded into the action band above */}
       {/* ── PDF Viewer Modal ─────────────────────────────────────────── */}
       {showPDF && (
         <div style={{
