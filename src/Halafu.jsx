@@ -398,8 +398,9 @@ function FieldIntelligence() {
         if (!box || cancelled) return
         const dpr  = Math.min(window.devicePixelRatio || 1, 2)
         const cssW = box.clientWidth - 24
-        // fall back to viewport height if the box hasn't laid out yet
-        const cssH = (box.clientHeight > 120 ? box.clientHeight : Math.round(window.innerHeight * 0.82)) - 24
+        // cap by the *visible* viewport (URL-bar aware) so a whole page fits, incl. mobile
+        const vvH = (window.visualViewport && window.visualViewport.height) || window.innerHeight
+        const cssH = Math.min(box.clientHeight > 120 ? box.clientHeight : Math.round(vvH * 0.82), vvH) - 24
         let chain = Promise.resolve()
         for (let n = 1; n <= pdf.numPages; n++) {
           chain = chain.then(() => {
@@ -640,7 +641,7 @@ function FieldIntelligence() {
               style={{ position:'fixed', inset:0, zIndex:9999, background:'rgba(8,2,6,0.85)',
                 display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:16 }}>
               <div onClick={e => e.stopPropagation()}
-                style={{ width:'100%', maxWidth:900, height:'90vh', background:'#111827',
+                style={{ width:'100%', maxWidth:900, flex:1, minHeight:0, background:'#111827',
                   display:'flex', flexDirection:'column', boxShadow:'0 20px 60px rgba(0,0,0,0.5)' }}>
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
                   gap:12, padding:'10px 14px', background:'#180410', borderBottom:'2px solid #8A1030' }}>
