@@ -528,7 +528,7 @@ export default function SocialsSentimentTab() {
             </div>
             <div style={{ padding:'14px 16px' }}>
             {(() => {
-              const sorted   = [...highlights].sort((a,b) => new Date(b.created_at) - new Date(a.created_at))
+              const sorted   = [...highlights].sort((a,b) => new Date(b.highlight_date) - new Date(a.highlight_date))
               const latestHL = sorted[0]
               const recentHL = sorted.slice(1, 8)
 
