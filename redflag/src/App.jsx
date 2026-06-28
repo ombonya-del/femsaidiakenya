@@ -717,33 +717,31 @@ function JiJueScreen({ setTab: goHome }) {
           </div>
         )}
 
-        {/* Red flags */}
+        {/* Red flags — curated trilingual data (EN/SW/Sheng aligned 1:1) */}
         {tab==='redflags' && (
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
-            {((lang==='en' && getC(a.id,'redflags',null))
-              ? getC(a.id,'redflags',null).map((text,i) => {
-                  const [flag,...rest] = text.split(' — ')
-                  const why = rest.join(' — ')
-                  return (
-                    <div key={i} style={{background:'#fff',padding:'16px',borderLeft:`3px solid ${a.color}`,border:'1px solid #e8dde4',borderLeft:`3px solid ${a.color}`}}>
-                      <div style={{fontFamily:"'Lora',serif",fontSize:15,fontWeight:700,color:'#180410',marginBottom:6}}>🚩 {flag}</div>
-                      {why && <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'#7A4A60',lineHeight:1.6}}>{why}</div>}
-                    </div>
-                  )
-                })
-              : a.redFlags.map((rf,i) => (
-                  <div key={i} style={{background:'#fff',padding:'16px',borderLeft:`3px solid ${a.color}`,border:'1px solid #e8dde4',borderLeft:`3px solid ${a.color}`}}>
-                    <div style={{fontFamily:"'Lora',serif",fontSize:15,fontWeight:700,color:'#180410',marginBottom:6}}>🚩 {rf.flag}</div>
-                    <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'#7A4A60',lineHeight:1.6}}>{rf.why}</div>
-                  </div>
-                ))
-            )}
+            {a.redFlags.map((rf,i) => (
+              <div key={i} style={{background:'#fff',padding:'16px',border:'1px solid #e8dde4',borderLeft:`3px solid ${a.color}`}}>
+                <div style={{fontFamily:"'Lora',serif",fontSize:15,fontWeight:700,color:'#180410',marginBottom:6}}>🚩 {rf.flag}</div>
+                <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'#7A4A60',lineHeight:1.6}}>{rf.why}</div>
+              </div>
+            ))}
           </div>
         )}
 
         {/* Protect yourself */}
         {tab==='protect' && (
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            {/* Code-word tactic — always shown, all languages */}
+            <div style={{background:'#FFF3E0',border:'1px solid #E8B878',borderLeft:'4px solid #C05010',padding:'16px',display:'flex',gap:12}}>
+              <span style={{fontSize:18,flexShrink:0,lineHeight:1.3}}>📲</span>
+              <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:14,color:'#180410',lineHeight:1.7}}>
+                {({en:'Have a code word with a trusted friend. One text of that word and they call you with a loud "emergency" — your reason to leave, right now.',
+                   sw:'Kuwa na neno la siri na rafiki unayemwamini. Ujumbe mmoja wa neno hilo, naye anakupigia simu na "dharura" — sababu yako ya kuondoka, sasa hivi.',
+                   sheng:'Kuwa na code word na rafiki wa karibu. Text moja ya hiyo word, na anakupigia na "emergency" kubwa — reason yako ya kutoka, sahizi.'})[lang]
+                  || 'Have a code word with a trusted friend. One text of that word and they call you with a loud "emergency" — your reason to leave, right now.'}
+              </div>
+            </div>
             {((lang==='en' && getC(a.id,'protective',null)) || a.protective).map((p,i) => {
               const isDigital = p.includes('hepa')||p.includes('Salmin')||p.includes('Red Flag')||p.includes('femsaidiakenya')
               return (

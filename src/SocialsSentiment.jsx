@@ -324,12 +324,12 @@ export default function SocialsSentimentTab() {
   const load = async () => {
     setLoading(true)
     const [idxRes, artRes, hlRes, vidRes] = await Promise.all([
-      supabase.from('misogyny_index').select('*').order('date', { ascending:true }).limit(30),
+      supabase.from('misogyny_index').select('*').order('date', { ascending:false }).limit(30),
       supabase.from('sentiment_articles').select('*').order('scanned_at', { ascending:false }).limit(200),
       supabase.from('misogyny_highlights').select('*').eq('active', true).order('highlight_date', { ascending:false }).limit(10),
       supabase.from('sentiment_articles').select('*').eq('content_type', 'video').order('scanned_at', { ascending:false }).limit(20),
     ])
-    setIndex(idxRes.data || [])
+    setIndex((idxRes.data || []).slice().reverse())  // newest 30, re-sorted oldest→newest for the trend
     const arts = artRes.data || []
     const vids = vidRes.data || []
     const merged = [...vids, ...arts.filter(a => a.content_type !== 'video')]
@@ -350,8 +350,13 @@ export default function SocialsSentimentTab() {
 
   // ── INTELLIGENCE BREAKDOWN METRICS ─────────────────────────────────────────
   const intelligenceFeed = articles.filter(a => a.platform === 'news' || a.platform === 'youtube' || a.content_type === 'article' || a.content_type === 'video' || !a.platform)
+  // Belt-and-braces: a Kibe-flagged item only counts if its title/snippet actually
+  // contains GBV/misogyny terms — keeps mis-scored off-topic gossip out of the pulse.
+  const RELEVANT_RE = /(woman|women|girl|wife|misogyn|red.?pill|manosphere|28 commandment|lambistic|gbv|femicid|violence|harass|assault|rape|defil|simp|incel|noisy women|red flag|abuse)/i
+  const offTopicKibe = a => a.is_kibe_related && !RELEVANT_RE.test(`${a.article_title||''} ${a.article_snippet||''}`)
   const pulseFeed        = articles
     .filter(a => a.platform === 'x' || a.content_type === 'social_post' || a.platform === 'tiktok' || (a.platform === 'youtube') || (a.platform === 'news' && (a.is_protest || a.is_kibe_related || ['march','podcast','video','community'].includes(a.content_category))))
+    .filter(a => !offTopicKibe(a))
     .sort((a,b) => new Date(b.scanned_at) - new Date(a.scanned_at))
 
   const total       = articles.length
