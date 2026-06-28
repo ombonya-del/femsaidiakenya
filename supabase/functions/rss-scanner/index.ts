@@ -115,6 +115,11 @@ const FEEDS = [
   'https://www.youtube.com/feeds/videos.xml?channel_id=UCuZTHA5RaqiVrnCYmOOv0sQ', // BTP Studios Kenya — "Financial Red Pill" series
   'https://anchor.fm/s/34b75ed8/podcast/rss',                                      // Red Pill Podcast (KE)
   'https://www.youtube.com/feeds/videos.xml?channel_id=UC3mEX7L5GcOnX7LVYYlHlaw', // Dialogues With Jagero — platforms Jacob Aliet / red-pill content
+  // Manosphere creators — news coverage / cross-platform mentions (feeds the Media register:
+  // profiles, interviews, backlash, op-eds about these figures wherever news indexes them).
+  'https://news.google.com/rss/search?q=%22Jacob+Aliet%22+Kenya&hl=en-KE&gl=KE&ceid=KE:en',
+  'https://news.google.com/rss/search?q=Amerix+OR+%22Eric+Amunga%22+masculinity&hl=en-KE&gl=KE&ceid=KE:en',
+  'https://news.google.com/rss/search?q=Kenya+manosphere+red+pill+misogyny&hl=en-KE&gl=KE&ceid=KE:en',
 ]
 
 // Curated sources whose content is the manosphere/red-pill register. Their items
@@ -144,6 +149,9 @@ const GBV_TERMS = [
   'andrew kibe','kibe','lambistic','28 commandments','manosphere',
   'femicide march','protest','rally','end femicide','campus murder',
   'alice rianga','diana cherono','faridah','missing girl',
+  // Manosphere creators / red-pill register (for news coverage about these figures)
+  'amerix','eric amunga','jacob aliet','red pill','red-pill','high value man',
+  'masculinity coach','masculinity saturday','hypergamy','toxic masculinity',
 ]
 
 function isKenyaGBV(title: string, snippet: string, source = ''): boolean {
