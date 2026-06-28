@@ -108,7 +108,27 @@ const FEEDS = [
   'https://feeds.bbci.co.uk/news/world/africa/rss.xml',
   // YouTube — BBC Eye (has Manosphere Messiahs content)
   'https://www.youtube.com/feeds/videos.xml?channel_id=UCnUYZLuoy1rq1aVMwx4aTzw',
+  // Curated manosphere / red-pill creators — the street-level "Community" register.
+  // (Diversifies beyond Kibe; each item is still AI-scored, so off-topic uploads score low.)
+  'https://www.youtube.com/feeds/videos.xml?channel_id=UCYQfNWgM1W_-9WpoeCFLt-A', // Jacob Aliet — "Unplugged" male-supremacy author/coach
+  'https://anchor.fm/s/b56da78/podcast/rss',                                       // GUY CODE Kenya — red-pill podcast
+  'https://www.youtube.com/feeds/videos.xml?channel_id=UCuZTHA5RaqiVrnCYmOOv0sQ', // BTP Studios Kenya — "Financial Red Pill" series
+  'https://anchor.fm/s/34b75ed8/podcast/rss',                                      // Red Pill Podcast (KE)
+  'https://www.youtube.com/feeds/videos.xml?channel_id=UC3mEX7L5GcOnX7LVYYlHlaw', // Dialogues With Jagero — platforms Jacob Aliet / red-pill content
 ]
+
+// Curated sources whose content is the manosphere/red-pill register. Their items
+// bypass the Kenya-keyword gate (titles rarely say "Kenya") but must still match the
+// red-pill lexicon below — keeps off-topic uploads (faith, money, sports) out — and
+// every passing item is still AI-classified before it counts.
+const MANOSPHERE_SOURCES = ['unplugged','jacob aliet','guy code','btp','red pill','jagero']
+const REDPILL_TERMS = [
+  'red pill','redpill','high value','high-value','wife material','alpha','beta',
+  'hypergamy','feminism','feminist','submission','submissive','masculine','masculinity',
+  'provider','body count','single mother','simp','divorce','women','woman','female',
+  'girlfriend','wife','dating','relationship','marriage','smv','sexual market','manosphere',
+]
+const isManoSource = (src: string) => MANOSPHERE_SOURCES.some(s => (src||'').toLowerCase().includes(s))
 
 // ── KENYA FILTER — article must mention Kenya or a Kenyan location ─────────────
 const KENYA_TERMS = [
@@ -126,13 +146,16 @@ const GBV_TERMS = [
   'alice rianga','diana cherono','faridah','missing girl',
 ]
 
-function isKenyaGBV(title: string, snippet: string): boolean {
+function isKenyaGBV(title: string, snippet: string, source = ''): boolean {
   const text = `${title} ${snippet}`.toLowerCase()
   const hasKenya = KENYA_TERMS.some(t => text.includes(t))
   const hasGBV   = GBV_TERMS.some(t => text.includes(t))
   // BBC/YouTube: allow without Kenya tag (they have Kenya-specific content)
   const isBBC    = title.toLowerCase().includes('bbc') || snippet.toLowerCase().includes('bbc')
-  return (hasKenya && hasGBV) || (isBBC && hasGBV)
+  // Curated manosphere sources: bypass the Kenya gate but require a red-pill term
+  // (filters out their off-topic uploads); AI classification still has final say.
+  const manosphere = isManoSource(source) && REDPILL_TERMS.some(t => text.includes(t))
+  return (hasKenya && hasGBV) || (isBBC && hasGBV) || manosphere
 }
 
 // ── FETCH FEED ────────────────────────────────────────────────────────────────
@@ -159,7 +182,13 @@ async function fetchFeed(url: string): Promise<any[]> {
         if (t && lnk) items.push({ source: chanTitle, title: t, snippet: snip, url: lnk, pubDate: '', content_type: 'video' })
       }
     } else {
-      // RSS feeds
+      // RSS feeds — capture the channel-level title so podcast items carry the show
+      // name as their source (needed for the curated-manosphere bypass).
+      const chRaw = text.match(/<channel>[\s\S]*?<title[^>]*>([\s\S]*?)<\/title>/)?.[1] || ''
+      const chanTitle = chRaw.replace(/<!\[CDATA\[|\]\]>/g,'').replace(/<[^>]+>/g,'').trim() || new URL(url).hostname
+      // Podcast feeds (Anchor / iTunes namespace) → tag as 'podcast' so items land in
+      // the street-level Community register, not the Media (article) register.
+      const isPodcast = url.includes('anchor.fm') || /<itunes:/.test(text)
       const itemRx = /<item>([\s\S]*?)<\/item>/g
       let m
       while ((m = itemRx.exec(text)) !== null) {
@@ -174,9 +203,9 @@ async function fetchFeed(url: string): Promise<any[]> {
         const realUrl = linkClean.match(/url=([^&]+)/)?.[1]
         const link = realUrl ? decodeURIComponent(realUrl) : linkClean
         const pubDate = item.match(/<pubDate>(.*?)<\/pubDate>/)?.[1] || ''
-        const source = item.match(/<source[^>]*>(.*?)<\/source>/)?.[1] || new URL(url).hostname
+        const source = item.match(/<source[^>]*>(.*?)<\/source>/)?.[1] || chanTitle
         const snippet = desc.replace(/<[^>]+>/g,'').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').trim()
-        if (title) items.push({ source, title, snippet, url: link, pubDate })
+        if (title) items.push({ source, title, snippet, url: link, pubDate, content_type: isPodcast ? 'podcast' : 'article' })
       }
     }
     console.log(`Fetched ${items.length} from ${url.slice(0,55)}`)
@@ -212,6 +241,7 @@ IMPORTANT SCORING RULES:
 2. Protest / march / rally / vigil about femicide or GBV: is_protest=true, gbv_relevance 7-8.
 3. Campus murders / university student femicide (JOOUST, RVIST, any Kenyan university): content_category="campus", gbv_relevance 8-10.
 4. Court cases, convictions, acquittals for femicide: content_category="policy", gbv_relevance 7-9.
+5. Manosphere / red-pill creators (e.g. Jacob Aliet / "Unplugged", Guy Code, Red Pill Podcast, BTP, Amerix, and similar "high-value man", hypergamy, female-nature, "wife material", anti-feminism content): set content_category="manosphere" and set misogyny_score by how dehumanising or contemptuous toward women the content is — red-pill framing of women as deceitful, hypergamous, or disposable is typically 6-9. These are usually ideological rather than incident reports, so gbv_relevance may be modest; that is fine. Off-topic uploads from these same sources (faith, money, sport, lifestyle with no gender angle) → content_category="general" and low scores.
 
 ARTICLES:
 ${list}
@@ -334,7 +364,7 @@ Deno.serve(async (req: Request) => {
     const unique = allArticles.filter(a => { if (!a.url||seen.has(a.url)) return false; seen.add(a.url); return true })
 
     // 3. Kenya + GBV filter (strict — must be relevant to Kenya AND GBV/manosphere)
-    const relevant = unique.filter(a => isKenyaGBV(a.title, a.snippet||''))
+    const relevant = unique.filter(a => isKenyaGBV(a.title, a.snippet||'', a.source||''))
     console.log(`Total: ${allArticles.length}, unique: ${unique.length}, Kenya+GBV: ${relevant.length}`)
 
     if (!relevant.length) return new Response(JSON.stringify({success:true,message:'No relevant content',total:allArticles.length}), {status:200})
@@ -353,7 +383,11 @@ Deno.serve(async (req: Request) => {
     }
 
     // 5. Classify with Claude in batches of 8
-    const toClassify = newItems.slice(0, 24) // max 24 per run
+    // Prioritise curated manosphere items so a news flood can't starve the Community lane.
+    const toClassify = newItems
+      .slice()
+      .sort((a,b) => (isManoSource(b.source||'') ? 1 : 0) - (isManoSource(a.source||'') ? 1 : 0))
+      .slice(0, 24) // max 24 per run
     const classified: any[] = []
     for (let i = 0; i < toClassify.length; i += 8) {
       const batch = await classifyArticles(toClassify.slice(i, i+8))
@@ -363,7 +397,7 @@ Deno.serve(async (req: Request) => {
 
     // 6. Insert qualifying articles
     const toInsert = classified
-      .filter(a => a.gbv_relevance >= 4 || a.is_kibe_related || a.is_protest)
+      .filter(a => a.gbv_relevance >= 4 || a.misogyny_score >= 5 || a.is_kibe_related || a.is_protest || a.content_category === 'manosphere')
       .map(a => ({
         source_name:a.source, channel_name:a.source, source_url:a.url, article_url:a.url,
         article_title:stripHtml(a.title), article_snippet:stripHtml((a.snippet||'').slice(0,500)),
@@ -372,7 +406,7 @@ Deno.serve(async (req: Request) => {
         gbv_relevance:a.gbv_relevance, misogyny_score:a.misogyny_score,
         sentiment:a.sentiment, tech_facilitated:a.tech_facilitated,
         tech_platforms:a.tech_platforms, tech_details:'',
-        platform:a.url?.includes('youtube')?'youtube':'news',
+        platform: a.content_type==='podcast' ? 'podcast' : (a.url?.includes('youtube') ? 'youtube' : 'news'),
         summary:'', published:true, verified:false,
         content_category:a.content_category||'general',
         is_kibe_related:a.is_kibe_related||false,
