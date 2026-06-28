@@ -251,8 +251,19 @@ async function updateMisogynyIndex() {
     .gte('scanned_at', since7)
   if (!all?.length) return
 
-  const news   = all.filter((a:any) => a.platform==='news'||a.content_type==='article'||a.content_type==='video')
-  const social = all.filter((a:any) => a.platform==='x'||a.content_type==='social_post')
+  // Advocacy & protest are the RESPONSE, not the harm — excluded from the index entirely.
+  const ADV = /femicidecount|njeriwamigwi|vocalafrica|usikimye|nanjala|femsaidia|wanjikurevolt|akilidada|amnesty|kenyahuman|endfemicide|treasonousbabe|c_nyakundi|fida|zamara|womenco/i
+  const isAdvocacy = (a:any) => a.is_protest || a.content_category==='protest' || ADV.test(a.source_name||'')
+  const relevant = all.filter((a:any) => !isAdvocacy(a))
+  // 🔥 COMMUNITY — street-level, lived, conversational intelligence: the day-to-day
+  //    manifestation. Manosphere/Kibe discourse, known misogynists, social posts, and
+  //    video / podcast / TikTok / YouTube commentary.
+  const social = relevant.filter((a:any) => a.is_kibe_related || a.content_category==='manosphere'
+    || a.platform==='x' || a.platform==='tiktok' || a.platform==='youtube'
+    || a.content_type==='social_post' || a.content_type==='video' || a.content_type==='podcast')
+  // 📰 MEDIA — scholarly / analytical / formal-press intelligence: news articles, court
+  //    rulings, policy and reported femicide/GBV coverage.
+  const news   = relevant.filter((a:any) => !social.includes(a))
   const calc   = (arr:any[]) => {
     if (!arr.length) return 0
     const n=arr.length
@@ -269,13 +280,13 @@ async function updateMisogynyIndex() {
     const vol  = Math.min(1, hm/12) * 100
     return Math.min(100, Math.round(prop*0.5 + mag*0.2 + vol*0.3))
   }
-  const score=calc(all), news_score=calc(news), social_score=calc(social)
+  const score=calc(relevant), news_score=calc(news), social_score=calc(social)
   const { data:yd } = await supabase.from('misogyny_index').select('score').eq('date',yest).single()
   const prev_score = yd?.score ?? score
 
   await supabase.from('misogyny_index').upsert({
     date:today, score, news_score, social_score, prev_score,
-    article_count:all.length, news_count:news.length, social_count:social.length,
+    article_count:relevant.length, news_count:news.length, social_count:social.length,
     high_alert:score>=60,
     manosphere_signals: all.filter((a:any)=>a.is_kibe_related||a.content_category==='manosphere').length,
     protest_signals:    all.filter((a:any)=>a.is_protest||a.content_category==='protest').length,
