@@ -317,6 +317,7 @@ export default function SocialsSentimentTab() {
   const score       = today?.score       || 0
   const newsScore   = today?.news_score  || 0
   const socialScore = today?.social_score|| 0
+  const socialCount = today?.social_count || 0   // gate the Community score on enough data
   const prevScore   = today?.prev_score  || score
 
   useEffect(() => { load() }, [])
@@ -659,7 +660,7 @@ export default function SocialsSentimentTab() {
                   <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:8, color:'#B89AAA', letterSpacing:'.08em', textTransform:'uppercase', marginBottom:1 }}>🔥 Community</p>
                   <span style={{ fontFamily:"'Lora',serif", fontSize:16, fontWeight:700,
                     color: socialScore>=70?'#CC1010':socialScore>=50?'#C05010':socialScore>=30?'#CA8A04':'#2D7A3A' }}>
-                    {socialScore>0 ? `${socialScore}%` : '—'}
+                    {(socialScore>0 && socialCount>=8) ? `${socialScore}%` : '—'}
                   </span>
                 </div>
               </div>

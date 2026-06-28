@@ -255,11 +255,19 @@ async function updateMisogynyIndex() {
   const social = all.filter((a:any) => a.platform==='x'||a.content_type==='social_post')
   const calc   = (arr:any[]) => {
     if (!arr.length) return 0
+    const n=arr.length
     const hm=arr.filter((a:any)=>a.misogyny_score>=7).length
     const tf=arr.filter((a:any)=>a.tech_facilitated).length
     const al=arr.filter((a:any)=>a.sentiment==='alarming'||a.sentiment==='negative').length
     const hg=arr.filter((a:any)=>a.gbv_relevance>=8).length
-    return Math.min(100, Math.round((hm/arr.length)*40+(tf/arr.length)*20+(al/arr.length)*25+(hg/arr.length)*15))
+    // 1) proportion / intensity of the discourse (0-100)
+    const prop = ((hm/n)*0.40 + (tf/n)*0.15 + (al/n)*0.25 + (hg/n)*0.20) * 100
+    // 2) average misogyny magnitude (0-10 → 0-100): severity, not just a threshold count
+    const mag  = (arr.reduce((s:number,a:any)=>s+(a.misogyny_score||0),0)/n/10) * 100
+    // 3) absolute severe-volume / persistence: ~12 severe pieces in the window = full,
+    //    so a flood of mild general articles can't dilute a sustained problem away
+    const vol  = Math.min(1, hm/12) * 100
+    return Math.min(100, Math.round(prop*0.5 + mag*0.2 + vol*0.3))
   }
   const score=calc(all), news_score=calc(news), social_score=calc(social)
   const { data:yd } = await supabase.from('misogyny_index').select('score').eq('date',yest).single()
