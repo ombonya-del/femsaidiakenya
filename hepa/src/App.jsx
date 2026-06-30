@@ -595,6 +595,14 @@ function CheckInScreen({ contacts, onBack }) {
             </button>
           </div>
         )}
+
+        {/* Code-word tactic — always available, complements the timer */}
+        <div className="checkin-card" style={{marginTop:16}}>
+          <div className="checkin-label">🔑 Code word</div>
+          <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'rgba(255,255,255,0.6)',lineHeight:1.7,margin:'8px 0 0'}}>
+            Agree a secret word with a trusted friend. Send them that one word by text, and they call you straight back with a loud <strong style={{color:'rgba(255,255,255,0.8)'}}>"emergency"</strong> — giving you a reason to leave, right now. No explaining, no scene.
+          </p>
+        </div>
       </div>
     </div>
   )

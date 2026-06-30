@@ -23,3 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 supabase/.temp/
+
+# Vite config build-temp files
+vite.config.js.timestamp-*.mjs

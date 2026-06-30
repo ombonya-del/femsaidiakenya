@@ -15,36 +15,54 @@ const PALETTES = {
 
 const isDesktop = () => typeof window !== 'undefined' && window.innerWidth >= 768
 
-// One story card — media is short (130px) and fully visible (contain, never cropped)
+// One story card — compact horizontal layout: a filled thumbnail (cover, no dead
+// space) beside the text, with the summary clamped so cards stay tight.
 export function StoryCard({ s, pal, projectLabel }) {
+  const [open, setOpen] = useState(false)
+  const media = s.media_url && (
+    <div style={{ flexShrink:0, width:118, height:118, overflow:'hidden',
+      background:'rgba(0,0,0,0.12)', borderRadius:2 }}>
+      {s.media_type === 'video'
+        ? <video src={s.media_url} controls
+            style={{ width:'100%', height:'100%', objectFit:'cover', background:'#000', display:'block' }}/>
+        : <img src={s.media_url} alt={s.title} loading="lazy"
+            style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}/>}
+    </div>
+  )
   return (
     <div style={{ background:pal.card, border:`1px solid ${pal.bd}`,
-      borderLeft:`3px solid ${pal.acc}`, padding:14, minWidth:0 }}>
-      {projectLabel && (
-        <p style={{ fontFamily:NS, fontSize:9, fontWeight:700, letterSpacing:'.1em',
-          textTransform:'uppercase', color:pal.acc, margin:'0 0 4px' }}>{projectLabel}</p>
-      )}
-      <p style={{ fontFamily:"'Lora',serif", fontSize:14, fontWeight:700, color:pal.txt, margin:'0 0 6px' }}>
-        {s.title}
-      </p>
-      {s.media_url && (
-        s.media_type === 'video'
-          ? <video src={s.media_url} controls
-              style={{ width:'100%', height:130, marginBottom:8, background:'#000', objectFit:'contain' }}/>
-          : <img src={s.media_url} alt={s.title} loading="lazy"
-              style={{ width:'100%', height:130, objectFit:'contain', marginBottom:8, background:'rgba(0,0,0,0.15)' }}/>
-      )}
-      {s.summary && (
-        <p style={{ fontFamily:NS, fontSize:12, color:pal.txt, lineHeight:1.7, margin:'0 0 8px' }}>
-          {s.summary}
+      borderLeft:`3px solid ${pal.acc}`, padding:12, minWidth:0,
+      display:'flex', gap:12, alignItems:'flex-start' }}>
+      {media}
+      <div style={{ minWidth:0, flex:1 }}>
+        {projectLabel && (
+          <p style={{ fontFamily:NS, fontSize:9, fontWeight:700, letterSpacing:'.1em',
+            textTransform:'uppercase', color:pal.acc, margin:'0 0 3px' }}>{projectLabel}</p>
+        )}
+        <p style={{ fontFamily:"'Lora',serif", fontSize:14, fontWeight:700, color:pal.txt, margin:'0 0 5px', lineHeight:1.3 }}>
+          {s.title}
         </p>
-      )}
-      {s.story_url && (
-        <a href={s.story_url} target="_blank" rel="noopener noreferrer"
-          style={{ fontFamily:NS, fontSize:11, fontWeight:700, color:pal.acc, textDecoration:'none' }}>
-          Read the full story{s.source_name ? ` on ${s.source_name}` : ''} →
-        </a>
-      )}
+        {s.summary && (
+          <p style={{ fontFamily:NS, fontSize:12, color:pal.txt, lineHeight:1.6, margin:'0 0 6px',
+            ...(open ? {} : { display:'-webkit-box', WebkitLineClamp:4, WebkitBoxOrient:'vertical', overflow:'hidden' }) }}>
+            {s.summary}
+          </p>
+        )}
+        <div style={{ display:'flex', gap:14, flexWrap:'wrap', alignItems:'center' }}>
+          {s.summary && s.summary.length > 220 && (
+            <button onClick={()=>setOpen(o=>!o)} style={{ fontFamily:NS, fontSize:11, fontWeight:700,
+              color:pal.mut, background:'none', border:'none', padding:0, cursor:'pointer' }}>
+              {open ? 'Show less' : 'Read more'}
+            </button>
+          )}
+          {s.story_url && (
+            <a href={s.story_url} target="_blank" rel="noopener noreferrer"
+              style={{ fontFamily:NS, fontSize:11, fontWeight:700, color:pal.acc, textDecoration:'none' }}>
+              Full story{s.source_name ? ` · ${s.source_name}` : ''} →
+            </a>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

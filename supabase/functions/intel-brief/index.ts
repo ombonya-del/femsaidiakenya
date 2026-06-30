@@ -346,7 +346,7 @@ Deno.serve(async (req: Request) => {
     const [idxRes, artRes, hlRes, caseRes, protestRes] = await Promise.all([
       supabase.from('misogyny_index').select('*').order('date',{ascending:false}).limit(14),
       supabase.from('sentiment_articles')
-        .select('article_title,source_name,misogyny_score,gbv_relevance,sentiment,tech_facilitated,tech_platforms,platform,content_type,scanned_at')
+        .select('article_title,source_name,misogyny_score,gbv_relevance,sentiment,tech_facilitated,tech_platforms,platform,content_type,is_kibe_related,scanned_at')
         .gte('scanned_at',since).order('misogyny_score',{ascending:false}).limit(20),
       supabase.from('misogyny_highlights').select('*').eq('active',true)
         .gte('highlight_date',since).order('highlight_date',{ascending:false}).limit(7),
@@ -363,7 +363,12 @@ Deno.serve(async (req: Request) => {
     ])
 
     const index      = idxRes.data || []
-    const articles   = artRes.data || []
+    // Guard: keep mis-scored off-topic Kibe gossip (house/car/lifestyle) out of the
+    // brief. A Kibe-flagged item only counts if its title carries a real GBV/misogyny
+    // /manosphere term — otherwise it's celebrity gossip that was wrongly scored high.
+    const REL_RE = /(woman|women|girl|wife|misogyn|red.?pill|manosphere|28 commandment|lambistic|gbv|femicid|violence|harass|assault|rape|defil|simp|incel|noisy women|red flag|abuse|feminis|hypergam|high.?value|provider|dating|marriage|relationship)/i
+    const offTopicKibe = (a:any) => (a.is_kibe_related || /kibe/i.test(a.article_title||'')) && !REL_RE.test(a.article_title||'')
+    const articles   = (artRes.data || []).filter((a:any)=>!offTopicKibe(a))
     const highlights = hlRes.data || []
     const cases      = caseRes.data || []
     const protests   = protestRes.data || []
