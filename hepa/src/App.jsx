@@ -606,6 +606,8 @@ function CheckInScreen({ contacts, onBack }) {
 // emergency so I have a reason to leave." Set once (persisted), fire in one tap.
 function CodeWordScreen({ contacts, onBack }) {
   const [word, setWord] = useState(() => localStorage.getItem('hepa_codeword') || '')
+  const [editing, setEditing] = useState(() => !localStorage.getItem('hepa_codeword'))
+  const [show, setShow] = useState(false)
   const [saved, setSaved] = useState(false)
   const contact = contacts[0]
   const phone = (contact?.phone || '').replace(/\s+/g, '')
@@ -613,7 +615,9 @@ function CodeWordScreen({ contacts, onBack }) {
   const clean = (word || '').trim()
 
   const save = () => {
+    if (!clean) return
     localStorage.setItem('hepa_codeword', clean)
+    setEditing(false); setShow(false)
     setSaved(true); setTimeout(() => setSaved(false), 1500)
   }
   const send = () => {
@@ -635,16 +639,44 @@ function CodeWordScreen({ contacts, onBack }) {
 
         <div className="checkin-card">
           <div className="checkin-label">Your code word</div>
-          <input value={word} onChange={e=>setWord(e.target.value)} placeholder="e.g. Pineapple"
-            style={{width:'100%',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.1)',
-              borderRadius:10,padding:'12px',fontSize:18,color:'#fff',marginTop:8,
-              fontFamily:"'Nunito Sans',sans-serif",outline:'none',boxSizing:'border-box'}}/>
-          <button className="hepa-btn" onClick={save} style={{marginTop:14}}>
-            {saved ? '✓ Saved' : 'Save code word'}
-          </button>
-          <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.35)',margin:'12px 0 0',lineHeight:1.6}}>
-            Pick something you'd never text by accident — and tell your contact what it means.
-          </p>
+          {editing ? (
+            <>
+              <div style={{position:'relative',marginTop:8}}>
+                <input value={word} onChange={e=>setWord(e.target.value)} type={show?'text':'password'}
+                  autoComplete="off" placeholder="e.g. Pineapple"
+                  style={{width:'100%',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.1)',
+                    borderRadius:10,padding:'12px',paddingRight:64,fontSize:18,color:'#fff',
+                    fontFamily:"'Nunito Sans',sans-serif",outline:'none',boxSizing:'border-box'}}/>
+                <button onClick={()=>setShow(s=>!s)} type="button"
+                  style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',
+                    border:'none',color:'rgba(255,255,255,0.5)',fontSize:12,fontFamily:"'Nunito Sans',sans-serif",cursor:'pointer'}}>
+                  {show ? 'Hide' : 'Show'}
+                </button>
+              </div>
+              <button className="hepa-btn" onClick={save} disabled={!clean} style={{marginTop:14, opacity: clean ? 1 : 0.4}}>
+                Save code word
+              </button>
+              <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.35)',margin:'12px 0 0',lineHeight:1.6}}>
+                Pick something you'd never text by accident — and tell your contact what it means.
+              </p>
+            </>
+          ) : (
+            <>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,marginTop:10}}>
+                <span style={{fontSize:20,letterSpacing:4,color:saved ? '#7CCF8E' : 'rgba(255,255,255,0.8)',fontFamily:"'Nunito Sans',sans-serif"}}>
+                  {saved ? '✓ Saved' : '••••••'}
+                </span>
+                <button onClick={()=>{ setEditing(true); setShow(false) }}
+                  style={{background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)',color:'rgba(255,255,255,0.7)',
+                    borderRadius:8,padding:'7px 14px',fontSize:12,fontWeight:700,fontFamily:"'Nunito Sans',sans-serif",cursor:'pointer'}}>
+                  Change
+                </button>
+              </div>
+              <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.35)',margin:'12px 0 0',lineHeight:1.6}}>
+                Saved and hidden — only you and {contact?.name || 'your contact'} need to know it.
+              </p>
+            </>
+          )}
         </div>
 
         {contact ? (
