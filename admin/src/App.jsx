@@ -3180,6 +3180,7 @@ function ManualMOTD({ supabase, onSaved }) {
   const [highlights, setHighlights] = useState([])
   const [scheduledFor, setScheduledFor] = useState('')
   const [reach, setReach]         = useState('')
+  const [formErr, setFormErr]     = useState('')
 
   const A = '#8A1030', MUT = '#7A4A60', TXT = '#180410', BD = '#B89AAA', CRD = '#C4AABB'
   const labelSt = { fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT, display:'block', marginBottom:4 }
@@ -3193,7 +3194,7 @@ function ManualMOTD({ supabase, onSaved }) {
   const reset = () => {
     setContent(''); setContext(''); setPlatform('X'); setHandle('')
     setSourceUrl(''); setMediaUrl(''); setMediaType(''); setEditId(null)
-    setScheduledFor(''); setReach('')
+    setScheduledFor(''); setReach(''); setFormErr('')
   }
 
   const uploadMedia = async (file) => {
@@ -3210,8 +3211,9 @@ function ManualMOTD({ supabase, onSaved }) {
 
   // mode: 'publish' (live now) | 'queue' (auto-fires on scheduled_for) | 'draft' (parked, no date)
   const save = async (mode) => {
-    if (!content.trim()) return
-    if (mode === 'queue' && !scheduledFor) { window.alert('Pick a date to schedule this post for.'); return }
+    setFormErr('')
+    if (!content.trim()) { setFormErr('Add the post content before saving.'); return }
+    if (mode === 'queue' && !scheduledFor) { setFormErr('Pick a date below to schedule this post — or use "Publish now" to make it live immediately.'); return }
     const today = new Date().toISOString().split('T')[0]
     setSaving(true)
     const row = { platform, handle: handle||'manual', content: content.trim(),
@@ -3227,7 +3229,7 @@ function ManualMOTD({ supabase, onSaved }) {
     if (editId) ({ error: err } = await supabase.from('misogyny_highlights').update(row).eq('id', editId))
     else ({ error: err } = await supabase.from('misogyny_highlights').insert(row))
     setSaving(false)
-    if (err) { window.alert('Could not save: ' + err.message); return }
+    if (err) { setFormErr('Could not save: ' + err.message); return }
     reset(); if (onSaved) onSaved(); loadHighlights()
   }
 
@@ -3354,6 +3356,12 @@ function ManualMOTD({ supabase, onSaved }) {
         <input type="date" value={scheduledFor} min={new Date().toISOString().split('T')[0]}
           onChange={e=>setScheduledFor(e.target.value)} style={{...inputSt,maxWidth:200}}/>
       </div>
+      {formErr && (
+        <div style={{marginBottom:10,padding:'8px 10px',background:'#FBE3E8',border:`1px solid ${A}`,
+          color:A,fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:600,borderRadius:3}}>
+          {formErr}
+        </div>
+      )}
       <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
         <button onClick={()=>save('publish')} disabled={saving||uploading}
           style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,padding:'8px 16px',background:A,color:'#F0D0D8',border:'none',cursor:'pointer'}}>

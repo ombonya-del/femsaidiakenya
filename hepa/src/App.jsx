@@ -596,13 +596,82 @@ function CheckInScreen({ contacts, onBack }) {
           </div>
         )}
 
-        {/* Code-word tactic — always available, complements the timer */}
-        <div className="checkin-card" style={{marginTop:16}}>
-          <div className="checkin-label">🔑 Code word</div>
-          <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'rgba(255,255,255,0.6)',lineHeight:1.7,margin:'8px 0 0'}}>
-            Agree a secret word with a trusted friend. Send them that one word by text, and they call you straight back with a loud <strong style={{color:'rgba(255,255,255,0.8)'}}>"emergency"</strong> — giving you a reason to leave, right now. No explaining, no scene.
+      </div>
+    </div>
+  )
+}
+
+// ── CODE-WORD SCREEN ──────────────────────────────────────────────────────────
+// Pre-arrange a secret word with a trusted contact. Sending it = "call me with an
+// emergency so I have a reason to leave." Set once (persisted), fire in one tap.
+function CodeWordScreen({ contacts, onBack }) {
+  const [word, setWord] = useState(() => localStorage.getItem('hepa_codeword') || '')
+  const [saved, setSaved] = useState(false)
+  const contact = contacts[0]
+  const phone = (contact?.phone || '').replace(/\s+/g, '')
+  const intlPhone = phone.startsWith('0') ? '254' + phone.slice(1) : phone
+  const clean = (word || '').trim()
+
+  const save = () => {
+    localStorage.setItem('hepa_codeword', clean)
+    setSaved(true); setTimeout(() => setSaved(false), 1500)
+  }
+  const send = () => {
+    if (!clean || !phone) return
+    localStorage.setItem('hepa_codeword', clean)
+    window.open(`https://wa.me/${intlPhone}?text=${encodeURIComponent(clean)}`, '_blank')
+  }
+
+  return (
+    <div className="hepa-screen">
+      <div className="screen-header">
+        <button className="back-btn" onClick={onBack}>←</button>
+        <div className="screen-title">Code word</div>
+      </div>
+      <div style={{padding:'0 16px'}}>
+        <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.7,marginBottom:20}}>
+          Agree a secret word with {contact?.name || 'your trusted contact'} <strong style={{color:'rgba(255,255,255,0.7)'}}>now</strong>. Later, when you need out, send them that one word — they call you straight back with a loud <strong style={{color:'rgba(255,255,255,0.7)'}}>"emergency"</strong>, giving you a reason to leave right away. No explaining, no scene.
+        </p>
+
+        <div className="checkin-card">
+          <div className="checkin-label">Your code word</div>
+          <input value={word} onChange={e=>setWord(e.target.value)} placeholder="e.g. Pineapple"
+            style={{width:'100%',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.1)',
+              borderRadius:10,padding:'12px',fontSize:18,color:'#fff',marginTop:8,
+              fontFamily:"'Nunito Sans',sans-serif",outline:'none',boxSizing:'border-box'}}/>
+          <button className="hepa-btn" onClick={save} style={{marginTop:14}}>
+            {saved ? '✓ Saved' : 'Save code word'}
+          </button>
+          <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:'rgba(255,255,255,0.35)',margin:'12px 0 0',lineHeight:1.6}}>
+            Pick something you'd never text by accident — and tell your contact what it means.
           </p>
         </div>
+
+        {contact ? (
+          <div className="checkin-card" style={{marginTop:16}}>
+            <div className="checkin-label">Sends to</div>
+            <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:15,color:'#fff',margin:'6px 0 0'}}>
+              {contact.name} <span style={{color:'rgba(255,255,255,0.4)'}}>· {contact.phone}</span>
+            </div>
+            <button className="hepa-btn" onClick={send} disabled={!clean}
+              style={{marginTop:14, opacity: clean ? 1 : 0.4}}>
+              📲 Send code word to {contact.name}
+            </button>
+            {clean && (
+              <a href={`sms:${phone}?body=${encodeURIComponent(clean)}`}
+                style={{display:'block',textAlign:'center',marginTop:12,fontFamily:"'Nunito Sans',sans-serif",
+                  fontSize:13,color:'rgba(255,255,255,0.5)',textDecoration:'none'}}>
+                or send by SMS instead
+              </a>
+            )}
+          </div>
+        ) : (
+          <div className="checkin-card" style={{marginTop:16}}>
+            <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:'rgba(255,255,255,0.5)',lineHeight:1.7,margin:0}}>
+              Set a trusted contact first (under <strong style={{color:'rgba(255,255,255,0.7)'}}>Trusted contact</strong>) so your code word has somewhere to go.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -854,6 +923,13 @@ function App() {
     />
   )
 
+  if (screen === 'codeword') return (
+    <CodeWordScreen
+      contacts={userData?.contacts || []}
+      onBack={() => setScreen('home')}
+    />
+  )
+
   if (screen === 'guide') return (
     <GuideScreen onBack={() => setScreen('home')}/>
   )
@@ -918,6 +994,11 @@ function App() {
           <span className="action-card-icon">⏱</span>
           <div className="action-card-title">Check-in timer</div>
           <div className="action-card-sub">Alert if I don&apos;t check in</div>
+        </button>
+        <button className="action-card" onClick={()=>setScreen('codeword')}>
+          <span className="action-card-icon">🔑</span>
+          <div className="action-card-title">Code word</div>
+          <div className="action-card-sub">One text → they call you</div>
         </button>
         <button className="action-card" onClick={()=>setScreen('guide')}>
           <span className="action-card-icon">📖</span>
