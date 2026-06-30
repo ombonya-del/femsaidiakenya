@@ -1,12 +1,6 @@
 {
-  "functions": {
-    "api/ussd.js": {
-      "memory": 128,
-      "maxDuration": 10
-    }
-  },
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
     {
