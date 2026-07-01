@@ -139,6 +139,11 @@ function RegisterScreen({ onDone }) {
         </div>
       </div>
 
+      <div style={{textAlign:'center',padding:'10px 20px 0'}}>
+        <a href="https://femsaidiakenya.org/privacy.html" target="_blank" rel="noopener noreferrer"
+          style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,textDecoration:'none'}}>Privacy Policy</a>
+      </div>
+
       <div style={{padding:'20px 20px'}}>
         {step===1 && (
           <div>

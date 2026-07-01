@@ -1245,6 +1245,10 @@ export default function App() {
         {tab==='jitume'   && <JiTumeScreen setTab={t=>{localStorage.setItem('redflag_tab',t);setTab(t)}}/>}
         {tab==='linda'    && <LindaLindaScreen setTab={t=>{localStorage.setItem('redflag_tab',t);setTab(t)}}/>}
         {tab==='database' && <DatabaseScreen setTab={t=>{localStorage.setItem('redflag_tab',t);setTab(t)}}/>}
+        <div style={{textAlign:'center',padding:'20px 16px 96px'}}>
+          <a href="https://femsaidiakenya.org/privacy.html" target="_blank" rel="noopener noreferrer"
+            style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,textDecoration:'none'}}>Privacy Policy</a>
+        </div>
       </div>
 
       <BottomNav tab={tab} setTab={t=>{localStorage.setItem('redflag_tab',t);setTab(t)}}/>

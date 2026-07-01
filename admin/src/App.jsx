@@ -3485,8 +3485,10 @@ export default function App() {
         {tab==='saint' && <SaIntTab/>}
       </main>
 
-      <footer style={{ borderTop:`1px solid ${BD}`, padding:'16px 24px', marginTop:40 }}>
-        <p style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>Built for justice</p>
+      <footer style={{ borderTop:`1px solid ${BD}`, padding:'16px 24px', marginTop:40, display:'flex', justifyContent:'space-between', gap:12, flexWrap:'wrap' }}>
+        <p style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif", margin:0 }}>Built for justice</p>
+        <a href="https://femsaidiakenya.org/privacy.html" target="_blank" rel="noopener noreferrer"
+          style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif", textDecoration:'none' }}>Privacy Policy</a>
       </footer>
     </div>
   )

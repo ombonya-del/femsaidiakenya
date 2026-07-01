@@ -1051,6 +1051,12 @@ function App() {
         </a>
       </div>
 
+      <div style={{textAlign:'center',padding:'8px 16px 4px'}}>
+        <a href="https://femsaidiakenya.org/privacy.html" target="_blank" rel="noopener noreferrer"
+          style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:'rgba(255,255,255,0.35)',textDecoration:'none'}}>
+          Privacy Policy
+        </a>
+      </div>
       <div style={{height:32}}/>
     </div>
   )

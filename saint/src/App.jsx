@@ -974,6 +974,11 @@ export default function App() {
                 color:MUT, textDecoration:'none' }}>
               halafu@femsaidiakenya.org
             </a>
+            <a href="https://femsaidiakenya.org/privacy.html" target="_blank" rel="noopener noreferrer"
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
+                color:MUT, textDecoration:'none' }}>
+              Privacy
+            </a>
             <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf?v=20260606"
               target="_blank" rel="noopener noreferrer"
               style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
