@@ -13,10 +13,6 @@ const ALERT_TO       = Deno.env.get('CASE_ALERT_TO')   || 'ombonya@gmail.com'
 const ALERT_FROM     = Deno.env.get('CASE_ALERT_FROM') || 'FemSaidia Alert <alerts@femsaidiakenya.org>'
 const ADMIN_URL      = 'https://admin.femsaidiakenya.org'
 const ALERT_THRESHOLD = 8
-// Abuse guard: once CRON_SECRET is set (supabase secrets), only callers that send
-// the matching x-cron-secret header may run the paid scan. Stays a no-op until the
-// secret is configured, so deploying this changes nothing until you flip it on.
-const CRON_SECRET    = Deno.env.get('CRON_SECRET') || ''
 
 function esc(s: string): string {
   return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
@@ -340,12 +336,6 @@ async function updateMisogynyIndex() {
 // ── MAIN ──────────────────────────────────────────────────────────────────────
 Deno.serve(async (req: Request) => {
   if (req.method === 'GET') return new Response(JSON.stringify({status:'ok'}), {headers:{'Content-Type':'application/json'}})
-
-  // Reject un-secreted callers once CRON_SECRET is configured (blocks bill-abuse of
-  // this paid, publicly-reachable function). No-op while CRON_SECRET is unset.
-  if (CRON_SECRET && req.headers.get('x-cron-secret') !== CRON_SECRET) {
-    return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers:{'Content-Type':'application/json'} })
-  }
 
   // ── Manual test path: POST {"test_alert": true} sends one sample case alert ──
   // Lets you verify the Resend pipeline end-to-end without waiting for a real case.

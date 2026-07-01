@@ -968,7 +968,7 @@ export default function App() {
               A FemSaidia Kenya intelligence initiative · femsaidiakenya.org
             </p>
           </div>
-          <div style={{ display:'flex', gap:16 }}>
+          <div style={{ display:'flex', gap:'10px 22px', flexWrap:'wrap', alignItems:'center' }}>
             <a href="mailto:halafu@femsaidiakenya.org"
               style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
                 color:MUT, textDecoration:'none' }}>

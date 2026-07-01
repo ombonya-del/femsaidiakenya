@@ -14,7 +14,7 @@ export default defineConfig({
         // their way: never serve the SPA shell as a navigation fallback for them
         // (that was the "blank page until you refresh" bug), and never precache
         // the viewer html (that made it go stale after each publish).
-        navigateFallbackDenylist: [/\.pdf$/, /intel-brief-latest-viewer\.html$/],
+        navigateFallbackDenylist: [/\.pdf$/, /intel-brief-latest-viewer\.html$/, /privacy\.html$/],
         globIgnores: ['**/intel-brief-latest-viewer.html', '**/intel-brief-latest.pdf'],
       },
       manifest: {
