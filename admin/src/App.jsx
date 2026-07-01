@@ -2278,9 +2278,12 @@ function IntelBriefsTab() {
   const triggerBrief = async () => {
     setTriggering(true)
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) { alert('Your session has expired — please sign in again.'); setTriggering(false); return }
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/intel-brief`, {
         method: 'POST',
-        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
         body: '{}'
       })
       const data = await res.json()
