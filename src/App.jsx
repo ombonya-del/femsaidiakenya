@@ -1585,6 +1585,12 @@ function WeRememberTab() {
           color:'rgba(240,208,216,0.5)' }}>
           Say their names. Remember their lives. Demand justice.
         </p>
+        <p style={{ marginTop:16 }}>
+          <a href="https://femsaidiakenya.org/privacy.html" target="_blank" rel="noopener noreferrer"
+            style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:'rgba(240,208,216,0.5)', textDecoration:'none' }}>
+            Privacy Policy
+          </a>
+        </p>
       </div>
     </div>
   )
