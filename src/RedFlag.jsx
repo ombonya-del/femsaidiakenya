@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { AlertTriangle, Shield, Users, MessageSquare, ChevronDown, ChevronUp,
          Send, X, Plus, Heart, ExternalLink } from 'lucide-react'
+import { TurnstileWidget, tsInsert, resetTurnstile } from './lib/turnstile'
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -500,11 +501,15 @@ function PerpetratorForm({onClose}) {
   const [done, setDone]     = useState(false)
   const [photoUrl, setPhotoUrl] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [tsToken, setTsToken] = useState('')
+  const [err, setErr] = useState('')
   const submit = async () => {
     if(!form.name.trim()||!form.modus_operandi.trim()) return
-    setSending(true)
-    await supabase.from('redflag_submissions').insert({...form,status:'pending',photo_url:photoUrl||null})
+    if(!tsToken){ setErr('Please complete the verification below.'); return }
+    setSending(true); setErr('')
+    const { error } = await tsInsert(supabase, 'redflag_submissions', {...form, photo_url:photoUrl||null}, tsToken)
     setSending(false)
+    if (error) { setErr(error.message); resetTurnstile(); setTsToken(''); return }
     setDone(true)
     setTimeout(onClose, 1500)
   }
@@ -554,7 +559,9 @@ function PerpetratorForm({onClose}) {
                   )}
                 </div>
               ))}
-              <button onClick={submit} disabled={sending||!form.name||!form.modus_operandi} style={{display:'inline-flex',alignItems:'center',gap:6,fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,padding:'10px 20px',background:A,color:'#fff',border:'none',cursor:form.name&&form.modus_operandi?'pointer':'not-allowed',opacity:form.name&&form.modus_operandi?1:0.5}}>
+              <TurnstileWidget onVerify={setTsToken} />
+              {err && <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:A,margin:'0 0 8px'}}>{err}</p>}
+              <button onClick={submit} disabled={sending||!form.name||!form.modus_operandi||!tsToken} style={{display:'inline-flex',alignItems:'center',gap:6,fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,padding:'10px 20px',background:A,color:'#fff',border:'none',cursor:form.name&&form.modus_operandi&&tsToken?'pointer':'not-allowed',opacity:form.name&&form.modus_operandi&&tsToken?1:0.5}}>
                 <Send size={13}/> {sending?'Submitting…':'Submit report'}
               </button>
             </>

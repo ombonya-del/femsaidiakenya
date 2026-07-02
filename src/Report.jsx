@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { AlertTriangle, Check, Phone, ExternalLink } from 'lucide-react'
+import { TurnstileWidget, tsInsert, resetTurnstile } from './lib/turnstile'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -52,6 +53,7 @@ const AGE_RANGES = [
 
 export default function ReportTab() {
   const [step, setStep]       = useState(1)
+  const [tsToken, setTsToken] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [errors, setErrors]   = useState({})
@@ -90,13 +92,13 @@ export default function ReportTab() {
 
   const submit = async () => {
     if (!validate()) return
+    if (!tsToken) { setErrors({ submit: 'Please complete the verification below.' }); return }
     setLoading(true)
-    const { error } = await supabase.from('incident_reports').insert([{
+    const { error } = await tsInsert(supabase, 'incident_reports', {
       ...form,
       incident_date: form.incident_date || null,
-      status: 'pending',
-    }])
-    if (error) setErrors({ submit: 'Submission failed. Please try again.' })
+    }, tsToken)
+    if (error) { setErrors({ submit: error.message }); resetTurnstile(); setTsToken('') }
     else setSuccess(true)
     setLoading(false)
   }
@@ -296,6 +298,7 @@ export default function ReportTab() {
                     </p>
                   </label>
                   {errors.terms_accepted && <p style={errStyle}>{errors.terms_accepted}</p>}
+                  <TurnstileWidget onVerify={setTsToken} />
                   {errors.submit && <p style={errStyle}>{errors.submit}</p>}
                 </div>
               )}
@@ -308,7 +311,7 @@ export default function ReportTab() {
                 }
                 {step < 3
                   ? <button onClick={next} style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'10px 24px', background:A, color:'#F0D0D8', border:'none', cursor:'pointer' }}>Continue →</button>
-                  : <button onClick={submit} disabled={loading} style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'10px 24px', background:loading?MUT:A, color:'#F0D0D8', border:'none', cursor:loading?'wait':'pointer' }}>
+                  : <button onClick={submit} disabled={loading||!tsToken} style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'10px 24px', background:(loading||!tsToken)?MUT:A, color:'#F0D0D8', border:'none', cursor:loading?'wait':(tsToken?'pointer':'not-allowed') }}>
                       {loading ? 'Submitting...' : 'Submit report'}
                     </button>
                 }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { ExternalLink, Check } from 'lucide-react'
+import { TurnstileWidget, tsInsert, resetTurnstile } from './lib/turnstile'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -49,6 +50,7 @@ export default function PartnersTab() {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const [errors, setErrors]   = useState({})
+  const [tsToken, setTsToken] = useState('')
   const [form, setForm]       = useState({
     org_name:'', org_type:'', county:'', website:'',
     contact_name:'', contact_email:'', contact_phone:'',
@@ -75,9 +77,10 @@ export default function PartnersTab() {
 
   const submit = async () => {
     if (!validate()) return
+    if (!tsToken) { setErrors({ submit:'Please complete the verification below.' }); return }
     setLoading(true)
-    const { error } = await supabase.from('partner_applications').insert([{ ...form, status:'pending' }])
-    if (error) setErrors({ submit:'Submission failed. Please try again or email admin@femsaidiakenya.org' })
+    const { error } = await tsInsert(supabase, 'partner_applications', { ...form }, tsToken)
+    if (error) { setErrors({ submit: error.message }); resetTurnstile(); setTsToken('') }
     else setSuccess(true)
     setLoading(false)
   }
@@ -210,8 +213,10 @@ export default function PartnersTab() {
 
               {errors.submit && <p style={{fontSize:11,color:A,marginTop:10,fontFamily:"'Nunito Sans',sans-serif"}}>{errors.submit}</p>}
 
-              <button onClick={submit} disabled={loading}
-                style={{ marginTop:16, width:'100%', fontFamily:"'Nunito Sans',sans-serif", fontSize:13, fontWeight:700, padding:'12px', background:loading?MUT:A, color:'#F0D0D8', border:'none', cursor:loading?'wait':'pointer', letterSpacing:'.04em' }}>
+              <TurnstileWidget onVerify={setTsToken} />
+
+              <button onClick={submit} disabled={loading||!tsToken}
+                style={{ marginTop:16, width:'100%', fontFamily:"'Nunito Sans',sans-serif", fontSize:13, fontWeight:700, padding:'12px', background:(loading||!tsToken)?MUT:A, color:'#F0D0D8', border:'none', cursor:loading?'wait':(tsToken?'pointer':'not-allowed'), letterSpacing:'.04em' }}>
                 {loading ? 'Submitting...' : 'Submit application →'}
               </button>
             </>

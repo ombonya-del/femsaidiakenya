@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { Check, Users, AlertTriangle } from 'lucide-react'
+import { TurnstileWidget, tsInsert, resetTurnstile } from './lib/turnstile'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -55,6 +56,7 @@ export default function PetitionTab() {
   const [success, setSuccess] = useState(false)
   const [error, setError]     = useState('')
   const [errors, setErrors]   = useState({})
+  const [tsToken, setTsToken] = useState('')
 
   useEffect(() => {
     loadCount()
@@ -90,20 +92,19 @@ export default function PetitionTab() {
 
   const sign = async () => {
     if (!validate()) return
+    if (!tsToken) { setError('Please complete the verification below.'); return }
     setLoading(true)
     setError('')
-    const { error } = await supabase.from('petition_signatures').insert([{
+    const { error } = await tsInsert(supabase, 'petition_signatures', {
       name: form.name.trim(),
       email: form.email.trim().toLowerCase(),
       county: form.county || null,
       country: form.country || 'Kenya',
       message: form.message.trim() || null,
-    }])
+    }, tsToken)
     if (error) {
-      if (error.code === '23505')
-        setError('This email has already signed the petition.')
-      else
-        setError('Something went wrong. Please try again.')
+      setError(error.message)
+      resetTurnstile(); setTsToken('')
     } else {
       setSuccess(true)
       loadCount()
@@ -269,12 +270,14 @@ export default function PetitionTab() {
 
                 {error && <p style={{ fontSize:11, color:A, fontFamily:"'Nunito Sans',sans-serif", marginTop:10 }}>{error}</p>}
 
-                <button onClick={sign} disabled={loading}
+                <TurnstileWidget onVerify={setTsToken} />
+
+                <button onClick={sign} disabled={loading||!tsToken}
                   style={{
                     marginTop:16, width:'100%',
                     fontFamily:"'Nunito Sans',sans-serif", fontSize:13, fontWeight:700,
-                    padding:'12px', background: loading ? MUT : A, color:'#F0D0D8',
-                    border:'none', cursor: loading ? 'wait' : 'pointer',
+                    padding:'12px', background: (loading||!tsToken) ? MUT : A, color:'#F0D0D8',
+                    border:'none', cursor: loading ? 'wait' : (tsToken ? 'pointer' : 'not-allowed'),
                     letterSpacing:'.04em',
                   }}>
                   {loading ? 'Signing...' : 'Sign this petition →'}

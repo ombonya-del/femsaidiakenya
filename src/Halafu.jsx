@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { ArrowRight, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
 import { createClient } from '@supabase/supabase-js'
 import ProjectStories, { MbonaSection } from './ProjectStories'
+import { TurnstileWidget, tsInsert, resetTurnstile } from './lib/turnstile'
 
 const _sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY)
 
@@ -790,11 +791,13 @@ function FundModal({ project, onClose }) {
   const [sending, setSending] = useState(false)
   const [done,    setDone]    = useState(false)
   const [error,   setError]   = useState('')
+  const [tsToken, setTsToken] = useState('')
 
   const submit = async () => {
     if (!form.name || !form.email) { setError('Name and email are required'); return }
+    if (!tsToken) { setError('Please complete the verification below.'); return }
     setSending(true)
-    const { error:err } = await _sb.from('halafu_donor_interest').insert([{
+    const { error:err } = await tsInsert(_sb, 'halafu_donor_interest', {
       project_id:    project.id,
       project_title: project.title,
       donor_type:    form.type,
@@ -802,8 +805,8 @@ function FundModal({ project, onClose }) {
       organisation:  form.organisation || null,
       email:         form.email,
       message:       form.message || null,
-    }])
-    if (err) { setError(err.message); setSending(false); return }
+    }, tsToken)
+    if (err) { setError(err.message); resetTurnstile(); setTsToken(''); setSending(false); return }
     setDone(true)
     setSending(false)
   }
@@ -838,7 +841,7 @@ function FundModal({ project, onClose }) {
               <button onClick={onClose}
                 style={{ background:'none', border:'none', cursor:'pointer', color:MUT, fontSize:18, lineHeight:1 }}>×</button>
             </div>
-            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT, lineHeight:1.7, marginBottom:20,
+            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, lineHeight:1.7, marginBottom:20,
               background:'#1E2D40', padding:'12px 14px', borderLeft:`3px solid ${A}`, color:'#B89AAA' }}>
               You are coming to us. That is how this should work. Tell us who you are and we will build the conversation from there — no 50-page application required.
             </p>
@@ -891,9 +894,10 @@ function FundModal({ project, onClose }) {
                   background:'#DDD0D0', border:`1px solid ${BD}`, padding:'8px 10px', outline:'none',
                   resize:'vertical' }}/>
             </div>
-            <button onClick={submit} disabled={sending}
+            <TurnstileWidget onVerify={setTsToken} />
+            <button onClick={submit} disabled={sending||!tsToken}
               style={{ width:'100%', fontFamily:"'Nunito Sans',sans-serif", fontSize:13, fontWeight:700,
-                padding:'12px', background:sending?MUT:A, color:'#F0D0D8', border:'none', cursor:sending?'wait':'pointer' }}>
+                padding:'12px', background:(sending||!tsToken)?MUT:A, color:'#F0D0D8', border:'none', cursor:sending?'wait':(tsToken?'pointer':'not-allowed') }}>
               {sending ? 'Sending...' : 'I want to fund this →'}
             </button>
           </>
@@ -1169,7 +1173,7 @@ export default function HalaFuTab({ isMobile }) {
                       {b.period_start} — {b.period_end}
                     </p>
                   </div>
-                  <a href={BRIEF_URL} target="_blank" rel="noopener noreferrer" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.08)', color:'#fff', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'10px 18px', textDecoration:'none', border:'1.5px solid rgba(255,255,255,0.7)', letterSpacing:'.04em', whiteSpace:'nowrap', background:'rgba(138,16,48,0.5)' }}>
+                  <a href={BRIEF_URL} target="_blank" rel="noopener noreferrer" style={{ display:'inline-flex', alignItems:'center', gap:8, color:'#fff', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'10px 18px', textDecoration:'none', border:'1.5px solid rgba(255,255,255,0.7)', letterSpacing:'.04em', whiteSpace:'nowrap', background:'rgba(138,16,48,0.5)' }}>
                     📄 Download
                   </a>
                 </div>
