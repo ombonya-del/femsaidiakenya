@@ -2514,14 +2514,20 @@ function HighlightsTab() {
   const [uploading, setUploading] = useState(false)
 
   const uploadMedia = async (file) => {
+    if (!file) return
     setUploading(true)
     const ext  = file.name.split('.').pop()
     const name = `highlight_${Date.now()}.${ext}`
-    const { data, error } = await supabase.storage.from('highlights-media').upload(name, file, { upsert:true })
-    if (!error) {
-      const url = supabase.storage.from('highlights-media').getPublicUrl(name).data.publicUrl
-      setForm(f => ({ ...f, media_url: url, media_type: file.type.startsWith('video') ? 'video' : 'image' }))
+    const { error } = await supabase.storage.from('highlights-media').upload(name, file, { upsert:true })
+    if (error) {
+      window.alert('Media upload failed: ' + error.message +
+        (file.type.startsWith('video')
+          ? '\n\nThis is a video — the highlights-media bucket likely needs a larger file-size limit and video MIME types enabled.'
+          : ''))
+      setUploading(false); return
     }
+    const url = supabase.storage.from('highlights-media').getPublicUrl(name).data.publicUrl
+    setForm(f => ({ ...f, media_url: url, media_type: file.type.startsWith('video') ? 'video' : 'image' }))
     setUploading(false)
   }
 
@@ -2539,8 +2545,8 @@ function HighlightsTab() {
     setForm({platform:'X',content:'',context:'',reach:'',post_date:'',highlight_date:new Date().toISOString().slice(0,10),media_url:'',media_type:'',embed_url:''})
     load()
   }
-  const [editing, setEditing] = useState(null)
-  const [editForm, setEditForm] = useState({})
+  // Editing is delegated to the rich ManualMOTD form (single source of truth).
+  const [editTarget, setEditTarget] = useState(null)
 
   const toggle = async (id, active) => {
     await supabase.from('misogyny_highlights').update({active:!active}).eq('id',id)
@@ -2549,15 +2555,6 @@ function HighlightsTab() {
   const del = async (id) => {
     if (!confirm('Delete this highlight?')) return
     await supabase.from('misogyny_highlights').delete().eq('id',id)
-    load()
-  }
-  const startEdit = (item) => {
-    setEditing(item.id)
-    setEditForm({ platform:item.platform, content:item.content, context:item.context||'', reach:item.reach||'', highlight_date:item.highlight_date })
-  }
-  const saveEdit = async () => {
-    await supabase.from('misogyny_highlights').update(editForm).eq('id',editing)
-    setEditing(null)
     load()
   }
 
@@ -2571,7 +2568,7 @@ function HighlightsTab() {
       </div>
 
       {/* Manual MOTD creation form */}
-      <ManualMOTD supabase={supabase} onSaved={load}/>
+      <ManualMOTD supabase={supabase} onSaved={load} editTarget={editTarget} onEditConsumed={()=>setEditTarget(null)}/>
 
       {adding && (
         <div style={{background:CRD,border:`1px solid ${BD}`,padding:16,marginBottom:16}}>
@@ -2617,7 +2614,7 @@ function HighlightsTab() {
             {form.media_url && (
               <div style={{marginTop:6}}>
                 {form.media_type==='image'
-                  ? <img src={form.media_url} style={{maxWidth:200,maxHeight:150,objectFit:'cover'}} alt="preview"/>
+                  ? <img src={form.media_url} style={{maxWidth:200,maxHeight:150,objectFit:'contain'}} alt="preview"/>
                   : <video src={form.media_url} style={{maxWidth:200,maxHeight:150}} controls/>
                 }
                 <button onClick={() => setForm(f=>({...f,media_url:'',media_type:''}))}
@@ -2663,37 +2660,20 @@ function HighlightsTab() {
           </div>
           <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:TXT,lineHeight:1.7,fontStyle:'italic',marginBottom:item.context?8:0}}>"{item.content}"</p>
           {item.context&&<p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:A,marginBottom:10}}>↳ {item.context}</p>}
-          {editing===item.id ? (
-            <div style={{marginTop:10,display:'flex',flexDirection:'column',gap:6}}>
-              <select value={editForm.platform} onChange={e=>setEditForm({...editForm,platform:e.target.value})} style={inputSt}>
-                {PLATFORMS.map(p=><option key={p} value={p}>{p}</option>)}
-              </select>
-              <textarea value={editForm.content} onChange={e=>setEditForm({...editForm,content:e.target.value})}
-                rows={3} style={{width:'100%',padding:'8px 12px',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,background:'rgba(255,255,255,0.8)',border:`1px solid ${BD}`,color:TXT,outline:'none',resize:'vertical',boxSizing:'border-box'}}/>
-              <input value={editForm.context} onChange={e=>setEditForm({...editForm,context:e.target.value})} placeholder="Context..." style={inputSt}/>
-              <input value={editForm.reach} onChange={e=>setEditForm({...editForm,reach:e.target.value})} placeholder="Reach..." style={inputSt}/>
-              <input type="date" value={editForm.highlight_date} onChange={e=>setEditForm({...editForm,highlight_date:e.target.value})} style={inputSt}/>
-              <div style={{display:'flex',gap:6}}>
-                <button onClick={saveEdit} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,padding:'4px 12px',background:'#1A5A2A',color:'#fff',border:'none',cursor:'pointer'}}>Save</button>
-                <button onClick={()=>setEditing(null)} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,padding:'4px 12px',background:'none',border:`1px solid ${BD}`,color:MUT,cursor:'pointer'}}>Cancel</button>
-              </div>
-            </div>
-          ) : (
-            <div style={{display:'flex',gap:6,marginTop:8}}>
-              <button onClick={()=>toggle(item.id,item.active)}
-                style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,padding:'4px 10px',background:item.active?A:'#1A5A2A',color:'#fff',border:'none',cursor:'pointer'}}>
-                {item.active?'Hide':'Show'}
-              </button>
-              <button onClick={()=>startEdit(item)}
-                style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,padding:'4px 10px',background:BD,color:TXT,border:'none',cursor:'pointer'}}>
-                Edit
-              </button>
-              <button onClick={()=>del(item.id)}
-                style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,padding:'4px 10px',background:'#CC1010',color:'#fff',border:'none',cursor:'pointer'}}>
-                Delete
-              </button>
-            </div>
-          )}
+          <div style={{display:'flex',gap:6,marginTop:8}}>
+            <button onClick={()=>toggle(item.id,item.active)}
+              style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,padding:'4px 10px',background:item.active?A:'#1A5A2A',color:'#fff',border:'none',cursor:'pointer'}}>
+              {item.active?'Hide':'Show'}
+            </button>
+            <button onClick={()=>setEditTarget(item)}
+              style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,padding:'4px 10px',background:BD,color:TXT,border:'none',cursor:'pointer'}}>
+              Edit
+            </button>
+            <button onClick={()=>del(item.id)}
+              style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,padding:'4px 10px',background:'#CC1010',color:'#fff',border:'none',cursor:'pointer'}}>
+              Delete
+            </button>
+          </div>
         </div>
       ))}
     </div>
@@ -3168,7 +3148,7 @@ function CommunityPulseTab() {
 }
 
 // ── Manual MOTD creation ──────────────────────────────────────────────────────
-function ManualMOTD({ supabase, onSaved }) {
+function ManualMOTD({ supabase, onSaved, editTarget, onEditConsumed }) {
   const [open, setOpen]           = useState(false)
   const [content, setContent]     = useState('')
   const [context, setContext]     = useState('')
@@ -3243,6 +3223,17 @@ function ManualMOTD({ supabase, onSaved }) {
     setMediaType(h.media_type||''); setScheduledFor(h.scheduled_for||'')
     setReach(h.reach||''); setOpen(true)
   }
+
+  // Edit requested from the highlights list below — open the full form on it.
+  useEffect(() => {
+    if (editTarget) {
+      startEdit(editTarget)
+      loadHighlights()
+      if (onEditConsumed) onEditConsumed()
+      if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editTarget])
 
   const publishNow = async (h) => {
     await supabase.from('misogyny_highlights')
@@ -3346,7 +3337,7 @@ function ManualMOTD({ supabase, onSaved }) {
           <div style={{display:'flex',alignItems:'center',gap:8,marginTop:6}}>
             {mediaType==='video'
               ? <video src={mediaUrl} style={{maxWidth:160,maxHeight:100}} controls/>
-              : <img src={mediaUrl} style={{maxWidth:160,maxHeight:100,objectFit:'cover'}} alt="preview"/>}
+              : <img src={mediaUrl} style={{maxWidth:160,maxHeight:100,objectFit:'contain'}} alt="preview"/>}
             <button onClick={()=>{setMediaUrl('');setMediaType('')}}
               style={{fontSize:10,background:'none',border:`1px solid ${BD}`,padding:'2px 6px',cursor:'pointer',color:MUT}}>Remove</button>
           </div>

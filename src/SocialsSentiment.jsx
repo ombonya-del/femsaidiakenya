@@ -575,11 +575,11 @@ export default function SocialsSentimentTab() {
                   {/* Media — screenshot or video */}
                   {h.media_url && h.media_url.length > 0 && h.media_type === 'image' && (
                     <img src={h.media_url} alt="Post screenshot"
-                      style={{ width:'100%', maxHeight:280, objectFit:'cover', marginTop:10, borderRadius:2 }}/>
+                      style={{ width:'100%', height:'auto', maxHeight:'80vh', objectFit:'contain', marginTop:10, borderRadius:2, background:'rgba(0,0,0,0.04)' }}/>
                   )}
                   {h.media_url && h.media_url.length > 0 && h.media_type === 'video' && (
-                    <video src={h.media_url} controls
-                      style={{ width:'100%', maxHeight:280, marginTop:10 }}/>
+                    <video src={h.media_url} controls playsInline preload="metadata"
+                      style={{ width:'100%', height:'auto', maxHeight:'70vh', marginTop:10, borderRadius:2, background:'#000' }}/>
                   )}
                   {h.embed_url && h.embed_url.includes('youtube') && (
                     <div style={{ marginTop:10, position:'relative', paddingBottom:'56.25%', height:0 }}>
