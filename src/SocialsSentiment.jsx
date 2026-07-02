@@ -1,12 +1,55 @@
 const stripHtml = (v) => !v ? '' : String(v).replace(/<[^>]*>/g, '').replace(/&[a-z#0-9]+;/gi, ' ').trim()
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { createClient } from '@supabase/supabase-js'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { ExternalLink, AlertTriangle, TrendingUp, TrendingDown, Minus,
          RefreshCw, ChevronDown, ChevronUp, X, Cpu, Radio, Play,
          FileText, Zap, Eye } from 'lucide-react'
+
+// ── X / Twitter embed — renders the real post so its video plays inline ───────
+let _twttrPromise = null
+function loadTwitterWidgets() {
+  if (typeof window === 'undefined') return Promise.reject(new Error('no window'))
+  if (window.twttr && window.twttr.widgets) return Promise.resolve(window.twttr)
+  if (_twttrPromise) return _twttrPromise
+  _twttrPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script')
+    s.src = 'https://platform.twitter.com/widgets.js'
+    s.async = true; s.charset = 'utf-8'
+    s.onload = () => resolve(window.twttr)
+    s.onerror = () => reject(new Error('twitter widgets failed to load'))
+    document.head.appendChild(s)
+  })
+  return _twttrPromise
+}
+// Normalise any x.com / twitter.com post link to a canonical status URL, or null.
+function tweetStatusUrl(url) {
+  if (!url) return null
+  const m = String(url).match(/(?:twitter\.com|x\.com)\/([^/]+)\/status\/(\d+)/i)
+  return m ? `https://twitter.com/${m[1]}/status/${m[2]}` : null
+}
+function TweetEmbed({ url }) {
+  const ref = useRef(null)
+  const statusUrl = tweetStatusUrl(url)
+  useEffect(() => {
+    if (!statusUrl || !ref.current) return
+    let cancelled = false
+    loadTwitterWidgets()
+      .then(tw => { if (!cancelled && tw && tw.widgets && ref.current) tw.widgets.load(ref.current) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [statusUrl])
+  if (!statusUrl) return null
+  return (
+    <div ref={ref} style={{ marginTop:10 }}>
+      <blockquote className="twitter-tweet" data-dnt="true" data-theme="light">
+        <a href={statusUrl}>{statusUrl}</a>
+      </blockquote>
+    </div>
+  )
+}
 
 const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -589,11 +632,21 @@ export default function SocialsSentimentTab() {
                         allowFullScreen title="Video"/>
                     </div>
                   )}
-                  {h.embed_url && h.embed_url.length > 0 && (h.embed_url.includes('tiktok') || h.embed_url.includes('x.com') || h.embed_url.includes('twitter')) && (
+                  {/* X / Twitter — embed the real post (video plays inline); link fallback for non-post URLs */}
+                  {h.embed_url && (h.embed_url.includes('x.com') || h.embed_url.includes('twitter')) && (
+                    tweetStatusUrl(h.embed_url)
+                      ? <TweetEmbed url={h.embed_url}/>
+                      : <a href={h.embed_url} target="_blank" rel="noopener noreferrer"
+                          style={{ display:'inline-flex', alignItems:'center', gap:6, marginTop:10,
+                            fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, textDecoration:'none', background:'#1D9BF0', padding:'6px 12px', color:'#fff' }}>
+                          🐦 View on X →
+                        </a>
+                  )}
+                  {h.embed_url && h.embed_url.includes('tiktok') && (
                     <a href={h.embed_url} target="_blank" rel="noopener noreferrer"
                       style={{ display:'inline-flex', alignItems:'center', gap:6, marginTop:10,
-                        fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, textDecoration:'none', background:'#1D9BF0', padding:'6px 12px', color:'#fff' }}>
-                      🐦 View on X →
+                        fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, textDecoration:'none', background:'#000', padding:'6px 12px', color:'#fff' }}>
+                      ▶ View on TikTok →
                     </a>
                   )}
                 </div>
