@@ -236,6 +236,16 @@ export default function PetitionTab() {
                     Share on X
                   </a>
                 </div>
+                <button
+                  onClick={() => {
+                    setSuccess(false)
+                    setForm({ name:'', email:'', county:'', country:'Kenya', message:'' })
+                    setError(''); setErrors({}); setTsToken(''); resetTurnstile()
+                  }}
+                  style={{ marginTop:20, fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700,
+                    padding:'10px 20px', background:'transparent', color:A, border:`1px solid ${A}`, cursor:'pointer' }}>
+                  Add another signature
+                </button>
               </div>
             ) : (
               <>
