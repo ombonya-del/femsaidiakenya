@@ -26,3 +26,9 @@ supabase/.temp/
 
 # Vite config build-temp files
 vite.config.js.timestamp-*.mjs
+
+*.timestamp-*.mjs
+~$*
+
+*.timestamp-*.mjs
+~$*
