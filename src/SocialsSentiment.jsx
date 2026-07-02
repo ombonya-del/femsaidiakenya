@@ -51,6 +51,47 @@ function TweetEmbed({ url }) {
   )
 }
 
+// ── TikTok embed — renders the real video player inline ───────────────────────
+// TikTok's embed.js scans the DOM for .tiktok-embed blockquotes when it loads,
+// so we (re)inject it after the blockquote mounts to trigger a render.
+function tiktokVideoId(url) {
+  if (!url) return null
+  const m = String(url).match(/tiktok\.com\/@[^/]+\/video\/(\d+)/i)
+  return m ? m[1] : null
+}
+function loadTikTokEmbed() {
+  return new Promise((resolve) => {
+    if (typeof document === 'undefined') return resolve()
+    const prev = document.getElementById('tiktok-embed-script')
+    if (prev) prev.remove()
+    const s = document.createElement('script')
+    s.id = 'tiktok-embed-script'
+    s.src = 'https://www.tiktok.com/embed.js'
+    s.async = true
+    s.onload = () => resolve()
+    s.onerror = () => resolve()
+    document.body.appendChild(s)
+  })
+}
+function TikTokEmbed({ url }) {
+  const vid = tiktokVideoId(url)
+  useEffect(() => {
+    if (!vid) return
+    let cancelled = false
+    const t = setTimeout(() => { if (!cancelled) loadTikTokEmbed() }, 0)
+    return () => { cancelled = true; clearTimeout(t) }
+  }, [vid])
+  if (!vid) return null
+  return (
+    <div style={{ marginTop:10 }}>
+      <blockquote className="tiktok-embed" cite={url} data-video-id={vid}
+        style={{ maxWidth:605, minWidth:280, margin:0 }}>
+        <section><a href={url} target="_blank" rel="noopener noreferrer">View on TikTok</a></section>
+      </blockquote>
+    </div>
+  )
+}
+
 const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
@@ -643,11 +684,13 @@ export default function SocialsSentimentTab() {
                         </a>
                   )}
                   {h.embed_url && h.embed_url.includes('tiktok') && (
-                    <a href={h.embed_url} target="_blank" rel="noopener noreferrer"
-                      style={{ display:'inline-flex', alignItems:'center', gap:6, marginTop:10,
-                        fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, textDecoration:'none', background:'#000', padding:'6px 12px', color:'#fff' }}>
-                      ▶ View on TikTok →
-                    </a>
+                    tiktokVideoId(h.embed_url)
+                      ? <TikTokEmbed url={h.embed_url}/>
+                      : <a href={h.embed_url} target="_blank" rel="noopener noreferrer"
+                          style={{ display:'inline-flex', alignItems:'center', gap:6, marginTop:10,
+                            fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, textDecoration:'none', background:'#000', padding:'6px 12px', color:'#fff' }}>
+                          ▶ View on TikTok →
+                        </a>
                   )}
                 </div>
               )
