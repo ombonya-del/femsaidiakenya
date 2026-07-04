@@ -680,6 +680,7 @@ function VoicesTab() {
     {id:'naive',color:'#1A3F6F',label:'The Naive'},
     {id:'precocious',color:'#C06020',label:'The Precocious'},
     {id:'allin',color:'#7A4ABA',label:'The All-In'},
+    {id:'onoff',color:'#8A1030',label:'The On & Off'},
   ]
   const [voices,     setVoices]     = useState([])
   const [loading,    setLoading]    = useState(true)
@@ -713,7 +714,7 @@ function VoicesTab() {
         <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT }}>Survivor stories, left-behind reflections and witness accounts.</p>
       </div>
       <div style={{ display:'flex', gap:8, marginBottom:12, flexWrap:'wrap' }}>
-        {['all','naive','precocious','allin','onandoff'].map(a => (
+        {['all','naive','precocious','allin','onoff'].map(a => (
           <button key={a} onClick={()=>setArchFilter(a)}
             style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
               padding:'5px 12px', border:`1px solid ${BD}`, cursor:'pointer',
@@ -766,7 +767,7 @@ function VoicesTab() {
                     onChange={e=>setEditStory({...editStory,archetype_id:e.target.value})}
                     style={inputSt}>
                     <option value="naive">The Naive</option>
-                    <option value="onandoff">The On & Off</option>
+                    <option value="onoff">The On & Off</option>
                     <option value="precocious">The Precocious</option>
                     <option value="allin">The All-In</option>
                   </select>
@@ -851,6 +852,7 @@ function MemorialTab() {
     {id:'naive',      label:'The Naive',      color:'#1A3F6F'},
     {id:'precocious', label:'The Precocious',  color:'#C06020'},
     {id:'allin',      label:'The All-In',      color:'#7A4ABA'},
+    {id:'onoff',      label:'The On & Off',    color:'#8A1030'},
   ]
   const [items,   setItems]   = useState([])
   const [loading, setLoading] = useState(true)
@@ -1386,7 +1388,7 @@ function KaaRadaAdminTab() {
     loadEntries()
   }
 
-  const iSt = { fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:TXT, background:'#2A1828', border:`1px solid ${BD}`, padding:'8px 10px', outline:'none', width:'100%', color:'#F0D0D8' }
+  const iSt = { fontFamily:"'Nunito Sans',sans-serif", fontSize:12, background:'#2A1828', border:`1px solid ${BD}`, padding:'8px 10px', outline:'none', width:'100%', color:'#F0D0D8' }
   const lSt = { fontSize:10, color:BD, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase', fontWeight:600, display:'block', marginBottom:3 }
   const sSt = { ...iSt, cursor:'pointer' }
 

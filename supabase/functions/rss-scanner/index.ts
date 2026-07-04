@@ -13,6 +13,10 @@ const ALERT_TO       = Deno.env.get('CASE_ALERT_TO')   || 'ombonya@gmail.com'
 const ALERT_FROM     = Deno.env.get('CASE_ALERT_FROM') || 'FemSaidia Alert <alerts@femsaidiakenya.org>'
 const ADMIN_URL      = 'https://admin.femsaidiakenya.org'
 const ALERT_THRESHOLD = 8
+// Only EMAIL a case alert when the article is genuinely recent by its own publish
+// date. Old cases that resurface in the feeds are still stored — just not emailed.
+// Undated items are stored but never alerted. Widen/narrow this window as needed.
+const ALERT_MAX_AGE_DAYS = 60
 
 function esc(s: string): string {
   return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
@@ -187,7 +191,8 @@ async function fetchFeed(url: string): Promise<any[]> {
         const t = e.match(/<title>([^<]+)<\/title>/)?.[1]?.trim() || ''
         const lnk = e.match(/<link[^>]*href="([^"]+)"/)?.[1] || ''
         const snip = (e.match(/<media:description>([^<]*)<\/media:description>/)?.[1] || '').trim()
-        if (t && lnk) items.push({ source: chanTitle, title: t, snippet: snip, url: lnk, pubDate: '', content_type: 'video' })
+        const pub = e.match(/<published>([^<]+)<\/published>/)?.[1] || e.match(/<updated>([^<]+)<\/updated>/)?.[1] || ''
+        if (t && lnk) items.push({ source: chanTitle, title: t, snippet: snip, url: lnk, pubDate: pub, content_type: 'video' })
       }
     } else {
       // RSS feeds — capture the channel-level title so podcast items carry the show
@@ -221,18 +226,65 @@ async function fetchFeed(url: string): Promise<any[]> {
   } catch(e: any) { console.error(`Feed error: ${e.message}`); return [] }
 }
 
-// ── TITLE-BASED DEDUP (reliable — URL encoding inconsistencies don't matter) ──
-async function getExistingTitles(): Promise<Set<string>> {
-  const since = new Date(Date.now() - 30*24*60*60*1000).toISOString()
+// ── RECENCY + TITLE NORMALISATION ─────────────────────────────────────────────
+// Currency guard: skip items older than this when the feed gives a usable date.
+// Undated items (some YouTube/podcast entries) are kept — we can't age them out.
+const MAX_AGE_DAYS = 180  // ~6 months. Lower to 90 for a stricter 3-month window.
+
+function withinMaxAge(pubDate: string): boolean {
+  if (!pubDate) return true            // no/unknown date → keep (can't age it out)
+  const t = Date.parse(pubDate)
+  if (Number.isNaN(t)) return true     // unparseable date → keep
+  return (Date.now() - t) <= MAX_AGE_DAYS * 24 * 60 * 60 * 1000
+}
+
+// Should this stored case trigger an EMAIL? Only if it's recent by publish date.
+// Undated / unparseable → false (store, don't email) so resurfaced old cases go quiet.
+function alertFresh(publishedAt: string | null): boolean {
+  if (!publishedAt) return false
+  const t = Date.parse(publishedAt)
+  if (Number.isNaN(t)) return false
+  return (Date.now() - t) <= ALERT_MAX_AGE_DAYS * 24 * 60 * 60 * 1000
+}
+
+// Normalise a title for dedup: strip Google News' trailing " - Publisher" suffix,
+// collapse whitespace, lowercase, cap length. Catches the same story arriving from
+// multiple feeds with slightly different source suffixes.
+function normTitle(title: string): string {
+  return (title || '')
+    .replace(/\s+[-–—|]\s+[^-–—|]{2,40}$/, '')  // drop trailing " - Publisher"
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+    .slice(0, 80)
+}
+
+// Normalise a URL for dedup: drop protocol / www / hash / trailing slash but KEEP
+// the query (YouTube's ?v=ID lives there). Catches the same article resurfacing
+// under a re-headlined Google News title — the underlying link stays stable.
+function normUrl(u: string): string {
+  return (u || '').trim().toLowerCase()
+    .replace(/^https?:\/\//, '').replace(/^www\./, '')
+    .replace(/#.*$/, '').replace(/\/+$/, '')
+}
+
+// ── DEDUP KEYS (title + url) ──────────────────────────────────────────────────
+// Look back over the full currency window so an item can't be re-ingested as a
+// "new" duplicate while it's still young enough to pass the recency filter.
+// URL is the reliable key when Google News re-headlines the same story; title is
+// the fallback for feeds whose URLs vary.
+async function getExistingKeys(): Promise<{ titles: Set<string>, urls: Set<string> }> {
+  const since = new Date(Date.now() - MAX_AGE_DAYS*24*60*60*1000).toISOString()
   const { data } = await supabase
     .from('sentiment_articles')
-    .select('article_title')
+    .select('article_title, article_url')
     .gte('scanned_at', since)
-  const titles = new Set<string>()
+  const titles = new Set<string>(), urls = new Set<string>()
   for (const row of data || []) {
-    if (row.article_title) titles.add(row.article_title.slice(0,80).toLowerCase().trim())
+    if (row.article_title) titles.add(normTitle(row.article_title))
+    if (row.article_url)   urls.add(normUrl(row.article_url))
   }
-  return titles
+  return { titles, urls }
 }
 
 // ── CLASSIFY WITH CLAUDE ──────────────────────────────────────────────────────
@@ -371,23 +423,33 @@ Deno.serve(async (req: Request) => {
     const seen = new Set<string>()
     const unique = allArticles.filter(a => { if (!a.url||seen.has(a.url)) return false; seen.add(a.url); return true })
 
+    // 2b. Currency filter — drop dated items older than MAX_AGE_DAYS (undated kept)
+    const fresh = unique.filter(a => withinMaxAge(a.pubDate || ''))
+
     // 3. Kenya + GBV filter (strict — must be relevant to Kenya AND GBV/manosphere)
-    const relevant = unique.filter(a => isKenyaGBV(a.title, a.snippet||'', a.source||''))
-    console.log(`Total: ${allArticles.length}, unique: ${unique.length}, Kenya+GBV: ${relevant.length}`)
+    const relevant = fresh.filter(a => isKenyaGBV(a.title, a.snippet||'', a.source||''))
+    console.log(`Total: ${allArticles.length}, unique: ${unique.length}, fresh: ${fresh.length}, Kenya+GBV: ${relevant.length}`)
 
     if (!relevant.length) return new Response(JSON.stringify({success:true,message:'No relevant content',total:allArticles.length}), {status:200})
 
     // 4. Dedup against DB by TITLE (reliable — no URL encoding issues)
-    const existingTitles = await getExistingTitles()
+    const { titles: existingTitles, urls: existingUrls } = await getExistingKeys()
+    const seenTitles = new Set<string>(), seenUrls = new Set<string>()
+    let dupesSkipped = 0
     const newItems = relevant.filter(a => {
-      const key = a.title.slice(0,80).toLowerCase().trim()
-      return !existingTitles.has(key)
+      const tkey = normTitle(a.title), ukey = normUrl(a.url || '')
+      // Skip if the title OR the underlying URL matches anything in the DB window
+      // or already seen this run. URL match catches re-headlined repeats.
+      if (existingTitles.has(tkey) || seenTitles.has(tkey) ||
+          (ukey && (existingUrls.has(ukey) || seenUrls.has(ukey)))) { dupesSkipped++; return false }
+      seenTitles.add(tkey); if (ukey) seenUrls.add(ukey)
+      return true
     })
     console.log(`New items after title dedup: ${newItems.length}`)
 
     if (!newItems.length) {
       await updateMisogynyIndex()
-      return new Response(JSON.stringify({success:true,message:'All already stored',total:allArticles.length,relevant:relevant.length,new:0}), {status:200})
+      return new Response(JSON.stringify({success:true,message:'All already stored',total:allArticles.length,fresh:fresh.length,relevant:relevant.length,dupes_skipped:dupesSkipped,new:0}), {status:200})
     }
 
     // 5. Classify with Claude in batches of 8
@@ -422,16 +484,19 @@ Deno.serve(async (req: Request) => {
         scanned_at:new Date().toISOString(),
       }))
 
-    let alertsSent = 0
+    let alertsSent = 0, alertsSuppressedStale = 0
     if (toInsert.length) {
       const { error } = await supabase.from('sentiment_articles').insert(toInsert)
       if (error) console.error('Insert error:', error.message)
       else {
         console.log(`Inserted ${toInsert.length} articles`)
-        // Fire a case alert for every newly-inserted high-probability case
-        const highCases = toInsert.filter(a => (a.gbv_relevance ?? 0) >= ALERT_THRESHOLD)
+        // Email a case alert only for high-probability cases that are genuinely recent
+        // by publish date. Old resurfaced cases are stored above but not emailed.
+        const eligible  = toInsert.filter(a => (a.gbv_relevance ?? 0) >= ALERT_THRESHOLD)
+        const highCases = eligible.filter(a => alertFresh(a.published_at))
+        alertsSuppressedStale = eligible.length - highCases.length
         for (const a of highCases) { if (await sendCaseAlert(a)) alertsSent++ }
-        if (highCases.length) console.log(`Case alerts: ${alertsSent}/${highCases.length} sent`)
+        if (eligible.length) console.log(`Case alerts: ${alertsSent}/${highCases.length} sent, ${alertsSuppressedStale} suppressed (stale/undated)`)
       }
     }
 
@@ -439,8 +504,11 @@ Deno.serve(async (req: Request) => {
 
     return new Response(JSON.stringify({
       success:true, total:allArticles.length, unique:unique.length,
-      kenya_gbv:relevant.length, new:newItems.length, classified:classified.length,
+      fresh:fresh.length, stale_skipped:unique.length-fresh.length,
+      kenya_gbv:relevant.length, dupes_skipped:dupesSkipped,
+      new:newItems.length, classified:classified.length,
       inserted:toInsert.length, case_alerts_sent:alertsSent,
+      alerts_suppressed_stale:alertsSuppressedStale,
       kibe_hits:toInsert.filter(a=>a.is_kibe_related).length,
       protest_hits:toInsert.filter(a=>a.is_protest).length,
     }), {status:200, headers:{'Content-Type':'application/json'}})
