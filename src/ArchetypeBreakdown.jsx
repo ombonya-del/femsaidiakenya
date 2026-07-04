@@ -1,10 +1,10 @@
 import React from 'react'
 
-// Presentational breakdown of femicide cases across the four relationship archetypes.
-// Fed a `cases` array (each item may carry an `archetype` field: naive|precocious|allin|onoff).
-// Anything untagged or outside the four intimate-partner archetypes falls into "Unclassified".
+// Donut breakdown of femicide cases across the four relationship archetypes,
+// with a value/percentage legend. One `cases` array in; each item may carry
+// `archetype` (naive|precocious|allin|onoff). Untagged/other → "Unclassified".
 const ARCHS = [
-  { id:'naive',      label:'The Naive',      color:'#1A3F6F' },
+  { id:'naive',      label:'The Naive',      color:'#2E5C93' },
   { id:'precocious', label:'The Precocious', color:'#C06020' },
   { id:'allin',      label:'The All-In',     color:'#7A4ABA' },
   { id:'onoff',      label:'The On & Off',   color:'#8A1030' },
@@ -19,51 +19,71 @@ export default function ArchetypeBreakdown({ cases = [], isMobile = false }) {
     else counts.other++
   })
   const total = cases.length
-  const max = Math.max(1, ...ARCHS.map(a => counts[a.id]))
+
+  const R = 54, C = 2 * Math.PI * R, SW = 18
+  let acc = 0
+  const segments = ARCHS.map(a => {
+    const n = counts[a.id]
+    const frac = total ? n / total : 0
+    const seg = { ...a, dash: frac * C, offset: acc * C }
+    acc += frac
+    return { ...seg, n }
+  }).filter(s => s.n > 0)
 
   return (
     <div style={{ background:'#fff', border:'1px solid #E6D6DC', borderTop:'3px solid #8A1030',
-      padding: isMobile ? '18px 16px' : '22px 24px' }}>
+      padding: isMobile ? '18px 16px' : '24px 26px' }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:12,
         marginBottom:4, flexWrap:'wrap' }}>
         <h3 style={{ fontFamily:"'Lora',serif", fontSize:16, fontWeight:700, color:'#180410', margin:0 }}>
           Cases by archetype
         </h3>
         <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:'#7A4A60' }}>
-          {total} documented case{total===1?'':'s'}
+          relationship pattern per case
         </span>
       </div>
-      <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:'#7A4A60',
-        margin:'0 0 14px', lineHeight:1.5 }}>
-        How the cases in our tracker map onto the four relationship archetypes.
-      </p>
-      <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-        {ARCHS.map(a => {
-          const n = counts[a.id]
-          const pct = total ? Math.round((n / total) * 100) : 0
-          const w = Math.round((n / max) * 100)
-          return (
-            <div key={a.id}>
-              <div style={{ display:'flex', justifyContent:'space-between',
-                fontFamily:"'Nunito Sans',sans-serif", fontSize:12, marginBottom:4 }}>
-                <span style={{ color:'#180410', fontWeight:700 }}>
-                  <span style={{ display:'inline-block', width:9, height:9, borderRadius:2,
-                    background:a.color, marginRight:7 }}/>{a.label}
-                </span>
-                <span style={{ color:'#7A4A60' }}>{n} · {pct}%</span>
+
+      <div style={{ display:'flex', flexDirection: isMobile ? 'column' : 'row', alignItems:'center',
+        gap: isMobile ? 18 : 28, marginTop:16 }}>
+        <div style={{ position:'relative', flexShrink:0, width:150, height:150 }}>
+          <svg width={150} height={150} viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r={R} fill="none" stroke="#F1E4EA" strokeWidth={SW}/>
+            {segments.map(s => (
+              <circle key={s.id} cx="60" cy="60" r={R} fill="none" stroke={s.color} strokeWidth={SW}
+                strokeDasharray={`${s.dash} ${C}`} strokeDashoffset={-s.offset}
+                transform="rotate(-90 60 60)"/>
+            ))}
+          </svg>
+          <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column',
+            alignItems:'center', justifyContent:'center' }}>
+            <span style={{ fontFamily:"'Lora',serif", fontSize:30, fontWeight:700, color:'#180410', lineHeight:1 }}>{total}</span>
+            <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'#7A4A60',
+              letterSpacing:'.06em', textTransform:'uppercase', marginTop:2 }}>cases</span>
+          </div>
+        </div>
+
+        <div style={{ display:'flex', flexDirection:'column', gap:9, flex:1, width: isMobile ? '100%' : 'auto' }}>
+          {ARCHS.map(a => {
+            const n = counts[a.id]
+            const pct = total ? Math.round((n / total) * 100) : 0
+            return (
+              <div key={a.id} style={{ display:'flex', alignItems:'center', gap:9,
+                fontFamily:"'Nunito Sans',sans-serif", fontSize:12.5 }}>
+                <span style={{ width:11, height:11, borderRadius:3, background:a.color, flexShrink:0 }}/>
+                <span style={{ color:'#180410', fontWeight:700 }}>{a.label}</span>
+                <span style={{ flex:1, height:1, background:'#F4EAEE' }}/>
+                <span style={{ color:'#7A4A60', fontVariantNumeric:'tabular-nums' }}>{n}</span>
+                <span style={{ color:'#9A7A88', width:36, textAlign:'right', fontVariantNumeric:'tabular-nums' }}>{pct}%</span>
               </div>
-              <div style={{ height:9, background:'#F0E6EA', borderRadius:5, overflow:'hidden' }}>
-                <div style={{ width:`${w}%`, height:'100%', background:a.color, borderRadius:5,
-                  transition:'width .4s' }}/>
-              </div>
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
+
       <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'#A08890',
-        margin:'14px 0 0', fontStyle:'italic', lineHeight:1.5 }}>
-        Classification reflects the relationship pattern recorded for each case; "Unclassified"
-        covers cases not yet tagged or outside the four intimate-partner archetypes.
+        margin:'16px 0 0', fontStyle:'italic', lineHeight:1.5 }}>
+        Classification reflects the recorded relationship pattern; "Unclassified" covers cases not yet
+        tagged or outside the four intimate-partner archetypes.
       </p>
     </div>
   )
