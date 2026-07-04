@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { ExternalLink, RefreshCw, Filter, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react'
+import ArchetypeBreakdown from './ArchetypeBreakdown.jsx'
 
 const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -199,6 +200,10 @@ export default function CaseTrackerTab() {
             <strong style={{ color:A }}> Real numbers are significantly higher.</strong>
           </div>
         </div>
+      </div>
+
+      <div style={{ marginTop:16 }}>
+        <ArchetypeBreakdown cases={cases} isMobile={mobile}/>
       </div>
 
       {/* Status summary — 2-col grid on mobile */}

@@ -7,6 +7,7 @@ import SocialsSentimentTab from './SocialsSentiment.jsx'
 import TechTrackerTab from './TechTracker.jsx'
 import SurvivalGuideTab from './SurvivalGuide.jsx'
 import CaseTrackerTab from './CaseTracker.jsx'
+import ArchetypeBreakdown from './ArchetypeBreakdown.jsx'
 import {
   AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine
@@ -243,6 +244,7 @@ function DashboardTab({ isMobile = false }){
   const [intelStats,   setIntelStats]   = useState({total:0,highMiso:0,techGBV:0,alarming:0})
   const [countyCounts, setCountyCounts] = useState({})
   const [totalCases,   setTotalCases]   = useState(null)
+  const [archetypeCases, setArchetypeCases] = useState([])
 
   useEffect(()=>{
     _sb.from('femicide_cases')
@@ -274,6 +276,9 @@ function DashboardTab({ isMobile = false }){
     _sb.from('femicide_cases')
       .select('id', { count: 'exact', head: true })
       .then(({ count }) => { if (count !== null) setTotalCases(count) })
+
+    _sb.from('femicide_cases').select('archetype').eq('published', true)
+      .then(({ data }) => { if (data) setArchetypeCases(data) })
   },[])
 
   return(
@@ -291,6 +296,10 @@ function DashboardTab({ isMobile = false }){
       </div>
 
       <ADHCard/>
+
+      <div style={{ marginTop:2, marginBottom:2 }}>
+        <ArchetypeBreakdown cases={archetypeCases} isMobile={isMobile}/>
+      </div>
 
       {/* ── EMERGENCY FLASH STRIP ── */}
       <div style={{

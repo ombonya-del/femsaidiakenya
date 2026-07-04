@@ -399,6 +399,21 @@ export default function CaseTrackerTab() {
                             Perpetrator: {c.perpetrator_relationship?.replace(/_/g,' ') || 'Unknown'}<br/>
                             {c.tech_facilitated && `Tech: ${safePlatforms(c.tech_platforms).join(', ')}`}
                           </p>
+                          <div style={{ marginTop:8 }}>
+                            <label style={{ fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase', display:'block', marginBottom:3 }}>Archetype</label>
+                            <select value={c.archetype || ''} onChange={async e => {
+                                const val = e.target.value || null
+                                await supabase.from('femicide_cases').update({ archetype: val }).eq('id', c.id)
+                                setCases(cs => cs.map(x => x.id===c.id ? { ...x, archetype: val } : x))
+                              }}
+                              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, padding:'5px 8px', background:'#fff', border:`1px solid ${BD}`, color:TXT, cursor:'pointer' }}>
+                              <option value="">Unclassified</option>
+                              <option value="naive">The Naive</option>
+                              <option value="precocious">The Precocious</option>
+                              <option value="allin">The All-In</option>
+                              <option value="onoff">The On & Off</option>
+                            </select>
+                          </div>
                         </div>
                         <div>
                           <p style={{ fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.08em', textTransform:'uppercase', marginBottom:4 }}>Source</p>
