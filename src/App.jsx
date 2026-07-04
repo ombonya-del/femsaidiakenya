@@ -1464,14 +1464,38 @@ function WeRememberTab() {
 
   useEffect(() => {
     const load = async () => {
-      const { data, count: c } = await supabase
-        .from('femicide_cases')
-        .select('id,victim_name,victim_age_range,county,incident_date,we_remember_note,incident_type', { count:'exact' })
-        .eq('we_remember', true)
-        .eq('published', true)
-        .order('incident_date', { ascending: false })
-      setCases(data || [])
-      setCount(c || 0)
+      // The memorial draws from two admin sources:
+      //  • femicide_cases.we_remember  — names flagged from the Case Tracker
+      //  • archetype_memorial.active   — names added in the admin "We Remember" tab
+      // Merge both so anything the admin adds appears here.
+      const [fc, am] = await Promise.all([
+        supabase.from('femicide_cases')
+          .select('id,victim_name,victim_age_range,county,incident_date,we_remember_note,incident_type')
+          .eq('we_remember', true)
+          .eq('published', true),
+        supabase.from('archetype_memorial')
+          .select('id,victim_name,age,county,incident_date,note')
+          .eq('active', true),
+      ])
+      const fromCases = fc.data || []
+      const fromMemorial = (am.data || []).map(m => ({
+        id: 'am_' + m.id,
+        victim_name: m.victim_name,
+        victim_age_range: m.age || null,
+        county: m.county || null,
+        incident_date: m.incident_date || null,
+        we_remember_note: m.note || null,
+      }))
+      // Dedupe by name (a Case Tracker entry wins over a manual one) then sort newest first.
+      const seen = new Set(fromCases.map(x => (x.victim_name || '').trim().toLowerCase()))
+      const merged = [...fromCases, ...fromMemorial.filter(x => {
+        const k = (x.victim_name || '').trim().toLowerCase()
+        if (!k || seen.has(k)) return false
+        seen.add(k); return true
+      })]
+      merged.sort((a, b) => new Date(b.incident_date || 0) - new Date(a.incident_date || 0))
+      setCases(merged)
+      setCount(merged.length)
       setLoading(false)
     }
     load()
