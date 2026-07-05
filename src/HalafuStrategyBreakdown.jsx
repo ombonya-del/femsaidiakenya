@@ -25,7 +25,7 @@ export default function HalafuStrategyBreakdown({ isMobile = false, theme = 'dar
     ring:'#F1E4EA', divider:'#F4EAEE', center:'#180410', centerSub:'#7A4A60',
     explHead:'#8A1030', desc:'#5A3A48',
   } : {
-    bg:'rgba(0,0,0,0.18)', border:'1px solid rgba(255,255,255,0.08)', top:'none',
+    bg:'#1A2535', border:'1px solid rgba(255,255,255,0.10)', top:'none',
     heading:'#EAD8E0', sub:'rgba(255,255,255,0.45)', label:'#EAD8E0', count:'rgba(255,255,255,0.6)', pctMut:'rgba(255,255,255,0.4)',
     ring:'rgba(255,255,255,0.08)', divider:'rgba(255,255,255,0.08)', center:'#F0E0E6', centerSub:'rgba(255,255,255,0.5)',
     explHead:'#F0577A', desc:'rgba(255,255,255,0.62)',
