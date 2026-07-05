@@ -203,12 +203,9 @@ export default function CaseTrackerTab() {
         </div>
       </div>
 
-      <div style={{ marginTop:16 }}>
-        <ArchetypeBreakdown cases={cases} isMobile={mobile}/>
-      </div>
-
-      <div style={{ marginTop:16 }}>
-        <HalafuStrategyBreakdown isMobile={mobile} theme="light"/>
+      <div style={{ marginTop:16, display:'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr', gap:16 }}>
+        <ArchetypeBreakdown cases={cases} isMobile={true}/>
+        <HalafuStrategyBreakdown isMobile={true} theme="light"/>
       </div>
 
       {/* Status summary — 2-col grid on mobile */}
