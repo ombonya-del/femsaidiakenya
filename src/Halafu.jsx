@@ -385,57 +385,16 @@ function FieldIntelligence({ open: openProp, onToggle } = {}) {
   const pdfBoxRef = useRef(null)
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 
-  // Render the Intel Brief PDF straight into the modal with PDF.js — no iframe,
-  // no dependency on the cached static viewer.html. Pages fit modal width and
-  // stack from the top so the brief sits at eye level immediately.
+  // Render the Intel Brief PDF with the browser's own PDF viewer (an <iframe>),
+  // not a hand-rolled PDF.js canvas render. The old CDN-worker approach could
+  // fall back to parsing on the main thread and freeze the tab; the native
+  // viewer renders off-thread with no external dependency. A short watchdog
+  // clears the "Loading…" state in case the iframe's onLoad never fires.
   useEffect(() => {
-    if (!previewOpen) return
-    let cancelled = false
-    const cont = pdfBoxRef.current
-    if (cont) cont.innerHTML = ''
+    if (!previewOpen) { setPdfState('idle'); return }
     setPdfState('loading')
-
-    const loadLib = () => new Promise((resolve, reject) => {
-      if (window.pdfjsLib) return resolve(window.pdfjsLib)
-      const s = document.createElement('script')
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'
-      s.onload = () => resolve(window.pdfjsLib); s.onerror = reject
-      document.head.appendChild(s)
-    })
-
-    loadLib().then(lib => {
-      if (cancelled || !lib) return
-      lib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
-      return lib.getDocument(BRIEF_URL).promise.then(pdf => {
-        const box = pdfBoxRef.current
-        if (!box || cancelled) return
-        const dpr  = Math.min(window.devicePixelRatio || 1, 2)
-        const cssW = box.clientWidth - 24
-        // cap by the *visible* viewport (URL-bar aware) so a whole page fits, incl. mobile
-        const vvH = (window.visualViewport && window.visualViewport.height) || window.innerHeight
-        const cssH = Math.min(box.clientHeight > 120 ? box.clientHeight : Math.round(vvH * 0.82), vvH) - 24
-        let chain = Promise.resolve()
-        for (let n = 1; n <= pdf.numPages; n++) {
-          chain = chain.then(() => {
-            if (cancelled) return
-            return pdf.getPage(n).then(page => {
-              const v1 = page.getViewport({ scale: 1 })
-              // fit each page within the modal so a whole page sits at eye level
-              const scale = Math.min(cssW / v1.width, cssH / v1.height)
-              const vp = page.getViewport({ scale: scale * dpr })
-              const c  = document.createElement('canvas')
-              c.width = vp.width; c.height = vp.height
-              c.style.cssText = 'width:' + (vp.width / dpr) + 'px;max-width:100%;border-radius:3px;box-shadow:0 4px 18px rgba(0,0,0,.5);background:#fff'
-              box.appendChild(c)
-              return page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise
-            })
-          })
-        }
-        return chain.then(() => { if (!cancelled) setPdfState('done') })
-      })
-    }).catch(() => { if (!cancelled) setPdfState('error') })
-
-    return () => { cancelled = true }
+    const t = setTimeout(() => setPdfState(s => (s === 'loading' ? 'done' : s)), 6000)
+    return () => clearTimeout(t)
   }, [previewOpen])
 
   useEffect(() => {
@@ -696,10 +655,13 @@ function FieldIntelligence({ open: openProp, onToggle } = {}) {
                       color:'#fff', textDecoration:'none', borderRadius:4 }}>⇓ Download PDF</a>
                   </div>
                 )}
-                <div ref={pdfBoxRef}
-                  style={{ flex:1, width:'100%', overflowY:'auto', WebkitOverflowScrolling:'touch',
-                    display:'flex', flexDirection:'column', alignItems:'center', gap:12,
-                    padding:'14px 12px 28px', background:'#0e1320' }}/>
+                <iframe
+                  ref={pdfBoxRef}
+                  title="Intel Brief preview"
+                  src={BRIEF_URL}
+                  onLoad={() => setPdfState('done')}
+                  onError={() => setPdfState('error')}
+                  style={{ flex:1, width:'100%', border:'none', background:'#fff' }}/>
               </div>
             </div>
           )}
