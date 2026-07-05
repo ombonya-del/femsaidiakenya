@@ -335,13 +335,18 @@ Deno.serve(async (req: Request) => {
   const publishId = u.searchParams.get('publish')
   if (publishId) return await handlePublish(publishId, req.headers.get('Authorization') || '')
 
-  // Generating a brief calls the paid Anthropic API — require an authorised admin
-  // (same allowlist as publishing). Blocks anonymous / bill-abuse calls.
+  // Scheduled generation: the biweekly cron passes a shared CRON_SECRET so a fresh
+  // draft can be produced automatically without an interactive admin sign-in.
+  const cronSecret = Deno.env.get('CRON_SECRET') || ''
+  const isCron = cronSecret !== '' && u.searchParams.get('cron') === cronSecret
+
+  // Otherwise generating a brief calls the paid Anthropic API — require an authorised
+  // admin (same allowlist as publishing). Blocks anonymous / bill-abuse calls.
   const genToken = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim()
   const { data: { user: genUser } } = genToken
     ? await supabase.auth.getUser(genToken)
     : { data: { user: null } } as any
-  if (!genUser || !BRIEF_PUBLISHERS.includes((genUser.email || '').toLowerCase()))
+  if (!isCron && (!genUser || !BRIEF_PUBLISHERS.includes((genUser.email || '').toLowerCase())))
     return jsonResp({ error: 'Not authorised — generate briefs from the signed-in admin.' }, 403)
 
   try {

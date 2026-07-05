@@ -9,6 +9,7 @@ on:
   schedule:
     - cron: '15 */2 * * *'   # rss-scanner, every 2h at :15
     - cron: '0 */6 * * *'    # health-check, every 6h on the hour
+    - cron: '0 6 1,15 * *'   # intel-brief draft, 1st & 15th at 06:00 UTC
   workflow_dispatch:
     inputs:
       target:
@@ -16,7 +17,7 @@ on:
         required: false
         default: 'both'
         type: choice
-        options: [both, rss-scanner, health-check]
+        options: [both, rss-scanner, health-check, intel-brief]
 
 env:
   SUPABASE_URL: https://uuluuhltphgwfblcghlp.supabase.co
@@ -60,5 +61,28 @@ jobs:
           BODY=$(echo "$RESP" | head -n -1)
           CODE=$(echo "$RESP" | tail -n 1)
           echo "health-check -> HTTP $CODE"
+          echo "$BODY"
+          [ "$CODE" = "200" ] || exit 1
+
+  intel-brief:
+    # biweekly draft generation (1st & 15th), or manual dispatch with target=intel-brief.
+    # Uses a secret cron token so the paid generation stays blocked for anonymous callers.
+    if: github.event_name == 'workflow_dispatch' && inputs.target == 'intel-brief' || github.event.schedule == '0 6 1,15 * *'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger intel-brief draft
+        env:
+          CRON_SECRET: ${{ secrets.INTEL_BRIEF_CRON_SECRET }}
+        run: |
+          set -e
+          RESP=$(curl -sS -w '\n%{http_code}' -X POST \
+            "$SUPABASE_URL/functions/v1/intel-brief?cron=$CRON_SECRET" \
+            -H "Authorization: Bearer $ANON_KEY" \
+            -H "apikey: $ANON_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{}' --max-time 300)
+          BODY=$(echo "$RESP" | head -n -1)
+          CODE=$(echo "$RESP" | tail -n 1)
+          echo "intel-brief -> HTTP $CODE"
           echo "$BODY"
           [ "$CODE" = "200" ] || exit 1
