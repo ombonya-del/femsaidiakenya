@@ -8,6 +8,7 @@ import TechTrackerTab from './TechTracker.jsx'
 import SurvivalGuideTab from './SurvivalGuide.jsx'
 import CaseTrackerTab from './CaseTracker.jsx'
 import ArchetypeBreakdown from './ArchetypeBreakdown.jsx'
+import HalafuStrategyBreakdown from './HalafuStrategyBreakdown.jsx'
 import {
   AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine
@@ -297,10 +298,6 @@ function DashboardTab({ isMobile = false }){
 
       <ADHCard/>
 
-      <div style={{ marginTop:2, marginBottom:2 }}>
-        <ArchetypeBreakdown cases={archetypeCases} isMobile={isMobile}/>
-      </div>
-
       {/* ── EMERGENCY FLASH STRIP ── */}
       <div style={{
         background:'#8A1030',
@@ -439,8 +436,8 @@ function DashboardTab({ isMobile = false }){
       </div>
 
       <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:2,marginTop:2}}>
-        <div className="card" style={{padding:24}}>
-          <div className="section-head" style={{flexDirection:'column',alignItems:'flex-start',gap:8}}>
+        <div className="card" style={{padding:16}}>
+          <div className="section-head" style={{flexDirection:'column',alignItems:'flex-start',gap:6}}>
             <span>All 47 counties · risk level</span>
             <span style={{display:'flex',flexWrap:'wrap',gap:10}}>
               {RISK.map((r,i)=>(
@@ -454,11 +451,11 @@ function DashboardTab({ isMobile = false }){
           <KenyaCountyMap countyCounts={countyCounts}/>
         </div>
 
-        <div className="card" style={{padding:24}}>
-          <div style={{borderBottom:`1px solid ${BD}`,paddingBottom:12,marginBottom:16,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div className="card" style={{padding:16}}>
+          <div style={{borderBottom:`1px solid ${BD}`,paddingBottom:10,marginBottom:12,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
             <div>
-              <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,letterSpacing:'.12em',textTransform:'uppercase',color:A,marginBottom:4}}>● Live from database</p>
-              <h2 style={{fontFamily:"'Lora',serif",fontSize:isMobile?16:22,fontWeight:700,color:TXT}}>Recent incidents</h2>
+              <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,fontWeight:700,letterSpacing:'.12em',textTransform:'uppercase',color:A,marginBottom:3}}>● Live from database</p>
+              <h2 style={{fontFamily:"'Lora',serif",fontSize:isMobile?14:17,fontWeight:700,color:TXT}}>Recent incidents</h2>
             </div>
             <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT,fontWeight:600}}>{recentCases.length} most recent</span>
           </div>
@@ -469,11 +466,11 @@ function DashboardTab({ isMobile = false }){
             const s=statusMap[inc.status]||statusMap['reported']
             const dateStr=inc.incident_date?new Date(inc.incident_date).toLocaleDateString(['en-KE','en-GB'],{day:'numeric',month:'short',year:'numeric'}):'—'
             return(
-              <div key={inc.id} style={{padding:'14px 0',borderBottom:i<recentCases.length-1?`1px solid ${BD}`:'none'}}>
+              <div key={inc.id} style={{padding:'9px 0',borderBottom:i<recentCases.length-1?`1px solid ${BD}`:'none'}}>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
                   <div style={{flex:1}}>
-                    <div style={{fontFamily:"'Lora',serif",fontWeight:700,fontSize:isMobile?13:15,color:TXT,marginBottom:4}}>{inc.victim_name||'Name withheld'}</div>
-                    <div style={{fontWeight:600,fontSize:12,color:MUT,fontFamily:"'Nunito Sans',sans-serif",marginBottom:4}}>{inc.county}{inc.location?` · ${inc.location}`:''}</div>
+                    <div style={{fontFamily:"'Lora',serif",fontWeight:700,fontSize:isMobile?12:13.5,color:TXT,marginBottom:2}}>{inc.victim_name||'Name withheld'}</div>
+                    <div style={{fontWeight:600,fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif",marginBottom:3}}>{inc.county}{inc.location?` · ${inc.location}`:''}</div>
                     <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
                       <span style={{fontSize:11,color:MUT,fontFamily:"'Nunito Sans',sans-serif"}}>{dateStr}</span>
                       {inc.source_url?(
@@ -493,6 +490,11 @@ function DashboardTab({ isMobile = false }){
             )
           })}
         </div>
+      </div>
+
+      <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:2,marginTop:2}}>
+        <ArchetypeBreakdown cases={archetypeCases} isMobile={isMobile}/>
+        <HalafuStrategyBreakdown isMobile={isMobile} theme="light"/>
       </div>
 
       <div className="card" style={{padding:24,marginTop:2}}>

@@ -56,6 +56,23 @@ const geom2path = g => {
   return ''
 }
 
+// Approx projected area — render largest counties first so small ones (Mombasa,
+// Vihiga, Nairobi) sit on top and stay hoverable instead of being covered.
+const ringArea = ring => {
+  let a = 0
+  for(let i=0;i<ring.length;i++){
+    const [x1,y1] = project(ring[i][0], ring[i][1])
+    const [x2,y2] = project(ring[(i+1)%ring.length][0], ring[(i+1)%ring.length][1])
+    a += x1*y2 - x2*y1
+  }
+  return Math.abs(a)/2
+}
+const geomArea = g => {
+  if(g.type==='Polygon') return g.coordinates.reduce((s,r)=>s+ringArea(r),0)
+  if(g.type==='MultiPolygon') return g.coordinates.reduce((s,p)=>s+p.reduce((ss,r)=>ss+ringArea(r),0),0)
+  return 0
+}
+
 const LEGEND = [
   {label:'Critical (100+)',c:100},{label:'High (30–99)',c:50},
   {label:'Elevated (15–29)',c:20},{label:'Medium (5–14)',c:8},
@@ -106,7 +123,7 @@ export default function KenyaCountyMap({ countyCounts = {} }) {
         })}
       </div>
 
-      <div style={{position:'relative',width:'100%',background:'#F0E8EC',border:`1px solid ${BD}`,overflow:'hidden'}}>
+      <div style={{position:'relative',width:'100%',maxWidth:340,margin:'0 auto',background:'#F0E8EC',border:`1px solid ${BD}`,overflow:'hidden'}}>
         {loading && (
           <div style={{padding:40,textAlign:'center',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT}}>
             Loading county map…
@@ -114,7 +131,7 @@ export default function KenyaCountyMap({ countyCounts = {} }) {
         )}
         <svg viewBox="0 0 480 520" style={{width:'100%',display:'block'}}
           onMouseLeave={() => setHovered(null)}>
-          {Object.entries(counties).map(([name, county]) => {
+          {Object.entries(counties).sort((a,b)=>geomArea(b[1].geom)-geomArea(a[1].geom)).map(([name, county]) => {
             const liveCount = countyCounts[name] || countyCounts[name+' County'] || 0
             const count = Math.max(liveCount, BASELINE[name] || 0)
             const risk  = getRisk(count)

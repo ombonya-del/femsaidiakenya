@@ -23,12 +23,12 @@ export default function HalafuStrategyBreakdown({ isMobile = false, theme = 'dar
     bg:'#fff', border:'1px solid #E6D6DC', top:'3px solid #8A1030',
     heading:'#180410', sub:'#7A4A60', label:'#180410', count:'#7A4A60', pctMut:'#9A7A88',
     ring:'#F1E4EA', divider:'#F4EAEE', center:'#180410', centerSub:'#7A4A60',
-    explHead:'#8A1030', desc:'#5A3A48', foot:'#A08890',
+    explHead:'#8A1030', desc:'#5A3A48',
   } : {
     bg:'rgba(0,0,0,0.18)', border:'1px solid rgba(255,255,255,0.08)', top:'none',
     heading:'#EAD8E0', sub:'rgba(255,255,255,0.45)', label:'#EAD8E0', count:'rgba(255,255,255,0.6)', pctMut:'rgba(255,255,255,0.4)',
     ring:'rgba(255,255,255,0.08)', divider:'rgba(255,255,255,0.08)', center:'#F0E0E6', centerSub:'rgba(255,255,255,0.5)',
-    explHead:'#F0577A', desc:'rgba(255,255,255,0.62)', foot:'rgba(255,255,255,0.35)',
+    explHead:'#F0577A', desc:'rgba(255,255,255,0.62)',
   }
 
   const total = rows.length
@@ -53,13 +53,13 @@ export default function HalafuStrategyBreakdown({ isMobile = false, theme = 'dar
   ]
 
   return (
-    <div style={{ background:T.bg, border:T.border, borderTop:T.top, padding: isMobile ? '18px 16px' : '24px 26px' }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:12, marginBottom:4, flexWrap:'wrap' }}>
-        <h3 style={{ fontFamily:"'Lora',serif", fontSize:16, fontWeight:700, color:T.heading, margin:0 }}>Cases by response strategy</h3>
-        <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:T.sub }}>Halafu? lane per case</span>
+    <div style={{ background:T.bg, border:T.border, borderTop:T.top, padding: isMobile ? '13px 14px' : '16px 18px' }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:10, marginBottom:2, flexWrap:'wrap' }}>
+        <h3 style={{ fontFamily:"'Lora',serif", fontSize:14, fontWeight:700, color:T.heading, margin:0 }}>Cases by response strategy</h3>
+        <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:T.sub }}>Halafu? lane</span>
       </div>
 
-      <div style={{ display:'flex', flexDirection: isMobile ? 'column' : 'row', alignItems:'center', gap: isMobile ? 18 : 28, marginTop:16 }}>
+      <div style={{ display:'flex', flexDirection: isMobile ? 'column' : 'row', alignItems:'center', gap: isMobile ? 12 : 16, marginTop:10 }}>
         <div style={{ position:'relative', flexShrink:0, width:150, height:150 }}>
           <svg width={150} height={150} viewBox="0 0 120 120">
             <circle cx="60" cy="60" r={R} fill="none" stroke={T.ring} strokeWidth={SW}/>
@@ -69,41 +69,38 @@ export default function HalafuStrategyBreakdown({ isMobile = false, theme = 'dar
             ))}
           </svg>
           <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
-            <span style={{ fontFamily:"'Lora',serif", fontSize:30, fontWeight:700, color:T.center, lineHeight:1 }}>{total}</span>
-            <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:T.centerSub, letterSpacing:'.06em', textTransform:'uppercase', marginTop:2 }}>cases</span>
+            <span style={{ fontFamily:"'Lora',serif", fontSize:28, fontWeight:700, color:T.center, lineHeight:1 }}>{total}</span>
+            <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, color:T.centerSub, letterSpacing:'.06em', textTransform:'uppercase', marginTop:2 }}>cases</span>
           </div>
         </div>
 
-        <div style={{ display:'flex', flexDirection:'column', gap:9, flex:1, width: isMobile ? '100%' : 'auto' }}>
+        <div style={{ display:'flex', flexDirection:'column', gap:5, flex:1, width: isMobile ? '100%' : 'auto' }}>
           {legend.map(l => (
-            <div key={l.label} style={{ display:'flex', alignItems:'center', gap:9, fontFamily:"'Nunito Sans',sans-serif", fontSize:12.5 }}>
-              <span style={{ width:11, height:11, borderRadius:3, background:l.color, flexShrink:0 }}/>
+            <div key={l.label} style={{ display:'flex', alignItems:'center', gap:7, fontFamily:"'Nunito Sans',sans-serif", fontSize:11 }}>
+              <span style={{ width:9, height:9, borderRadius:2, background:l.color, flexShrink:0 }}/>
               <span style={{ color:T.label, fontWeight:700 }}>{l.label}</span>
               <span style={{ flex:1, height:1, background:T.divider }}/>
               <span style={{ color:T.count, fontVariantNumeric:'tabular-nums' }}>{l.n}</span>
-              <span style={{ color:T.pctMut, width:36, textAlign:'right', fontVariantNumeric:'tabular-nums' }}>{pctOf(l.n)}%</span>
+              <span style={{ color:T.pctMut, width:32, textAlign:'right', fontVariantNumeric:'tabular-nums' }}>{pctOf(l.n)}%</span>
             </div>
           ))}
         </div>
       </div>
 
-      <div style={{ marginTop:18, paddingTop:16, borderTop:`1px solid ${T.divider}` }}>
-        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700, color:T.explHead, letterSpacing:'.1em', textTransform:'uppercase', margin:'0 0 10px' }}>
+      <div style={{ marginTop:12, paddingTop:10, borderTop:`1px solid ${T.divider}` }}>
+        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700, color:T.explHead, letterSpacing:'.1em', textTransform:'uppercase', margin:'0 0 7px' }}>
           What the lanes mean
         </p>
-        <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+        <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
           {LANES.map(l => (
-            <div key={l.id} style={{ display:'flex', gap:8, alignItems:'flex-start' }}>
-              <span style={{ width:9, height:9, borderRadius:2, background:l.color, marginTop:4, flexShrink:0 }}/>
-              <p style={{ margin:0, fontFamily:"'Nunito Sans',sans-serif", fontSize:11.5, lineHeight:1.55, color:T.desc }}>
+            <div key={l.id} style={{ display:'flex', gap:7, alignItems:'flex-start' }}>
+              <span style={{ width:8, height:8, borderRadius:2, background:l.color, marginTop:3, flexShrink:0 }}/>
+              <p style={{ margin:0, fontFamily:"'Nunito Sans',sans-serif", fontSize:10, lineHeight:1.45, color:T.desc }}>
                 <strong style={{ color:l.color }}>{l.label}</strong> — {l.desc}
               </p>
             </div>
           ))}
         </div>
-        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:T.foot, margin:'12px 0 0', fontStyle:'italic', lineHeight:1.5 }}>
-          Each case is attributed to the lane whose projects can best respond to its circumstances. "Unattributed" = not yet tagged.
-        </p>
       </div>
     </div>
   )
