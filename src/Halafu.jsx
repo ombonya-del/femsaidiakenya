@@ -1079,7 +1079,8 @@ export default function HalaFuTab({ isMobile }) {
   return (
     <div className="fade-up" style={{ width:'100%', display:'flex', flexDirection:'column' }}>
       {/* Hero + manifesto + stat ribbon (full width) */}
-      <div style={{ order:1, borderBottom:`1px solid ${BD}`, paddingBottom:16, marginBottom:2 }}>
+      <div style={{ order:1, borderBottom:`1px solid ${BD}`, paddingBottom:16, marginBottom:2, display:'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 16 : 22, alignItems:'flex-start' }}>
+        <div style={{ flex:1, minWidth:0 }}>
         <p className="label" style={{ marginBottom:8, color:A }}>FemSaidia Action Lab · From outrage to architecture</p>
         <h1 className="serif" style={{ fontSize:isMobile?26:34, fontWeight:700, color:TXT, marginBottom:10 }}>
           Halafu<span style={{ color:A }}>?</span>
@@ -1101,6 +1102,10 @@ export default function HalaFuTab({ isMobile }) {
               <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT }}>{s.l}</span>
             </span>
           ))}
+        </div>
+        </div>
+        <div style={{ flexShrink:0, width: isMobile ? '100%' : 340 }}>
+          <HalafuStrategyBreakdown isMobile={isMobile} theme="dark"/>
         </div>
       </div>
 
@@ -1130,7 +1135,6 @@ export default function HalaFuTab({ isMobile }) {
                   textDecoration:'none', border:'1px solid rgba(255,255,255,0.15)', letterSpacing:'.04em' }}>✎ Submit a project</a>
             </div>
           </div>
-          <HalafuStrategyBreakdown isMobile={isMobile} compact={true}/>
           {/* Intelligence Brief + Field Intelligence gateway */}
           <div style={{ background:'#EDE0E8', border:`1px solid #D4BEC4`, padding:'16px 20px' }}>
             <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
