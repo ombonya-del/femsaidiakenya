@@ -1,13 +1,18 @@
 import React from 'react'
 
 // Donut breakdown of femicide cases across the four relationship archetypes,
-// with a value/percentage legend. One `cases` array in; each item may carry
-// `archetype` (naive|precocious|allin|onoff). Untagged/other → "Unclassified".
+// with a value/percentage legend and a short explainer of what each archetype means.
+// One `cases` array in; each item may carry `archetype` (naive|precocious|allin|onoff).
+// Untagged / non-intimate-partner cases fall into "Unclassified".
 const ARCHS = [
-  { id:'naive',      label:'The Naive',      color:'#2E5C93' },
-  { id:'precocious', label:'The Precocious', color:'#C06020' },
-  { id:'allin',      label:'The All-In',     color:'#7A4ABA' },
-  { id:'onoff',      label:'The On & Off',   color:'#8A1030' },
+  { id:'naive',      label:'The Naive',      color:'#2E5C93',
+    desc:'A first serious relationship — the warning signs aren’t yet recognisable. Typically 17–19.' },
+  { id:'precocious', label:'The Precocious', color:'#C06020',
+    desc:'Young, often in an age-gap or fast-moving dynamic. Typically 21–23.' },
+  { id:'allin',      label:'The All-In',     color:'#7A4ABA',
+    desc:'Fully committed — married or long-term — as control quietly tightens. Typically 24–27.' },
+  { id:'onoff',      label:'The On & Off',   color:'#8A1030',
+    desc:'Co-parents and long-term on/off partners; danger peaks around separation and reconciliation. Typically 25–40.' },
   { id:'other',      label:'Unclassified',   color:'#9A8A92' },
 ]
 
@@ -25,9 +30,9 @@ export default function ArchetypeBreakdown({ cases = [], isMobile = false }) {
   const segments = ARCHS.map(a => {
     const n = counts[a.id]
     const frac = total ? n / total : 0
-    const seg = { ...a, dash: frac * C, offset: acc * C }
+    const seg = { ...a, dash: frac * C, offset: acc * C, n }
     acc += frac
-    return { ...seg, n }
+    return seg
   }).filter(s => s.n > 0)
 
   return (
@@ -80,11 +85,26 @@ export default function ArchetypeBreakdown({ cases = [], isMobile = false }) {
         </div>
       </div>
 
-      <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'#A08890',
-        margin:'16px 0 0', fontStyle:'italic', lineHeight:1.5 }}>
-        Classification reflects the recorded relationship pattern; "Unclassified" covers cases not yet
-        tagged or outside the four intimate-partner archetypes.
-      </p>
+      <div style={{ marginTop:18, paddingTop:16, borderTop:'1px solid #F0E2E8' }}>
+        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700, color:'#8A1030',
+          letterSpacing:'.1em', textTransform:'uppercase', margin:'0 0 10px' }}>
+          What the archetypes mean
+        </p>
+        <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+          {ARCHS.filter(a => a.desc).map(a => (
+            <div key={a.id} style={{ display:'flex', gap:8, alignItems:'flex-start' }}>
+              <span style={{ width:9, height:9, borderRadius:2, background:a.color, marginTop:4, flexShrink:0 }}/>
+              <p style={{ margin:0, fontFamily:"'Nunito Sans',sans-serif", fontSize:11.5, lineHeight:1.55, color:'#5A3A48' }}>
+                <strong style={{ color:a.color }}>{a.label}</strong> — {a.desc}
+              </p>
+            </div>
+          ))}
+        </div>
+        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:'#A08890',
+          margin:'12px 0 0', fontStyle:'italic', lineHeight:1.5 }}>
+          "Unclassified" covers cases not yet tagged or outside the four intimate-partner archetypes.
+        </p>
+      </div>
     </div>
   )
 }

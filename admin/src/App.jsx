@@ -59,6 +59,7 @@ const CaseForm = ({ data, setData, onSave, onCancel, saveLabel }) => (
         {l:'Age range',  k:'victim_age_range', type:'age_range'},
         {l:'Status',     k:'status', type:'status'},
         {l:'Perpetrator relationship to victim', k:'perpetrator_relationship', type:'relationship'},
+        {l:'Archetype', k:'archetype', type:'archetype'},
         {l:'Perpetrator age (if known)', k:'perpetrator_age', type:'number'},
         {l:'Source type', k:'source_type'},
         {l:'Source URL', k:'source_url'},
@@ -102,6 +103,14 @@ const CaseForm = ({ data, setData, onSave, onCancel, saveLabel }) => (
               <option value='stranger'>Stranger</option>
               <option value='employer'>Employer / person of authority</option>
               <option value='online_contact'>Online contact</option>
+            </select>
+          ) : type==='archetype' ? (
+            <select style={inputSt} value={data[k]||''} onChange={e=>setData(d=>({...d,[k]:e.target.value||null}))}>
+              <option value=''>Unclassified</option>
+              <option value='naive'>The Naive</option>
+              <option value='precocious'>The Precocious</option>
+              <option value='allin'>The All-In</option>
+              <option value='onoff'>The On & Off</option>
             </select>
           ) : (
             <input style={inputSt} value={data[k]||''} onChange={e=>setData(d=>({...d,[k]:e.target.value}))}/>
