@@ -6,7 +6,7 @@ const sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_
 // How the femicide case load maps onto Halafu?'s three response lanes.
 const LANES = [
   { id:'understand', label:'Understand', color:'#7C3AED', desc:'What is turning boys into men who harm?' },
-  { id:'interrupt',  label:'Interrupt',  color:'#16A34A', desc:'Where can we intervene before harm happens?' },
+  { id:'interrupt',  label:'Interrupt',  color:'#34C759', desc:'Where can we intervene before harm happens?' },
   { id:'build',      label:'Build',      color:'#DC2626', desc:'What do we create to prevent the next death?' },
 ]
 
