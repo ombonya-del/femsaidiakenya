@@ -786,13 +786,13 @@ export default function App() {
           This is not another awareness campaign. This is architecture.
         </p>
         <div style={{ display:'flex', gap:10, justifyContent:'center', flexWrap:'wrap' }}>
-          <a href="#projects"
+          <button onClick={()=>setActiveTab('projects')}
             style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700,
-              padding:'12px 24px', background:RED, color:TXT, textDecoration:'none',
+              padding:'12px 24px', background:RED, color:TXT, border:'none', cursor:'pointer',
               letterSpacing:'.06em' }}>
             See the 10 projects →
-          </a>
-          <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf?v=20260606"
+          </button>
+          <a href="https://femsaidiakenya.org/intel-brief-latest.pdf"
             target="_blank" rel="noopener noreferrer"
             style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700,
               padding:'12px 24px', background:'transparent',
@@ -880,14 +880,14 @@ export default function App() {
             <p style={{ fontFamily:"'Lora',serif", fontSize:18, fontWeight:700,
               color:TXT, marginBottom:16 }}>FemSaidia Intel Brief — June 2026</p>
             <div style={{ display:'flex', gap:10 }}>
-              <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf?v=20260606"
+              <a href="https://femsaidiakenya.org/intel-brief-latest.pdf"
                 target="_blank" rel="noopener noreferrer"
                 style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
                   padding:'10px 20px', background:RED, color:TXT,
                   textDecoration:'none', letterSpacing:'.06em' }}>
                 📄 Download PDF →
               </a>
-              <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf?v=20260606"
+              <a href="https://femsaidiakenya.org/intel-brief-latest.pdf"
                 target="_blank" rel="noopener noreferrer"
                 style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
                   padding:'10px 20px', background:'transparent',
@@ -979,7 +979,7 @@ export default function App() {
                 color:MUT, textDecoration:'none' }}>
               Privacy
             </a>
-            <a href="https://uuluuhltphgwfblcghlp.supabase.co/storage/v1/object/public/public-assets/intel-brief-latest.pdf?v=20260606"
+            <a href="https://femsaidiakenya.org/intel-brief-latest.pdf"
               target="_blank" rel="noopener noreferrer"
               style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
                 color:RED, textDecoration:'none', fontWeight:700 }}>
