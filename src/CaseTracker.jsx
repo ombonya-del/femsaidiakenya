@@ -190,7 +190,7 @@ export default function CaseTrackerTab() {
         {/* Funnel section */}
         <div style={{ background:'#B89AAA', border:`2px solid ${A}`, padding: mobile ? '14px' : '20px' }}>
           <p style={{ fontSize:10, color:A, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.12em', textTransform:'uppercase', marginBottom:4, fontWeight:700 }}>Justice status breakdown</p>
-          <p style={{ fontSize: mobile ? 14 : 18, fontFamily:"'Lora',serif", fontWeight:500, color:TXT, marginBottom:22, borderBottom:`1px solid ${BD}`, paddingBottom:12 }}>Where do cases end up?</p>
+          <p style={{ fontSize: mobile ? 13 : 15, fontFamily:"'Lora',serif", fontWeight:500, color:TXT, marginBottom:22, borderBottom:`1px solid ${BD}`, paddingBottom:12 }}>Where do cases end up?</p>
           <JusticeFunnel cases={cases} mobile={mobile}/>
           <p style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif", marginTop:10, fontStyle:'italic' }}>
             {noActionCount} cases ({cases.length ? Math.round((noActionCount/cases.length)*100) : 0}%) have no known legal action.
