@@ -15,6 +15,14 @@ const ADMIN_URL      = Deno.env.get('ADMIN_URL') ?? 'https://admin.femsaidiakeny
 const BRIEF_PUBLISHERS = (Deno.env.get('BRIEF_PUBLISHERS') ?? 'ombonya@gmail.com')
   .split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
 
+// Allow the admin frontend (browser) to call this function — without these,
+// the preflight/response is blocked and the client sees "Failed to fetch".
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
 function resultPage(emoji: string, color: string, msg: string): Response {
   return new Response(
     `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -23,12 +31,12 @@ function resultPage(emoji: string, color: string, msg: string): Response {
        <h2 style="color:${color};margin:8px 0">${msg}</h2>
        <p style="color:#888;font-size:12px">FemSaidia Kenya · Intel Brief</p>
      </div>`,
-    { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+    { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', ...CORS } }
   )
 }
 
 function jsonResp(obj: Record<string, unknown>, status = 200): Response {
-  return new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } })
+  return new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json', ...CORS } })
 }
 
 // Publish a draft brief — only an authenticated, allow-listed admin may do this.
@@ -330,6 +338,8 @@ async function generatePDF(brief: any): Promise<Uint8Array> {
 
 // ── MAIN HANDLER ──────────────────────────────────────────────────────────────
 Deno.serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
+
   // Publish endpoint: editor clicks the one-click link in the review email
   const u = new URL(req.url)
   const publishId = u.searchParams.get('publish')
