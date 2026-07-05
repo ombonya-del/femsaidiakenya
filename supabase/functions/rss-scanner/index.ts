@@ -268,23 +268,31 @@ function normUrl(u: string): string {
     .replace(/#.*$/, '').replace(/\/+$/, '')
 }
 
-// ── DEDUP KEYS (title + url) ──────────────────────────────────────────────────
-// Look back over the full currency window so an item can't be re-ingested as a
-// "new" duplicate while it's still young enough to pass the recency filter.
+// ── DEDUP (accurate, archive-size-proof) ──────────────────────────────────────
+// A plain select caps at 1000 rows, so once the archive grew past that the old
+// check went blind to everything older — the cause of repeat / stale alerts.
+// Instead we look up ONLY the candidate URLs/titles (a small, bounded set), so the
+// existence check is always complete no matter how large the archive is.
 // URL is the reliable key when Google News re-headlines the same story; title is
 // the fallback for feeds whose URLs vary.
-async function getExistingKeys(): Promise<{ titles: Set<string>, urls: Set<string> }> {
-  const since = new Date(Date.now() - MAX_AGE_DAYS*24*60*60*1000).toISOString()
-  const { data } = await supabase
-    .from('sentiment_articles')
-    .select('article_title, article_url')
-    .gte('scanned_at', since)
-  const titles = new Set<string>(), urls = new Set<string>()
-  for (const row of data || []) {
-    if (row.article_title) titles.add(normTitle(row.article_title))
-    if (row.article_url)   urls.add(normUrl(row.article_url))
+const chunk = <X,>(arr: X[], n: number): X[][] => {
+  const out: X[][] = []
+  for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n))
+  return out
+}
+async function findExisting(items: any[]): Promise<{ titles: Set<string>, urls: Set<string> }> {
+  const urls   = [...new Set(items.map(a => a.url).filter(Boolean))]
+  const titles = [...new Set(items.map(a => stripHtml(a.title)).filter(Boolean))]
+  const existingUrls = new Set<string>(), existingTitles = new Set<string>()
+  for (const c of chunk(urls, 80)) {
+    const { data } = await supabase.from('sentiment_articles').select('article_url').in('article_url', c)
+    for (const r of data || []) if (r.article_url) existingUrls.add(normUrl(r.article_url))
   }
-  return { titles, urls }
+  for (const c of chunk(titles, 80)) {
+    const { data } = await supabase.from('sentiment_articles').select('article_title').in('article_title', c)
+    for (const r of data || []) if (r.article_title) existingTitles.add(normTitle(r.article_title))
+  }
+  return { titles: existingTitles, urls: existingUrls }
 }
 
 // ── CLASSIFY WITH CLAUDE ──────────────────────────────────────────────────────
@@ -433,7 +441,7 @@ Deno.serve(async (req: Request) => {
     if (!relevant.length) return new Response(JSON.stringify({success:true,message:'No relevant content',total:allArticles.length}), {status:200})
 
     // 4. Dedup against DB by TITLE (reliable — no URL encoding issues)
-    const { titles: existingTitles, urls: existingUrls } = await getExistingKeys()
+    const { titles: existingTitles, urls: existingUrls } = await findExisting(relevant)
     const seenTitles = new Set<string>(), seenUrls = new Set<string>()
     let dupesSkipped = 0
     const newItems = relevant.filter(a => {
