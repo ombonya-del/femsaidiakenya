@@ -46,6 +46,13 @@ const STATUS_COLORS = {
   dismissed:'#E0D0C0', cold:'#D0D4D8', no_action:'#E8D0C8'
 }
 
+// ── HALAFU? STRATEGY LANES → PROJECTS ─────────────────────────────────────────
+const HALAFU_LANES = [
+  { id:'understand', label:'Understand', projects:['The Misogyny Pipeline in Kenya','The Economics of Male Violence','Boys Who Witnessed It'] },
+  { id:'interrupt',  label:'Interrupt',  projects:['Counter-Narrative Content Lab','The 10-16 Curriculum','Salmin for Men','The Baraza Network'] },
+  { id:'build',      label:'Build',      projects:['Fathers & Daughters Initiative','KaaRada Perpetrator Intervention','FemSaidia Intelligence Brief'] },
+]
+
 // ── CASE FORM (module level — prevents input focus loss) ──────────────────────
 const CaseForm = ({ data, setData, onSave, onCancel, saveLabel }) => (
   <div style={{ background:'#D4BCBC', border:`1px solid ${BD}`, padding:18, marginBottom:2 }}>
@@ -60,6 +67,8 @@ const CaseForm = ({ data, setData, onSave, onCancel, saveLabel }) => (
         {l:'Status',     k:'status', type:'status'},
         {l:'Perpetrator relationship to victim', k:'perpetrator_relationship', type:'relationship'},
         {l:'Archetype', k:'archetype', type:'archetype'},
+        {l:'Halafu? lane', k:'halafu_lane', type:'halafu_lane'},
+        {l:'Halafu? project', k:'halafu_project', type:'halafu_project'},
         {l:'Perpetrator age (if known)', k:'perpetrator_age', type:'number'},
         {l:'Source type', k:'source_type'},
         {l:'Source URL', k:'source_url'},
@@ -111,6 +120,16 @@ const CaseForm = ({ data, setData, onSave, onCancel, saveLabel }) => (
               <option value='precocious'>The Precocious</option>
               <option value='allin'>The All-In</option>
               <option value='onoff'>The On & Off</option>
+            </select>
+          ) : type==='halafu_lane' ? (
+            <select style={inputSt} value={data[k]||''} onChange={e=>setData(d=>({...d,halafu_lane:e.target.value||null,halafu_project:null}))}>
+              <option value=''>—</option>
+              {HALAFU_LANES.map(l=><option key={l.id} value={l.id}>{l.label}</option>)}
+            </select>
+          ) : type==='halafu_project' ? (
+            <select style={inputSt} value={data[k]||''} onChange={e=>setData(d=>({...d,[k]:e.target.value||null}))} disabled={!data.halafu_lane}>
+              <option value=''>{data.halafu_lane ? '—' : 'Select lane first'}</option>
+              {(HALAFU_LANES.find(l=>l.id===data.halafu_lane)?.projects||[]).map(p=><option key={p} value={p}>{p}</option>)}
             </select>
           ) : (
             <input style={inputSt} value={data[k]||''} onChange={e=>setData(d=>({...d,[k]:e.target.value}))}/>

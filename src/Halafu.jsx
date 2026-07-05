@@ -369,6 +369,64 @@ function CrisisCounter({ part = 'both', previous = false }) {
 }
 
 
+// ── HALAFU? STRATEGY BREAKDOWN — how the case load maps onto the 3 response lanes ──
+const HALAFU_LANES_VIZ = [
+  { id:'understand', label:'Understand', color:'#7C3AED', projects:['The Misogyny Pipeline in Kenya','The Economics of Male Violence','Boys Who Witnessed It'] },
+  { id:'interrupt',  label:'Interrupt',  color:'#16A34A', projects:['Counter-Narrative Content Lab','The 10-16 Curriculum','Salmin for Men','The Baraza Network'] },
+  { id:'build',      label:'Build',      color:'#DC2626', projects:['Fathers & Daughters Initiative','KaaRada Perpetrator Intervention','FemSaidia Intelligence Brief'] },
+]
+
+function HalafuStrategyBreakdown({ isMobile = false, compact = false }) {
+  const [rows, setRows] = useState(null)
+  useEffect(() => {
+    _sb.from('femicide_cases').select('halafu_lane,halafu_project').eq('published', true)
+      .then(({ data }) => setRows(data || []))
+  }, [])
+  if (!rows) return null
+  const total = rows.length
+  const laneCount = id => rows.filter(c => c.halafu_lane === id).length
+  const projCount = p => rows.filter(c => c.halafu_project === p).length
+  const attributed = rows.filter(c => c.halafu_lane).length
+  const unattributed = total - attributed
+  const maxLane = Math.max(1, ...HALAFU_LANES_VIZ.map(l => laneCount(l.id)), unattributed)
+  const pctOf = n => total ? Math.round(n / total * 100) : 0
+
+  const laneRow = (label, color, n, projects) => (
+    <div key={label} style={{ marginBottom:12 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:5 }}>
+        <span style={{ width:9, height:9, borderRadius:2, background:color, flexShrink:0 }}/>
+        <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12.5, fontWeight:700, color:'#EAD8E0' }}>{label}</span>
+        <span style={{ flex:1 }}/>
+        <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:'rgba(255,255,255,0.55)', fontVariantNumeric:'tabular-nums' }}>{n} · {pctOf(n)}%</span>
+      </div>
+      <div style={{ height:8, background:'rgba(255,255,255,0.08)', borderRadius:4, overflow:'hidden' }}>
+        <div style={{ width:`${Math.round(n / maxLane * 100)}%`, height:'100%', background:color, borderRadius:4 }}/>
+      </div>
+      {!compact && projects && (
+        <div style={{ display:'flex', flexWrap:'wrap', gap:'2px 12px', marginTop:6, paddingLeft:17 }}>
+          {projects.map(p => (
+            <span key={p} style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10.5,
+              color: projCount(p) ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.28)' }}>
+              {p} <strong style={{ color: projCount(p) ? color : 'rgba(255,255,255,0.3)' }}>{projCount(p)}</strong>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+
+  return (
+    <div style={{ padding: isMobile ? '14px 16px' : '16px 20px', background:'rgba(0,0,0,0.18)', border:'1px solid rgba(255,255,255,0.08)' }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:10, marginBottom:12, flexWrap:'wrap' }}>
+        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700, letterSpacing:'.14em', textTransform:'uppercase', color:'#F0577A', margin:0 }}>Cases by response strategy</p>
+        <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10.5, color:'rgba(255,255,255,0.45)' }}>{attributed} of {total} cases attributed</span>
+      </div>
+      {HALAFU_LANES_VIZ.map(l => laneRow(l.label, l.color, laneCount(l.id), l.projects))}
+      {unattributed > 0 && laneRow('Unattributed', '#8A8A9A', unattributed, null)}
+    </div>
+  )
+}
+
 function FieldIntelligence({ open: openProp, onToggle } = {}) {
   const [intel, setIntel]         = useState(null)
   const [syntheses, setSyntheses] = useState([])   // newest first, from saint_synthesis
@@ -533,7 +591,7 @@ function FieldIntelligence({ open: openProp, onToggle } = {}) {
             boxShadow:'0 0 8px #16A34A', animation:'pulse 2s infinite' }}/>
           <div>
             <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-              letterSpacing:'.2em', textTransform:'uppercase', color:'#8A1030', margin:0 }}>
+              letterSpacing:'.2em', textTransform:'uppercase', color:'#F0577A', margin:0 }}>
               Field Intelligence · Live Signal
             </p>
             {intel && (
@@ -597,6 +655,9 @@ function FieldIntelligence({ open: openProp, onToggle } = {}) {
       </div>
       {expanded && (
         <div onClick={e=>e.stopPropagation()}>
+          <div style={{ padding: isMobile ? '12px' : '14px 16px', borderBottom:'1px solid rgba(138,16,48,0.2)' }}>
+            <HalafuStrategyBreakdown isMobile={isMobile} compact={false}/>
+          </div>
           {/* Top metrics row */}
           {intel && (
             <div style={{ display:'grid',
@@ -1107,7 +1168,7 @@ export default function HalaFuTab({ isMobile }) {
           {/* Are you a funder? CTA — immediately below the hero */}
           <div style={{ background:'#1E2D40', border:`1px solid #3A1830`, padding:'16px 20px' }}>
             <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, letterSpacing:'.1em',
-              textTransform:'uppercase', color:A, marginBottom:6 }}>● Are you a funder? These projects need you.</p>
+              textTransform:'uppercase', color:'#F0577A', marginBottom:6 }}>● Are you a funder? These projects need you.</p>
             <p style={{ fontFamily:"'Lora',serif", fontSize:17, fontWeight:700, color:'#F0D0D8', lineHeight:1.4, marginBottom:12 }}>
               {[...new Set(PROJECTS.flatMap(p=>p.donors.map(d=>d.name)))].length} funding prospects identified across {PROJECTS.length} projects.
             </p>
@@ -1126,6 +1187,7 @@ export default function HalaFuTab({ isMobile }) {
                   textDecoration:'none', border:'1px solid rgba(255,255,255,0.15)', letterSpacing:'.04em' }}>✎ Submit a project</a>
             </div>
           </div>
+          <HalafuStrategyBreakdown isMobile={isMobile} compact={true}/>
           {/* Intelligence Brief + Field Intelligence gateway */}
           <div style={{ background:'#EDE0E8', border:`1px solid #D4BEC4`, padding:'16px 20px' }}>
             <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
