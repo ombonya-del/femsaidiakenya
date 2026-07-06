@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import ProjectStories from './ProjectStories'
+import { ArchetypeDonut, StrategyDonut } from './Donuts'
 
 const sb = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -827,6 +828,19 @@ export default function App() {
                 color:MUT, lineHeight:1.8 }}>{c.text}</p>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Case intelligence — archetype + response-strategy breakdowns */}
+      <div style={{ padding:'28px 24px 8px', maxWidth:1100, margin:'0 auto' }}>
+        <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
+          letterSpacing:'.2em', color:GOLD, marginBottom:14 }}>
+          THE CASE LOAD, READ TWO WAYS
+        </p>
+        <div style={{ display:'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(2,1fr)', gap:16 }}>
+          <ArchetypeDonut isMobile={isMobile}/>
+          <StrategyDonut isMobile={isMobile}/>
         </div>
       </div>
 

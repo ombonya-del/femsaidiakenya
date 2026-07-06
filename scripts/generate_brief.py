@@ -1412,21 +1412,35 @@ def _parse_top_incidents_text(text, highlights=None):
 # ════════════════════════════════════════════════════════════════════════════
 
 def fetch_live_cases(limit=8):
-    """Fetch latest femicide_cases directly from DB — always current."""
+    """Fetch latest femicide_cases directly from DB — always current.
+
+    Mirrors the public Case Tracker exactly: published rows only, newest first,
+    with NO date-window filter. (Previously this looked only at the last 30 days
+    and omitted the published filter, so the brief's "Recorded Incidents" could
+    show unpublished cases and disagree with what the tracker displays.)"""
     import requests as _req
     try:
-        since = (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%d")
-        r = _req.get(
+        url = (
             f"{SUPABASE_URL}/rest/v1/femicide_cases"
             f"?select=victim_name,county,incident_date,incident_type,"
-            f"suspect_relationship,tech_facilitated,tech_platforms,source_url,status"
-            f"&incident_date=gte.{since}"
-            f"&order=incident_date.desc&limit={limit}",
-            headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
-            timeout=10
+            f"perpetrator_relationship,tech_facilitated,tech_platforms,source_url,status"
+            f"&published=eq.true"
+            f"&order=incident_date.desc.nullslast&limit={limit}"
         )
-        return r.json() if r.ok else []
-    except Exception:
+        r = _req.get(url, headers={"apikey": SUPABASE_KEY,
+                                   "Authorization": f"Bearer {SUPABASE_KEY}"}, timeout=10)
+        if not r.ok:
+            print(f"WARN  fetch_live_cases HTTP {r.status_code}: {r.text[:180]}")
+            return []
+        data = r.json()
+        if data:
+            print(f"OK    live cases: {len(data)} published; newest = "
+                  f"{data[0].get('victim_name','?')} ({data[0].get('incident_date','?')})")
+        else:
+            print("WARN  fetch_live_cases: 0 published cases returned")
+        return data
+    except Exception as e:
+        print(f"WARN  fetch_live_cases error: {e}")
         return []
 
 
@@ -1557,7 +1571,7 @@ def _page1(c, brief, snap, live_cases):
         # Meta line: county · date · relationship
         county  = str(case.get("county","") or "")
         idate   = str(case.get("incident_date","") or "")[:10]
-        rel     = str(case.get("suspect_relationship","") or "")
+        rel     = str(case.get("perpetrator_relationship","") or "")
         itype   = str(case.get("incident_type","") or "")
         meta = " · ".join(filter(None, [county, idate, rel or itype]))
         c.setFont(FR, 8); c.setFillColor(MUTED)
@@ -1780,9 +1794,12 @@ _DV_CW2   = (CW - 14) / 2          # ≈ 250.5pt per column
 _DV_LX    = MAR
 _DV_RX    = MAR + _DV_CW2 + 14
 # Page 1 columns
-_DV_P1_TOP = H - 36 - 58 - 2 - 8  # 738
-_DV_P1_BOT = 28 + 8                # 36
-_DV_P1_H   = _DV_P1_TOP - _DV_P1_BOT  # 702pt
+_P1_STRIP_BOT = H - 36 - 58 - 2 - 8   # 738 - just below the data strip
+_DR_H  = 178                          # full-width donut row height (donut + legend + explainer)
+_DR_GAP = 8
+_DV_P1_TOP = _P1_STRIP_BOT - _DR_H - _DR_GAP  # columns start below the donut row
+_DV_P1_BOT = 28 + 8                   # 36
+_DV_P1_H   = _DV_P1_TOP - _DV_P1_BOT
 # Page 2 bottom bar + columns
 _DV_BBAR   = 80                    # bottom bar height
 _DV_P2_TOP = H - 36 - 2 - 8       # 796
@@ -1925,9 +1942,8 @@ def _dv_p1_left(c, brief, snap, live_cases):
     x, w = _DV_LX, _DV_CW2
     h    = _DV_P1_H   # 702pt
 
-    inc_h = int(h * 0.45)   # 315pt
-    scn_h = int(h * 0.30)   # 210pt
-    cty_h = h - inc_h - scn_h  # 177pt
+    inc_h = int(h * 0.58)
+    scn_h = h - inc_h
 
     # ── INCIDENTS ─────────────────────────────────────────────────────────
     cur = _DV_P1_TOP
@@ -1939,15 +1955,16 @@ def _dv_p1_left(c, brief, snap, live_cases):
     c.rect(x, cur-inc_content, w, inc_content, fill=1, stroke=0)
     _dv_lbar(c, x, cur-inc_content, inc_content, ALERT)
 
-    cases = live_cases or snap.get('cases', snap.get('top_incidents', []))
+    # Live case-tracker rows ONLY. Never fall back to the draft's embedded
+    # TOP_INCIDENTS text — it is LLM-written at draft time and can reference old
+    # cases (e.g. a 2024 name), which is exactly what made this section disagree
+    # with the live Case Tracker.
+    cases = live_cases or []
     if not cases:
-        ti_txt = brief.get('TOP_INCIDENTS', '')
-        if ti_txt:
-            # Use the existing parser that handles the markdown format
-            cases = _parse_top_incidents_text(ti_txt, snap.get('motd_highlights', []))
-    if not cases:
-        ti_txt = brief.get('TOP_INCIDENTS', 'No recorded incidents this period.')
-        _dv_wrap(c, ti_txt, x+8, cur, w-14, inc_content, FR, 8.5, HexColor('#555'))
+        _dv_wrap(c, 'Live case data was unavailable when this brief was built - '
+                    'showing no incidents rather than stale ones. Re-generate once the '
+                    'Case Tracker connection is restored.',
+                 x+8, cur, w-14, inc_content, FR, 8.5, HexColor('#555'))
     if cases:
         n   = min(len(cases), 5)
         per = inc_content // n
@@ -1968,7 +1985,7 @@ def _dv_p1_left(c, brief, snap, live_cases):
             # Meta
             county = str(case.get('county','') or '')
             idate  = str(case.get('incident_date') or case.get('date','') or '')[:10]
-            rel    = str(case.get('suspect_relationship','') or '')
+            rel    = str(case.get('perpetrator_relationship','') or '')
             itype  = str(case.get('incident_type','') or '')
             meta   = "  \u00b7  ".join(filter(None, [county, idate, rel or itype]))
             c.setFont(FR, 7); c.setFillColor(HexColor('#555'))
@@ -2031,43 +2048,6 @@ def _dv_p1_left(c, brief, snap, live_cases):
         c.setFont(FR, 5.5); c.setFillColor(MUTED)
         c.drawRightString(x+w-4, ry2+14, f"{sv}/10")
         if i < n2-1: _dv_rule(c, x, ry2, w)
-    cur = _DV_P1_TOP - inc_h - scn_h
-
-    # ── COUNTY BREAKDOWN ───────────────────────────────────────────────────
-    cur = _dv_band(c, x, cur, w, "Cases by County \u00b7 Current Period",
-                   HexColor('#1A3F6F'))
-    cty_content = cty_h - 14
-    c.setFillColor(HexColor('#f5f8ff'))
-    c.rect(x, cur-cty_content, w, cty_content, fill=1, stroke=0)
-    _dv_lbar(c, x, cur-cty_content, cty_content, HexColor('#2563EB'))
-
-    # Build county counts from live cases or snap
-    from collections import Counter as _Counter
-    raw_cases = live_cases or snap.get('cases', []) or []
-    county_counts = _Counter(
-        str(ca.get('county','Unknown') or 'Unknown') for ca in raw_cases
-    )
-    # If no live data, try snap county summary
-    if not county_counts:
-        # Fallback static known distribution
-        county_counts = _Counter({'Nairobi':4,'Kiambu':2,'Mombasa':1,'Siaya':1})
-    top_ctys = county_counts.most_common(5)
-    max_val  = max(v for _,v in top_ctys)
-    bar_max  = w - 82
-    bar_slot = cty_content // max(len(top_ctys), 1)
-    for i, (cty, cnt) in enumerate(top_ctys):
-        by   = cur - 16 - i*bar_slot
-        bh   = min(12, bar_slot-8)
-        if by < cur-cty_content+6: break
-        c.setFont(FR, 7); c.setFillColor(HexColor('#444'))
-        c.drawString(x+8, by+bh/2-2, cty[:16])
-        bw = max(8, int(bar_max * cnt/max_val))
-        c.setFillColor(HexColor('#e2e8f0'))
-        c.rect(x+76, by, bar_max, bh, fill=1, stroke=0)
-        c.setFillColor(HexColor('#2563EB'))
-        c.rect(x+76, by, bw, bh, fill=1, stroke=0)
-        c.setFont(FB, 6.5); c.setFillColor(HexColor('#180410'))
-        c.drawString(x+76+bw+3, by+bh/2-2, str(cnt))
 
 # ── Page 1 RIGHT: overview + motd + tech + analysis ──────────────────────────
 def _dv_p1_right(c, brief, snap):
@@ -2138,12 +2118,12 @@ def _dv_p1_right(c, brief, snap):
                  f"{arts} articles \u00b7 {kibe} Kibe-tagged \u00b7 {prot} protest")
 
 # ── Page 2 LEFT: Insight (58%) + Pipeline diagram (42%) ──────────────────────
-def _dv_p2_left(c, brief, snap):  # snap needed for index visual
+def _dv_p2_left(c, brief, snap, case_mix):  # snap needed for index visual
     x, w = _DV_LX, _DV_CW2
     h    = _DV_P2_H   # 672pt
 
-    ins_h = int(h * 0.64)   # ≈430pt — more room for text + snapshot
-    pip_h = h - ins_h        # ≈242pt — pipeline reduced
+    ins_h = int(h * 0.58)
+    cty_h = h - ins_h
 
     # INSIGHT
     cur = _DV_P2_TOP
@@ -2195,69 +2175,16 @@ def _dv_p2_left(c, brief, snap):  # snap needed for index visual
             c.drawString(x+106+fw_s+3, by_s+2, f"{pct_s}%")
     cur = _DV_P2_TOP - ins_h
 
-    # PIPELINE SECTION: index snapshot top + pipeline nodes bottom
-    cur = _dv_band(c, x, cur, w,
-                   "The Kibe\u2013Campus\u2013Femicide Pipeline \u00b7 Documented", BRAND)
-    pip_content = pip_h - 14
-    c.setFillColor(HexColor('#fff8f8'))
-    c.rect(x, cur-pip_content, w, pip_content, fill=1, stroke=0)
-    _dv_lbar(c, x, cur-pip_content, pip_content, ALERT)
-
-    nodes = [
-        ('CONTENT',  'Kibe book tour\n28 Commands\nLambistic', BRAND),
-        ('CAMPUS',   'JOOUST / RVIST\nBBC filmed\nMay 2026',   HexColor('#C05010')),
-        ('EXPOSURE', 'Male attitude\nchange BBC\ndocumented',  HexColor('#ca8a04')),
-        ('FEMICIDE', 'Alice Rianga\nBondo/Siaya\nMay 2026',    ALERT),
-    ]
-    n_nodes  = len(nodes)
-    gap_x    = 6
-    node_w   = (w - gap_x*(n_nodes-1) - 16) / n_nodes   # ≈ 55pt
-    node_h   = min(44, pip_content - 50)  # smaller nodes
-    ny       = cur - pip_content + 20  # nodes near bottom
-
-    for i, (title, body, col) in enumerate(nodes):
-        nx2 = x + 8 + i*(node_w+gap_x)
-        c.setFillColor(WHITE); c.rect(nx2, ny, node_w, node_h, fill=1, stroke=0)
-        c.setFillColor(col); c.rect(nx2, ny+node_h-4, node_w, 4, fill=1, stroke=0)
-        c.setFont(FB, 5.5); c.setFillColor(col)
-        c.drawCentredString(nx2+node_w/2, ny+node_h-12, title)
-        c.setFont(FR, 5.5); c.setFillColor(HexColor('#180410'))
-        for k, bl in enumerate(body.split('\n')):
-            c.drawCentredString(nx2+node_w/2, ny+node_h-22-k*9, bl)
-        if i < n_nodes-1:
-            ax = nx2+node_w+2; ay = ny+node_h/2
-            c.setStrokeColor(col); c.setLineWidth(0.8)
-            c.line(ax, ay, ax+gap_x-2, ay)
-            p = c.beginPath()
-            p.moveTo(ax+gap_x-5, ay-3); p.lineTo(ax+gap_x-5, ay+3)
-            p.lineTo(ax+gap_x-1, ay); p.close()
-            c.setFillColor(col); c.drawPath(p, fill=1, stroke=0)
-
-    # Evidence badges
-    ev_y = cur - node_h - 28
-    c.setFont(FR, 5); c.setFillColor(MUTED)
-    c.drawString(x+8, ev_y, 'Evidence:')
-    bxb = x+52
-    for txt2, col2 in [('BBC film', BRAND), ('Police rpt', ALERT),
-                        ('Nation/Std', HexColor('#CC0000')), ('s.96 DPP', HexColor('#C05010'))]:
-        bw = c.stringWidth(txt2, FB, 5)+8
-        rrect(c, bxb, ev_y-2, bw, 9, r=2, fill=col2)
-        c.setFont(FB, 5); c.setFillColor(WHITE)
-        c.drawString(bxb+4, ev_y+3, txt2); bxb += bw+4
-
-    # DPP call
-    c.setFont(FR, 6); c.setFillColor(HexColor('#8A1030'))
-    c.drawString(x+8, cur-pip_content+14,
-                 'Prosecute under s.96 \u2014 incitement. BBC documentary is admissible evidence.')
+    # CASES BY COUNTY (moved here from page 1)
+    _dv_county_col(c, x, cur, w, cty_h, case_mix)
 
 # ── Page 2 RIGHT: The Ask (58%) + 7-week trend (42%) ─────────────────────────
-def _dv_p2_right(c, brief, snap):
+def _dv_p2_right(c, brief, snap, case_mix):
     import re as _re2
     x, w = _DV_RX, _DV_CW2
     h    = _DV_P2_H   # 672pt
 
-    ask_h = int(h * 0.58)   # 389pt
-    trd_h = h - ask_h        # 283pt
+    ask_h = h
 
     # ASK
     cur = _DV_P2_TOP
@@ -2319,62 +2246,6 @@ def _dv_p2_right(c, brief, snap):
             if ty3 < ry3+5: break
             c.drawString(x+22, ty3, dln); ty3 -= 10
         if j < n-1: _dv_rule(c, x, ry3, w)
-    cur = _DV_P2_TOP - ask_h
-
-    # 7-WEEK TREND CHART
-    cur = _dv_band(c, x, cur, w, "7-Week Misogyny Index Trend",
-                   HexColor('#1A2035'))
-    trd_content = trd_h - 14
-    c.setFillColor(HexColor('#f9fafb'))
-    c.rect(x, cur-trd_content, w, trd_content, fill=1, stroke=0)
-
-    mi   = float(snap.get('misogyny_index', 51) or 51)
-    hist = snap.get('index_history', [])
-    if not hist or len(hist) < 4:
-        hist = [max(20,int(mi-16)), max(20,int(mi-12)), max(20,int(mi-9)),
-                max(20,int(mi-6)), max(20,int(mi-3)), int(mi), int(mi)]
-    hist  = [int(v) for v in hist[-7:]]
-    lbls  = [f'W{i+1}' for i in range(len(hist)-1)] + ['Now']
-    chart_h = trd_content - 24
-    chart_w = int(w) - 28
-    bx0   = x + 22
-    by0   = cur - trd_content + 14
-    bar_w = max(4, (chart_w - len(hist)*2) // len(hist))
-
-    # Grid
-    for yv in [20, 40, 60, 80]:
-        ly = by0 + int(chart_h*yv/100)
-        c.setFillColor(HexColor('#e8eaed')); c.rect(bx0, ly, chart_w, 0.3, fill=1, stroke=0)
-        c.setFont(FR, 4); c.setFillColor(MUTED)
-        c.drawRightString(bx0-2, ly+1, str(yv))
-    # Alert threshold
-    thr_y = by0 + int(chart_h*60/100)
-    c.setStrokeColor(ALERT); c.setLineWidth(0.5); c.setDash([3,2])
-    c.line(bx0, thr_y, bx0+chart_w, thr_y); c.setDash([])
-
-    pts = []
-    for i, val in enumerate(hist):
-        bxb = bx0 + i*(bar_w+2)
-        bh  = int(chart_h*val/100)
-        fill = ALERT if val >= 60 else HexColor('#d4d8f0')
-        c.setFillColor(fill); c.rect(bxb, by0, bar_w, bh, fill=1, stroke=0)
-        c.setFont(FR, 4.5)
-        c.setFillColor(ALERT if val>=60 else MUTED)
-        label_y = by0 + bh + 3
-        pass  # labels drawn in fixed column below
-        c.setFont(FR, 4); c.setFillColor(MUTED)
-        c.drawCentredString(bxb+bar_w/2, by0-18, lbls[i])
-        # Value label at fixed y above highest bar (no overlap)
-        c.setFont(FR, 4.5); c.setFillColor(ALERT if val>=60 else MUTED)
-        if i == 0 or abs(val - hist[i-1]) >= 3:  # only show if changed enough
-            c.drawCentredString(bxb+bar_w/2, by0+bh+3, str(val))
-        pts.append((bxb+bar_w/2, by0+bh))
-    c.setStrokeColor(BRAND); c.setLineWidth(0.8)
-    for i in range(len(pts)-1): c.line(pts[i][0], pts[i][1], pts[i+1][0], pts[i+1][1])
-
-    # Legend
-    c.setFont(FR, 5.5); c.setFillColor(MUTED)
-    c.drawString(x+8, cur-trd_content+8, f"7-wk avg: {sum(hist)//len(hist)}  \u00b7  Alert threshold: 60  \u00b7  Trend: {'Rising' if hist[-1]>hist[0] else 'Falling'}")
 
 # ── Page 2 BOTTOM BAR: FemSaidia Desk | Brief Metadata (full width, 80pt) ─────
 def _dv_bottom_bar(c, brief, snap):
@@ -2449,7 +2320,7 @@ def _parse_ti_text(raw):
             'notes':            desc[:150],
             'county':           county_match.group(1) if county_match else '',
             'incident_date':    date_match.group(0) if date_match else '',
-            'suspect_relationship': '',
+            'perpetrator_relationship': '',
             'incident_type':    '',
             'tech_facilitated': bool(tech_p),
             'tech_platforms':   tech_p,
@@ -2457,13 +2328,204 @@ def _parse_ti_text(raw):
         })
     return cases[:5]
 
+# ════════════════════════════════════════════════════════════════════════════
+#  PAGE 3 — Case Intelligence (archetype + response-strategy donuts)
+# ════════════════════════════════════════════════════════════════════════════
+def fetch_case_breakdowns():
+    """All published cases' archetype + halafu_lane, for the donut breakdowns."""
+    import requests as _req
+    try:
+        r = _req.get(
+            f"{SUPABASE_URL}/rest/v1/femicide_cases"
+            f"?select=archetype,halafu_lane,county&published=eq.true&limit=10000",
+            headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
+            timeout=10)
+        return r.json() if r.ok else []
+    except Exception:
+        return []
+
+
+def _dv_donut(c, cx, cy, r, sw, segs, total):
+    """Ring donut: segs = list of (HexColor, count). Clockwise from top."""
+    c.setLineCap(0)
+    c.setStrokeColor(CSEP); c.setLineWidth(sw)
+    c.circle(cx, cy, r, stroke=1, fill=0)
+    if total > 0:
+        start = 90.0
+        for color, n in segs:
+            if n <= 0: continue
+            ext = -(float(n) / total) * 360.0
+            c.setStrokeColor(color); c.setLineWidth(sw)
+            c.arc(cx - r, cy - r, cx + r, cy + r, start, ext)
+            start += ext
+    c.setFont(FB, 22); c.setFillColor(HexColor('#180410'))
+    c.drawCentredString(cx, cy - 4, str(total))
+    c.setFont(FR, 6.5); c.setFillColor(MUTED)
+    c.drawCentredString(cx, cy - 16, "CASES")
+
+
+def _archetype_breakdown(cases):
+    ARCH = [('naive', 'The Naive', '#2E5C93'), ('precocious', 'The Precocious', '#C06020'),
+            ('allin', 'The All-In', '#7A4ABA'), ('onoff', 'The On & Off', '#8A1030')]
+    ids = {a[0] for a in ARCH}
+    def cnt(i):
+        if i == 'other':
+            return sum(1 for cc in cases if cc.get('archetype') not in ids)
+        return sum(1 for cc in cases if cc.get('archetype') == i)
+    segs   = [(HexColor(col), cnt(i)) for i, _, col in ARCH] + [(HexColor('#9A8A92'), cnt('other'))]
+    legend = [(lbl, HexColor(col), cnt(i)) for i, lbl, col in ARCH] + [('Unclassified', HexColor('#9A8A92'), cnt('other'))]
+    return segs, legend
+
+
+def _strategy_breakdown(cases):
+    LANES = [('understand', 'Understand', '#7C3AED'), ('interrupt', 'Interrupt', '#E8A13C'),
+             ('build', 'Build', '#DC2626')]
+    ids = {l[0] for l in LANES}
+    def cnt(i):
+        if i == 'unattr':
+            return sum(1 for cc in cases if cc.get('halafu_lane') not in ids)
+        return sum(1 for cc in cases if cc.get('halafu_lane') == i)
+    segs   = [(HexColor(col), cnt(i)) for i, _, col in LANES] + [(HexColor('#8A8A9A'), cnt('unattr'))]
+    legend = [(lbl, HexColor(col), cnt(i)) for i, lbl, col in LANES] + [('Unattributed', HexColor('#8A8A9A'), cnt('unattr'))]
+    return segs, legend
+
+
+def _dv_donut_row(c, y_top, case_mix):
+    """Full-width row: archetype + response-strategy donuts, side by side."""
+    a_segs, a_leg = _archetype_breakdown(case_mix)
+    s_segs, s_leg = _strategy_breakdown(case_mix)
+    _dv_donut_col(c, _DV_LX, y_top, _DV_CW2, _DR_H,
+                  "Cases by Archetype \u00b7 Relationship Pattern",
+                  "The relationship pattern behind each published case.",
+                  a_segs, a_leg, BRAND, HexColor('#fff8f8'),
+                  "Each published femicide, mapped to the relationship pattern behind it - from "
+                  "first relationships (Naive) to the separation-triggered danger of on/off "
+                  "partnerships (On & Off). It shows who is being killed, and when in a relationship.")
+    _dv_donut_col(c, _DV_RX, y_top, _DV_CW2, _DR_H,
+                  "Cases by Response Strategy \u00b7 Halafu? Lane",
+                  "Which Halafu? lane is best placed to interrupt each case.",
+                  s_segs, s_leg, HexColor('#1A2035'), HexColor('#f9fafb'),
+                  "Each case routed to the Halafu? lane best placed to interrupt it - Understand "
+                  "the drivers, Interrupt the escalation, or Build what prevents the next death. "
+                  "It shows where the response effort is concentrated.")
+
+
+def _dv_county_col(c, x, y_top, w, slot_h, cases):
+    """Cases-by-county horizontal bars, sized to a single column slot."""
+    from collections import Counter as _Counter
+    cur = _dv_band(c, x, y_top, w, "Cases by County \u00b7 All Published", HexColor('#1A3F6F'))
+    content = slot_h - 14
+    c.setFillColor(HexColor('#f5f8ff')); c.rect(x, cur-content, w, content, fill=1, stroke=0)
+    _dv_lbar(c, x, cur-content, content, HexColor('#2563EB'))
+    counts = _Counter(str(ca.get('county','Unknown') or 'Unknown') for ca in (cases or []))
+    top = counts.most_common(7) or [('No data', 1)]
+    max_val = max(v for _, v in top)
+    bar_max = w - 90
+    slot = (content - 20) // max(len(top), 1)
+    for i, (cty, cnt) in enumerate(top):
+        by = cur - 18 - i*slot
+        bh = min(11, slot-5)
+        if by < cur-content+6: break
+        c.setFont(FR, 7); c.setFillColor(HexColor('#444')); c.drawString(x+8, by+bh/2-2, cty[:18])
+        bw = max(6, int(bar_max*cnt/max_val))
+        c.setFillColor(HexColor('#e2e8f0')); c.rect(x+82, by, bar_max, bh, fill=1, stroke=0)
+        c.setFillColor(HexColor('#2563EB')); c.rect(x+82, by, bw, bh, fill=1, stroke=0)
+        c.setFont(FB, 6.5); c.setFillColor(HexColor('#180410')); c.drawString(x+82+bw+3, by+bh/2-2, str(cnt))
+    return cur - content
+
+
+def _dv_donut_col(c, x, y_top, w, slot_h, title, tag, segs, legend, accent, bg, expl=''):
+    """Single-column donut: band + donut (left) + legend (right) + explainer."""
+    cur = _dv_band(c, x, y_top, w, title, accent)
+    content = slot_h - 14
+    c.setFillColor(bg); c.rect(x, cur - content, w, content, fill=1, stroke=0)
+    _dv_lbar(c, x, cur - content, content, accent)
+    total = sum(n for _, n in segs)
+    _dv_donut(c, x + 58, cur - 58, 40, 16, segs, total)
+    lx, ly = x + 112, cur - 22
+    for label, color, n in legend:
+        pct = round(n / total * 100) if total else 0
+        c.setFillColor(color); c.rect(lx, ly - 7, 7, 7, fill=1, stroke=0)
+        c.setFont(FB, 7); c.setFillColor(HexColor('#180410')); c.drawString(lx + 11, ly - 6, label)
+        c.setFont(FR, 7); c.setFillColor(MUTED); c.drawRightString(x + w - 30, ly - 6, str(n))
+        c.setFillColor(HexColor('#9A7A88')); c.drawRightString(x + w - 8, ly - 6, f"{pct}%")
+        ly -= 14
+    # explainer — full width, below the donut + legend
+    if expl:
+        ty = min(cur - 112, ly - 8)
+        c.setFont(FR, 6); c.setFillColor(HexColor('#6A4A58'))
+        cpl = max(1, int((w - 16) / (6 * 0.50)))
+        for ln in textwrap.wrap(expl, cpl):
+            if ty < cur - content + 8: break
+            c.drawString(x + 8, ty, ln); ty -= 9
+    else:
+        c.setFont(FR, 6); c.setFillColor(MUTED)
+        c.drawString(x + 8, cur - content + 8, tag)
+    return cur - content
+
+
+def _dv_expl_row(c, x0, y0, right, label, color, desc):
+    """Bold label + regular description with a hanging wrap. Returns bottom y."""
+    c.setFillColor(color); c.rect(x0, y0 - 6, 6, 6, fill=1, stroke=0)
+    tx = x0 + 12
+    c.setFont(FB, 7.5); c.setFillColor(color)
+    lead_txt = label + "  "
+    c.drawString(tx, y0, lead_txt)
+    penx = tx + c.stringWidth(lead_txt, FB, 7.5)
+    c.setFont(FR, 7.5); c.setFillColor(HexColor('#5A3A48'))
+    y, line, startx = y0, '', penx
+    for wd in str(desc).split():
+        test = (line + ' ' + wd).strip()
+        if c.stringWidth(test, FR, 7.5) + (startx - tx) > (right - tx):
+            c.drawString(startx, y, line); y -= 11; line = wd; startx = tx
+        else:
+            line = test
+    if line: c.drawString(startx, y, line)
+    return y - 13
+
+
+def _dv_donut_card(c, x, y_top, w, title, tag, segs, legend, expl_head, expl):
+    """Full-width donut card: donut + legend + colour-keyed explainer."""
+    CH = 250
+    total = sum(n for _, n in segs)
+    c.setFillColor(WHITE); c.rect(x, y_top - CH, w, CH, fill=1, stroke=0)
+    c.setStrokeColor(CBORD); c.setLineWidth(0.6); c.rect(x, y_top - CH, w, CH, fill=0, stroke=1)
+    c.setFillColor(BRAND); c.rect(x, y_top - 3, w, 3, fill=1, stroke=0)
+    c.setFont(FB, 11); c.setFillColor(HexColor('#180410'))
+    c.drawString(x + 14, y_top - 22, title)
+    c.setFont(FR, 7.5); c.setFillColor(MUTED)
+    c.drawRightString(x + w - 14, y_top - 22, tag)
+    c.setFillColor(CSEP); c.rect(x + 14, y_top - 30, w - 28, 0.5, fill=1, stroke=0)
+    _dv_donut(c, x + 82, y_top - 96, 44, 18, segs, total)
+    lx, ly = x + 150, y_top - 48
+    for label, color, n in legend:
+        pct = round(n / total * 100) if total else 0
+        c.setFillColor(color); c.rect(lx, ly - 7, 8, 8, fill=1, stroke=0)
+        c.setFont(FB, 8); c.setFillColor(HexColor('#180410')); c.drawString(lx + 13, ly - 6, label)
+        c.setFont(FR, 8); c.setFillColor(MUTED)
+        c.drawRightString(x + w - 46, ly - 6, str(n))
+        c.setFillColor(HexColor('#9A7A88')); c.drawRightString(x + w - 14, ly - 6, f"{pct}%")
+        ly -= 16
+    ey = y_top - 158
+    c.setFont(FB, 6.5); c.setFillColor(BRAND)
+    c.drawString(x + 14, ey, expl_head.upper())
+    ey -= 13
+    for label, color, desc in expl:
+        ey = _dv_expl_row(c, x + 14, ey, x + w - 14, label, color, desc)
+    return y_top - CH
+
+
 def page_double(c, brief, snap):
-    """2-page double-column brief — zero gaps, all sections filled."""
+    """2-page double-column brief — zero gaps, all sections filled.
+    The archetype + response-strategy donuts sit inline on page 2 (in place of
+    the old campus-pipeline and 7-week-trend blocks), so the brief stays 2 pages."""
     live_cases = fetch_live_cases(limit=6)
+    case_mix   = fetch_case_breakdowns()
 
     # Page 1
     _dv_hdr(c, brief, snap, 1)
     _dv_index(c, brief, snap)
+    _dv_donut_row(c, _P1_STRIP_BOT, case_mix)
     _dv_p1_left(c, brief, snap, live_cases)
     _dv_p1_right(c, brief, snap)
     _dv_ftr(c, 1)
@@ -2472,8 +2534,8 @@ def page_double(c, brief, snap):
     # Page 2
     _dv_hdr(c, brief, snap, 2)
     c.setFillColor(BRAND); c.rect(0, H-38, W, 2, fill=1, stroke=0)
-    _dv_p2_left(c, brief, snap)
-    _dv_p2_right(c, brief, snap)
+    _dv_p2_left(c, brief, snap, case_mix)
+    _dv_p2_right(c, brief, snap, case_mix)
     _dv_bottom_bar(c, brief, snap)
     _dv_ftr(c, 2)
     c.showPage()

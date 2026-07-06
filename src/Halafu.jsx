@@ -618,54 +618,6 @@ function FieldIntelligence({ open: openProp, onToggle } = {}) {
           <div style={{ padding:'16px 24px' }}>
             {/* Action buttons moved to top of the section for reachability */}
 
-          {previewOpen && (
-            <div
-              onClick={e => { e.stopPropagation(); setPreviewOpen(false) }}
-              style={{ position:'fixed', inset:0, zIndex:9999, background:'rgba(8,2,6,0.85)',
-                display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:16 }}>
-              <div onClick={e => e.stopPropagation()}
-                style={{ width:'100%', maxWidth:900, flex:1, minHeight:0, background:'#111827',
-                  display:'flex', flexDirection:'column', boxShadow:'0 20px 60px rgba(0,0,0,0.5)' }}>
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-                  gap:12, padding:'10px 14px', background:'#180410', borderBottom:'2px solid #8A1030' }}>
-                  <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
-                    letterSpacing:'.1em', textTransform:'uppercase', color:'#F0D0D8' }}>
-                    Intel Brief — Preview
-                  </span>
-                  <div style={{ display:'flex', gap:8 }}>
-                    <a href={BRIEF_URL} target="_blank" rel="noopener noreferrer"
-                      onClick={e => e.stopPropagation()}
-                      style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-                        padding:'6px 12px', background:'rgba(138,16,48,0.5)', color:'#fff',
-                        textDecoration:'none' }}>📄 Download</a>
-                    <button onClick={() => setPreviewOpen(false)}
-                      style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-                        padding:'6px 12px', background:'none', border:'1px solid rgba(240,208,216,0.4)',
-                        color:'#F0D0D8', cursor:'pointer' }}>✕ Close</button>
-                  </div>
-                </div>
-                {pdfState === 'loading' && (
-                  <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12,
-                    color:'#9aa3b8', textAlign:'center', padding:'10px' }}>Loading brief…</div>
-                )}
-                {pdfState === 'error' && (
-                  <div style={{ textAlign:'center', padding:'28px' }}>
-                    <a href={BRIEF_URL} download style={{ fontFamily:"'Nunito Sans',sans-serif",
-                      fontSize:11, fontWeight:700, padding:'8px 14px', background:'#8A1030',
-                      color:'#fff', textDecoration:'none', borderRadius:4 }}>⇓ Download PDF</a>
-                  </div>
-                )}
-                <iframe
-                  ref={pdfBoxRef}
-                  title="Intel Brief preview"
-                  src={BRIEF_URL}
-                  onLoad={() => setPdfState('done')}
-                  onError={() => setPdfState('error')}
-                  style={{ flex:1, width:'100%', border:'none', background:'#fff' }}/>
-              </div>
-            </div>
-          )}
-
           {syntheses.length === 0 ? (
               <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
                 color:'rgba(255,255,255,0.4)', fontStyle:'italic', margin:0 }}>
@@ -714,6 +666,54 @@ function FieldIntelligence({ open: openProp, onToggle } = {}) {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {previewOpen && (
+        <div
+          onClick={e => { e.stopPropagation(); setPreviewOpen(false) }}
+          style={{ position:'fixed', inset:0, zIndex:9999, background:'rgba(8,2,6,0.85)',
+            display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:16 }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ width:'100%', maxWidth:900, flex:1, minHeight:0, background:'#111827',
+              display:'flex', flexDirection:'column', boxShadow:'0 20px 60px rgba(0,0,0,0.5)' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+              gap:12, padding:'10px 14px', background:'#180410', borderBottom:'2px solid #8A1030' }}>
+              <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+                letterSpacing:'.1em', textTransform:'uppercase', color:'#F0D0D8' }}>
+                Intel Brief — Preview
+              </span>
+              <div style={{ display:'flex', gap:8 }}>
+                <a href={BRIEF_URL} target="_blank" rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                    padding:'6px 12px', background:'rgba(138,16,48,0.5)', color:'#fff',
+                    textDecoration:'none' }}>📄 Download</a>
+                <button onClick={() => setPreviewOpen(false)}
+                  style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                    padding:'6px 12px', background:'none', border:'1px solid rgba(240,208,216,0.4)',
+                    color:'#F0D0D8', cursor:'pointer' }}>✕ Close</button>
+              </div>
+            </div>
+            {pdfState === 'loading' && (
+              <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12,
+                color:'#9aa3b8', textAlign:'center', padding:'10px' }}>Loading brief…</div>
+            )}
+            {pdfState === 'error' && (
+              <div style={{ textAlign:'center', padding:'28px' }}>
+                <a href={BRIEF_URL} download style={{ fontFamily:"'Nunito Sans',sans-serif",
+                  fontSize:11, fontWeight:700, padding:'8px 14px', background:'#8A1030',
+                  color:'#fff', textDecoration:'none', borderRadius:4 }}>⇓ Download PDF</a>
+              </div>
+            )}
+            <iframe
+              ref={pdfBoxRef}
+              title="Intel Brief preview"
+              src={BRIEF_URL}
+              onLoad={() => setPdfState('done')}
+              onError={() => setPdfState('error')}
+              style={{ flex:1, width:'100%', border:'none', background:'#fff' }}/>
           </div>
         </div>
       )}
