@@ -1,0 +1,71 @@
+name: CI
+
+# Gate every push and PR: all apps must build, the Intel Brief PDF must render,
+# and the live DB schema must still match what the code queries. These catch the
+# classes of bug that previously shipped silently (build breaks, PDF layout
+# regressions, and renamed/missing columns).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    name: build (${{ matrix.app }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ['.', 'admin', 'saint', 'redflag']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install
+        working-directory: ${{ matrix.app }}
+        run: npm ci || npm install
+      - name: Build
+        working-directory: ${{ matrix.app }}
+        run: npm run build
+
+  lint:
+    name: lint (informational)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci || npm install
+      - name: ESLint (root)
+        run: npx eslint . || true
+
+  render-test:
+    name: Intel Brief render test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install reportlab requests pypdf
+      - name: Render brief from fixtures (2 pages, no exceptions)
+        run: python3 scripts/test_render_brief.py
+
+  schema-check:
+    name: DB schema contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests
+      - name: Verify tables + columns the code depends on still exist
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: python3 scripts/schema_check.py
