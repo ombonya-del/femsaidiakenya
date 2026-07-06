@@ -107,6 +107,39 @@ async function checkIntelBriefs(): Promise<Check> {
   return { name:"Intel Brief Production", ok:true, detail:`Newest brief ${daysAgo.toFixed(0)}d ago` }
 }
 
+async function checkSchemaContract(): Promise<Check> {
+  // The exact columns the Intel Brief pipeline + shared reads depend on. A
+  // renamed/dropped column makes PostgREST 400 the query — the failure that
+  // silently broke "Recorded Incidents" (it referenced a column that no longer
+  // existed). Catching it here means drift is flagged every 6h, not on a push.
+  const cols = "victim_name,county,location,incident_date,incident_type," +
+    "perpetrator_relationship,tech_facilitated,tech_platforms,source_url," +
+    "status,published,archetype,halafu_lane"
+  const { error } = await sb.from("femicide_cases").select(cols).limit(1)
+  if (error)
+    return { name:"Schema Contract (femicide_cases)", ok:false,
+      detail:`Column/schema drift: ${String(error.message).slice(0,140)}` }
+  return { name:"Schema Contract (femicide_cases)", ok:true, detail:"All pipeline columns present" }
+}
+
+async function checkLiveIncidents(): Promise<Check> {
+  // Mirrors the Intel Brief's fetch_live_cases exactly, so a broken incidents
+  // query surfaces here instead of as a wrong/stale PDF.
+  const { data, error } = await sb.from("femicide_cases")
+    .select("victim_name,incident_date")
+    .eq("published", true)
+    .order("incident_date", { ascending:false, nullsFirst:false })
+    .limit(6)
+  if (error)
+    return { name:"Intel Brief live incidents", ok:false,
+      detail:`Query failed: ${String(error.message).slice(0,120)}` }
+  if (!data || data.length === 0)
+    return { name:"Intel Brief live incidents", ok:false,
+      detail:"0 published cases — brief would show none" }
+  return { name:"Intel Brief live incidents", ok:true,
+    detail:`${data.length} rows; newest ${data[0].incident_date ?? "?"}` }
+}
+
 // ── CLAUDE DIAGNOSIS ──────────────────────────────────────────────────────────
 async function getClaudeDiagnosis(checks: Check[]): Promise<string> {
   const failures = checks.filter(c => !c.ok && !c.autoFixed)
@@ -350,12 +383,14 @@ async function sendEmailV3(checks: Check[], advisory: (Check & {fixCmd?:string})
 // ── MAIN ──────────────────────────────────────────────────────────────────────
 serve(async () => {
   try {
-    const [sites, femicide, intel, subs, responders] = await Promise.all([
+    const [sites, femicide, intel, subs, responders, schema, liveInc] = await Promise.all([
       checkSites(),
       checkFemicideCases(),
       checkIntelBriefs(),
       checkPushSubscriptions(),
       checkResponders(),
+      checkSchemaContract(),
+      checkLiveIncidents(),
     ])
     const rss       = await checkRssScanner()
     const synthesis = await checkSaintSynthesis()
@@ -368,7 +403,7 @@ serve(async () => {
       checkHepaTimerWiring(),
     ])
 
-    const all      = [...sites, rss, synthesis, subs, responders, femicide, intel]
+    const all      = [...sites, rss, synthesis, subs, responders, femicide, intel, schema, liveInc]
     const advisory = [vapid, resend, anthropic, hepaWiring]
     const diagnosis = await getClaudeDiagnosis(all)
     await sendEmailV3(all, advisory, diagnosis)
