@@ -1,10 +1,29 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 
-const sb = createClient(
-  'https://uuluuhltphgwfblcghlp.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bHV1aGx0cGhnd2ZibGNnaGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MjI2NDAsImV4cCI6MjA5MzQ5ODY0MH0.KU_wtm0NVUz8vrMqgozPvTlmiCIf_yXP8Z3Gpmh599E'
-)
+const SUPABASE_URL = 'https://uuluuhltphgwfblcghlp.supabase.co'
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bHV1aGx0cGhnd2ZibGNnaGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MjI2NDAsImV4cCI6MjA5MzQ5ODY0MH0.KU_wtm0NVUz8vrMqgozPvTlmiCIf_yXP8Z3Gpmh599E'
+const sb = createClient(SUPABASE_URL, ANON_KEY)
+
+// Reads of the `responders` table go through the itika-auth edge function
+// (service role) because the table is locked to the anon key. The function
+// returns only the single matching record, so the table can't be enumerated.
+const AUTH_FN = `${SUPABASE_URL}/functions/v1/itika-auth`
+async function responderAuth(action, payload) {
+  try {
+    const r = await fetch(AUTH_FN, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json',
+                 'Authorization': `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
+      body: JSON.stringify({ action, ...payload }),
+    })
+    const j = await r.json().catch(() => ({}))
+    if (!r.ok) return { data: null, error: j.error || `HTTP ${r.status}` }
+    return { data: j.responder || null, error: null }
+  } catch (e) {
+    return { data: null, error: String(e) }
+  }
+}
 
 // ── PALETTE ──────────────────────────────────────────────────────────────────
 const BG   = '#071A0F'
@@ -674,8 +693,7 @@ function LoginScreen({ onLogin, onRegister }) {
     if(!phone.trim()) return
     setLoading(true); setError('')
     const clean = phone.trim().replace(/\s/g,'')
-    const { data, error } = await sb.from('responders')
-      .select('*').eq('phone', clean).single()
+    const { data, error } = await responderAuth('login', { phone: clean })
     if (error || !data) {
       setError('Phone number not found. Please register first or check your number.')
       setLoading(false); return
@@ -759,12 +777,11 @@ export default function App() {
       try {
         const r = JSON.parse(saved)
         // Refresh from DB
-        sb.from('responders').select('*').eq('id', r.id).single()
+        responderAuth('restore', { id: r.id })
           .then(({data}) => {
+            if (!data) { localStorage.removeItem('itika_responder'); return }
             setResponder(data)
             setScreen('dashboard')
-            if ('Notification' in window && Notification.permission === 'granted') {
-            }
           })
       } catch(e) {}
     }
