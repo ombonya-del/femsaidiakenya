@@ -101,6 +101,13 @@ function Dashboard({ session }) {
   const [alerts, setAlerts] = useState([])
   const [pushState, setPushState] = useState('idle')
   const [busy, setBusy] = useState(null)
+  const [authorized, setAuthorized] = useState(null)
+
+  // Gate the UI to allowlisted coordinators. RLS is the hard gate; this is UX.
+  // Fail-open if the helper isn't deployed yet (error) — RLS still governs data.
+  useEffect(() => {
+    sb.rpc('is_coordinator').then(({ data, error }) => setAuthorized(error ? true : !!data))
+  }, [])
 
   const load = () => {
     sb.from('responders').select('*').order('created_at',{ascending:false})
@@ -168,6 +175,21 @@ function Dashboard({ session }) {
 
   const pending = responders.filter(r => !r.verified || !r.active)
   const active  = responders.filter(r => r.verified && r.active)
+
+  if (authorized === false) return (
+    <div style={{ minHeight:'100vh', background:BG, color:TXT, fontFamily:font,
+      display:'flex', alignItems:'center', justifyContent:'center', padding:24, textAlign:'center' }}>
+      <div style={{ maxWidth:340 }}>
+        <div style={{ fontSize:40, marginBottom:14 }}>🔒</div>
+        <h2 style={{ fontFamily:serif, fontSize:22, fontWeight:700, marginBottom:8 }}>Not authorised</h2>
+        <p style={{ fontSize:13, color:MUT, lineHeight:1.7, marginBottom:20 }}>
+          <strong>{session.user?.email}</strong> isn't on the coordinator allowlist. Ask an existing coordinator to add you.
+        </p>
+        <button onClick={()=>sb.auth.signOut()} style={{ padding:'10px 18px', background:'none',
+          border:`1px solid ${BD}`, color:MUT, fontSize:12, fontWeight:700, cursor:'pointer' }}>Sign out</button>
+      </div>
+    </div>
+  )
 
   return (
     <div style={{ minHeight:'100vh', background:BG, color:TXT, fontFamily:font, paddingBottom:40 }}>
