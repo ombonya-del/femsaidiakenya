@@ -140,6 +140,22 @@ async function checkLiveIncidents(): Promise<Check> {
     detail:`${data.length} rows; newest ${data[0].incident_date ?? "?"}` }
 }
 
+async function checkAdminPushSubs(): Promise<Check> {
+  // The Itika loop notifies admins on new registrations + responders en route.
+  // Those go to the "itika_admins" push group. If every admin device's
+  // subscription has expired (or none ever subscribed), registrations would
+  // silently go unseen — so page if the group is empty.
+  const { count, error } = await sb.from("push_subscriptions")
+    .select("id", { count: "exact", head: true })
+    .eq("subscription_group", "itika_admins")
+  if (error)
+    return { name:"Itika admin push", ok:false, detail:`Query failed: ${String(error.message).slice(0,120)}` }
+  if ((count ?? 0) === 0)
+    return { name:"Itika admin push", ok:false,
+      detail:"No admin devices subscribed — new-responder / en-route alerts have nowhere to go. An admin must open the admin app and tap 'Enable admin alerts'." }
+  return { name:"Itika admin push", ok:true, detail:`${count} admin device(s) subscribed` }
+}
+
 // ── CLAUDE DIAGNOSIS ──────────────────────────────────────────────────────────
 async function getClaudeDiagnosis(checks: Check[]): Promise<string> {
   const failures = checks.filter(c => !c.ok && !c.autoFixed)
@@ -383,7 +399,7 @@ async function sendEmailV3(checks: Check[], advisory: (Check & {fixCmd?:string})
 // ── MAIN ──────────────────────────────────────────────────────────────────────
 serve(async () => {
   try {
-    const [sites, femicide, intel, subs, responders, schema, liveInc] = await Promise.all([
+    const [sites, femicide, intel, subs, responders, schema, liveInc, adminPush] = await Promise.all([
       checkSites(),
       checkFemicideCases(),
       checkIntelBriefs(),
@@ -391,6 +407,7 @@ serve(async () => {
       checkResponders(),
       checkSchemaContract(),
       checkLiveIncidents(),
+      checkAdminPushSubs(),
     ])
     const rss       = await checkRssScanner()
     const synthesis = await checkSaintSynthesis()
@@ -403,7 +420,7 @@ serve(async () => {
       checkHepaTimerWiring(),
     ])
 
-    const all      = [...sites, rss, synthesis, subs, responders, femicide, intel, schema, liveInc]
+    const all      = [...sites, rss, synthesis, subs, responders, femicide, intel, schema, liveInc, adminPush]
     const advisory = [vapid, resend, anthropic, hepaWiring]
     const diagnosis = await getClaudeDiagnosis(all)
     await sendEmailV3(all, advisory, diagnosis)

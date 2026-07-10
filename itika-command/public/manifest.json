@@ -1,0 +1,16 @@
+{
+  "name": "Itika Command",
+  "short_name": "Command",
+  "description": "FemSaidia Kenya — Itika responder dispatch & coordination",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0A2A1A",
+  "background_color": "#071A0F",
+  "categories": ["utilities"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
