@@ -27,7 +27,13 @@ begin
 end $$;
 
 alter table public.responders enable row level security;
+-- public registration (itika) inserts:
 create policy responders_anon_insert on public.responders
   for insert to anon, authenticated with check (true);
+-- signed-in admin (OTP session) can list, verify/activate (update) and delete:
 create policy responders_admin_select on public.responders
   for select to authenticated using (true);
+create policy responders_admin_update on public.responders
+  for update to authenticated using (true) with check (true);
+create policy responders_admin_delete on public.responders
+  for delete to authenticated using (true);
