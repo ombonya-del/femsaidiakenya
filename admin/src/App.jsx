@@ -2726,6 +2726,7 @@ function RespondersTab() {
   const [editing,    setEditing]    = useState(null)
   const [editData,   setEditData]   = useState({})
   const [activeTab,  setActiveTab]  = useState('responders')
+  const [pushState,  setPushState]  = useState('idle')
 
   const load = () => {
     setLoading(true)
@@ -2754,7 +2755,47 @@ function RespondersTab() {
 
   const update = async (id, updates) => {
     await supabase.from('responders').update(updates).eq('id',id)
+    // When the admin activates a responder, notify that responder.
+    if (updates.active === true) {
+      fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json',
+                   'Authorization': `Bearer ${SUPABASE_KEY}`, apikey: SUPABASE_KEY },
+        body: JSON.stringify({
+          responder_id: id,
+          title: "You're activated on Itika",
+          body: "Your responder account is active — you'll now receive alerts in your county.",
+          tag: 'itika',
+        }),
+      }).catch(() => {})
+    }
     load(); setEditing(null)
+  }
+
+  // Subscribe THIS admin device to push (group 'itika_admins') so it receives
+  // new-registration and responder-en-route notifications.
+  const enableAdminAlerts = async () => {
+    try {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) { setPushState('unsupported'); return }
+      setPushState('working')
+      const perm = await Notification.requestPermission()
+      if (perm !== 'granted') { setPushState('denied'); return }
+      const reg = await navigator.serviceWorker.register('/sw.js')
+      await navigator.serviceWorker.ready
+      let sub = await reg.pushManager.getSubscription()
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: 'BOcENhE48dHNQuPWaxsV1rvT_vH7HwRAO6u_CThCP1068nWP5MvDYwQeI43yhEnq6x7SgdpR4mxXqTwPXfYPau0',
+        })
+      }
+      const j = sub.toJSON()
+      const { error } = await supabase.from('push_subscriptions').upsert({
+        endpoint: j.endpoint, p256dh: j.keys?.p256dh, auth: j.keys?.auth,
+        county: null, subscription_group: 'itika_admins', responder_id: null,
+      }, { onConflict: 'endpoint' })
+      setPushState(error ? 'error' : 'enabled')
+    } catch (e) { setPushState('error') }
   }
 
   const counts = {
@@ -2789,6 +2830,25 @@ function RespondersTab() {
         </h2>
         <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT}}>
           Verify, activate and manage responders. Monitor alerts and responses across all counties.
+        </p>
+      </div>
+
+      {/* Enable push on this admin device */}
+      <div style={{marginBottom:16}}>
+        <button onClick={enableAdminAlerts} disabled={pushState==='working'||pushState==='enabled'}
+          style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,
+            padding:'8px 16px',border:`1px solid ${A}`,
+            cursor: pushState==='enabled'?'default':'pointer',
+            background: pushState==='enabled'?'#1A5A2A':CRD, color: pushState==='enabled'?'#fff':A}}>
+          {pushState==='enabled' ? '🔔 Alerts enabled on this device'
+            : pushState==='working' ? 'Enabling…'
+            : pushState==='denied' ? '🔕 Blocked — allow notifications in your browser'
+            : pushState==='unsupported' ? 'Push not supported on this browser'
+            : pushState==='error' ? '⚠ Failed — tap to retry'
+            : '🔔 Enable admin alerts on this device'}
+        </button>
+        <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT,marginTop:6}}>
+          Get a push when a new responder registers or a responder heads to an alert. Enable on each device you use.
         </p>
       </div>
 

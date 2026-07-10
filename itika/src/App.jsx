@@ -25,6 +25,16 @@ async function responderAuth(action, payload) {
   }
 }
 
+// Fire-and-forget push notification via the send-push function.
+function notifyPush(payload) {
+  return fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json',
+               'Authorization': `Bearer ${ANON_KEY}`, apikey: ANON_KEY },
+    body: JSON.stringify(payload),
+  }).catch(() => {})
+}
+
 // ── PALETTE ──────────────────────────────────────────────────────────────────
 const BG   = '#071A0F'
 const SURF = '#0A2A1A'
@@ -92,6 +102,10 @@ function RegisterScreen({ onDone }) {
       verified: false,
       active:   false,
     }])
+    // Notify admins to verify + activate the new responder
+    notifyPush({ group: 'itika_admins', title: 'New Itika responder',
+      body: `${form.full_name} registered in ${form.county} — verify to activate.`,
+      tag: 'itika-admin' })
     setSending(false)
     setDone(true)
     // User must tap 'Enable' or 'Skip' to proceed
@@ -305,14 +319,13 @@ async function subscribeToPush(responder) {
     // Reuse existing subscription — don't unsubscribe (leaves orphaned DB entries)
     let sub = await reg.pushManager.getSubscription()
     if (!sub) {
-
-    const vapidKey = 'BOcENhE48dHNQuPWaxsV1rvT_vH7HwRAO6u_CThCP1068nWP5MvDYwQeI43yhEnq6x7SgdpR4mxXqTwPXfYPau0'
-    if (!vapidKey) return
-
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: vapidKey,
-    })
+      // NOTE: assign the OUTER `sub` (previously a shadowing `const sub` here
+      // meant new responders never actually got subscribed).
+      const vapidKey = 'BOcENhE48dHNQuPWaxsV1rvT_vH7HwRAO6u_CThCP1068nWP5MvDYwQeI43yhEnq6x7SgdpR4mxXqTwPXfYPau0'
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: vapidKey,
+      })
     }
     console.log('Subscription created:', sub.endpoint?.slice(0,40))
 
@@ -352,6 +365,12 @@ function AlertCard({ alert, responder, onRespond }) {
       accepted_at:  status==='accepted' ? new Date().toISOString() : null,
     }])
     await sb.from('responder_alerts').update({status:'responded'}).eq('id',alert.id)
+    // Notify admins that a responder is on it (closes the loop)
+    if (status === 'accepted') {
+      notifyPush({ group: 'itika_admins', title: 'Responder en route',
+        body: `${responder.full_name} is responding to an alert in ${responder.county}.`,
+        tag: 'itika-admin' })
+    }
     setResponding(false)
     onRespond()
   }

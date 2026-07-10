@@ -1,4 +1,4 @@
-const CACHE = "itika-v5"
+const CACHE = "itika-v6"
 const SHELL = ["/", "/index.html"]
 
 self.addEventListener("install", e => {
@@ -23,12 +23,25 @@ self.addEventListener("fetch", e => {
 })
 
 self.addEventListener("push", event => {
-  event.waitUntil(
-    self.registration.showNotification("EMERGENCY ALERT - Itika", {
-      body: "An emergency has been reported in your county. Open Itika NOW to respond.",
-      tag: "itika-alert"
-    })
-  )
+  // Default to the emergency-alert message (back-compat with the old "ALERT"
+  // string payload); override with the real title/body when send-push provides
+  // structured JSON (registration / activation / response notifications).
+  let n = {
+    title: "EMERGENCY ALERT - Itika",
+    body: "An emergency has been reported in your county. Open Itika NOW to respond.",
+    tag: "itika-alert",
+  }
+  try {
+    if (event.data) {
+      const d = event.data.json()
+      if (d && (d.title || d.body)) {
+        n = { title: d.title || n.title, body: d.body || n.body, tag: d.tag || "itika" }
+      }
+    }
+  } catch (_) {
+    // payload was not JSON — keep the emergency default
+  }
+  event.waitUntil(self.registration.showNotification(n.title, { body: n.body, tag: n.tag }))
 })
 
 self.addEventListener("notificationclick", event => {
