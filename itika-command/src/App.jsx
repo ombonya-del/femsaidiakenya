@@ -108,6 +108,16 @@ function Dashboard({ session }) {
     sb.from('responder_alerts').select('*').order('created_at',{ascending:false}).limit(15)
       .then(({ data }) => setAlerts(data || []))
   }
+  // Reflect an existing push subscription on load, so a refresh doesn't reset
+  // the button to "Enable…" when this device is already subscribed.
+  useEffect(() => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+    navigator.serviceWorker.getRegistration()
+      .then(reg => reg?.pushManager?.getSubscription())
+      .then(s => { if (s) setPushState('enabled') })
+      .catch(() => {})
+  }, [])
+
   useEffect(() => {
     load()
     const i = setInterval(load, 20000)
@@ -146,8 +156,13 @@ function Dashboard({ session }) {
   const reject = async (r) => {
     if (!window.confirm(`Remove ${r.full_name}? This deletes their registration.`)) return
     setBusy(r.id)
+    // Clear child rows first (foreign keys) then the responder, or the delete
+    // is blocked for anyone who has already responded to alerts.
+    await sb.from('responder_responses').delete().eq('responder_id', r.id)
+    await sb.from('responder_alerts').delete().eq('responder_id', r.id)
     await sb.from('push_subscriptions').delete().eq('responder_id', r.id)
-    await sb.from('responders').delete().eq('id', r.id)
+    const { error } = await sb.from('responders').delete().eq('id', r.id)
+    if (error) alert('Remove failed: ' + error.message)
     setBusy(null); load()
   }
 

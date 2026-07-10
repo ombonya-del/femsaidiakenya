@@ -43,3 +43,5 @@ create policy push_anon_update on public.push_subscriptions
   for update to anon, authenticated using (true) with check (true);
 create policy push_admin_select on public.push_subscriptions
   for select to authenticated using (true);
+create policy push_admin_delete on public.push_subscriptions
+  for delete to authenticated using (true);
