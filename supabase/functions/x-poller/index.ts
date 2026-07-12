@@ -5,6 +5,9 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 )
 const BEARER = Deno.env.get('X_BEARER_TOKEN') ?? ''
+// Curated X List (the "Femsaidiakenya" list) — the automatable equivalent of a
+// bookmark folder. Set X_LIST_FEMSAIDIA to the numeric list id to activate.
+const LIST_ID = Deno.env.get('X_LIST_FEMSAIDIA') ?? ''
 
 // ── HANDLES — existing advocacy accounts + NEW: Kibe ─────────────────────────
 const HANDLES = [
@@ -84,6 +87,45 @@ async function pollHandle(handle: string) {
       const motdScore = isKibe ? 8 : 5
       await maybeInsertMOTD(text, handle, 'https://x.com/' + handle + '/status/' + tweet.id, motdScore)
     }
+  }
+  return results
+}
+
+// ── FETCH FROM A CURATED LIST (bookmark-folder equivalent) — NEW ─────────────
+async function pollList(listId: string) {
+  const results = { fetched:0, relevant:0, inserted:0 }
+  const url = `https://api.twitter.com/2/lists/${listId}/tweets?max_results=25&tweet.fields=created_at,text,author_id&expansions=author_id&user.fields=username`
+  const res = await fetch(url, { headers: { 'Authorization': `Bearer ${BEARER}` } })
+  if (!res.ok) { console.error(`list ${listId}: ${res.status}`); return results }
+  const data = await res.json()
+  const tweets = data.data || []
+  const users: Record<string,string> = {}
+  ;(data.includes?.users || []).forEach((u: any) => { users[u.id] = u.username })
+  results.fetched += tweets.length
+  for (const tweet of tweets) {
+    const text = tweet.text || ''
+    const handle = users[tweet.author_id] || 'list'
+    const isKibe = ['kibeandy','amerix'].includes(handle.toLowerCase())
+    // List items are hand-curated, so keep everything relevant (looser than handles)
+    if (!isKibe && !KEYWORDS.some(k => text.toLowerCase().includes(k))) continue
+    results.relevant++
+    const link = `https://x.com/${handle}/status/${tweet.id}`
+    const { error } = await supabase.from('sentiment_articles').upsert({
+      source_name:      `X list / @${handle}`,
+      article_title:    text.slice(0,200),
+      article_snippet:  text,
+      article_url:      link,
+      platform:         'x',
+      content_type:     'social_post',
+      scanned_at:       tweet.created_at || new Date().toISOString(),
+      gbv_relevance:    isKibe ? 8 : 7,
+      misogyny_score:   isKibe ? 8 : 5,
+      sentiment:        isKibe ? 'alarming' : 'negative',
+      is_kibe_related:  isKibe,
+      is_protest:       false,
+      content_category: isKibe ? 'manosphere' : 'gbv',
+    }, { onConflict: 'article_url' })
+    if (!error) { results.inserted++; await maybeInsertMOTD(text, handle, link, isKibe ? 8 : 5) }
   }
   return results
 }
@@ -188,8 +230,14 @@ Deno.serve(async (req: Request) => {
       await new Promise(r=>setTimeout(r,1200))
     }
 
+    // Curated "Femsaidiakenya" List (bookmark-folder equivalent) — NEW
+    if (LIST_ID) {
+      const r = await pollList(LIST_ID)
+      totals.fetched += r.fetched; totals.relevant += r.relevant; totals.inserted += r.inserted
+    }
+
     console.log(`Poller v2: ${JSON.stringify(totals)}`)
-    return new Response(JSON.stringify({ success:true, ...totals }), { status:200 })
+    return new Response(JSON.stringify({ success:true, list: !!LIST_ID, ...totals }), { status:200 })
   } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), { status:500 })
   }
