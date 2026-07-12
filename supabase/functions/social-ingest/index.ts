@@ -51,7 +51,7 @@ ${item.article_snippet}
 
 Return only JSON.`
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', { method:'POST', headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_KEY,'anthropic-version':'2023-06-01'}, body:JSON.stringify({ model:'claude-opus-4-6', max_tokens:400, messages:[{role:'user',content:prompt}] }) })
+    const res = await fetch('https://api.anthropic.com/v1/messages', { method:'POST', headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_KEY,'anthropic-version':'2023-06-01'}, body:JSON.stringify({ model:'claude-opus-4-8', max_tokens:400, messages:[{role:'user',content:prompt}] }) })
     const data = await res.json()
     const text = data.content?.[0]?.text || '{}'
     return JSON.parse(text.replace(/```json|```/g,'').trim())

@@ -116,7 +116,7 @@ export default function KenyaCountyMap({ countyCounts = {} }) {
           onMouseLeave={() => setHovered(null)}>
           {Object.entries(counties).map(([name, county]) => {
             const liveCount = countyCounts[name] || countyCounts[name+' County'] || 0
-            const count = Math.max(liveCount, BASELINE[name] || 0)
+            const count = liveCount + (BASELINE[name] || 0)  // combined burden, so verified cases always move the map
             const risk  = getRisk(count)
             const d     = geom2path(county.geom)
             if(!d) return null
@@ -139,7 +139,7 @@ export default function KenyaCountyMap({ countyCounts = {} }) {
           {hovered && counties[hovered] && (() => {
             const liveCount = countyCounts[hovered] || countyCounts[hovered+' County'] || 0
             const historical = BASELINE[hovered] || 0
-            const total = Math.max(liveCount, historical)
+            const total = liveCount + historical
             const risk  = getRisk(total)
             const tx    = Math.min(Math.max(tooltip.x, 80), 400)
             const ty    = tooltip.y > 300 ? tooltip.y - 110 : tooltip.y + 12

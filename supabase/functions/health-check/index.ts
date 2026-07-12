@@ -54,14 +54,29 @@ async function checkSites(): Promise<Check[]> {
 async function checkRssScanner(): Promise<Check> {
   const { data } = await sb.from("sentiment_articles")
     .select("scanned_at").order("scanned_at",{ascending:false}).limit(1)
-  if (!data?.[0]) return { name:"RSS Scanner", ok:false, detail:"No articles found" }
-  const hoursAgo = (Date.now() - new Date(data[0].scanned_at).getTime()) / 3600000
+  const hoursAgo = data?.[0] ? (Date.now() - new Date(data[0].scanned_at).getTime()) / 3600000 : Infinity
   if (hoursAgo < 8) return { name:"RSS Scanner", ok:true, detail:`Last scan: ${hoursAgo.toFixed(1)}h ago` }
-  // Auto-fix: trigger scanner
-  console.log("RSS Scanner stale — auto-triggering...")
-  const fixed = await triggerFunction("rss-scanner")
-  return { name:"RSS Scanner", ok:fixed, autoFixed:fixed,
-    detail: fixed ? `Auto-fixed: triggered scan (was ${hoursAgo.toFixed(1)}h stale)` : `Still stale after retry (${hoursAgo.toFixed(1)}h ago)` }
+
+  // Stale — actually RUN the scanner and read what it did, rather than trusting a
+  // bare HTTP 200 (which hid the failure: it "remediated" while nothing landed).
+  console.log("RSS Scanner stale — auto-triggering and inspecting result...")
+  const staleMsg = data?.[0] ? `was ${hoursAgo.toFixed(1)}h stale` : "no articles yet"
+  let res: any = null
+  try {
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/rss-scanner`, {
+      method:"POST", headers:{ "Content-Type":"application/json", "Authorization":`Bearer ${ANON_KEY}` },
+      body:"{}", signal:AbortSignal.timeout(55000),
+    })
+    res = await r.json().catch(() => ({}))
+    if (!r.ok) return { name:"RSS Scanner", ok:false, detail:`Scan failed: HTTP ${r.status}${res?.error ? ` — ${String(res.error).slice(0,80)}` : ""} (${staleMsg})` }
+  } catch (e) {
+    return { name:"RSS Scanner", ok:false, detail:`Scan trigger failed: ${String(e).slice(0,60)} (${staleMsg})` }
+  }
+  const inserted = res?.inserted ?? 0, total = res?.total ?? 0, fresh = res?.new ?? res?.fresh ?? 0
+  if (inserted > 0) return { name:"RSS Scanner", ok:true, autoFixed:true, detail:`Auto-fixed: inserted ${inserted} new article(s) (${staleMsg})` }
+  if (total === 0)  return { name:"RSS Scanner", ok:false, detail:`Ran but feeds returned 0 items — feeds likely blocked/changed (${staleMsg})` }
+  if (fresh === 0)  return { name:"RSS Scanner", ok:true, detail:`Ran: ${total} fetched, nothing new since last scan (${staleMsg})` }
+  return { name:"RSS Scanner", ok:false, detail:`Ran: ${total} fetched, ${fresh} new, but 0 inserted — classifier/threshold issue (${staleMsg})` }
 }
 
 async function checkSaintSynthesis(): Promise<Check> {
@@ -169,7 +184,7 @@ Write exactly 2 sentences: first, a plain-English diagnosis of what likely went 
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "Content-Type":"application/json", "x-api-key":ANTHROPIC_KEY, "anthropic-version":"2023-06-01" },
-      body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:200, messages:[{role:"user",content:prompt}] })
+      body: JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:200, messages:[{role:"user",content:prompt}] })
     })
     const d = await r.json()
     return d.content?.[0]?.text ?? ""

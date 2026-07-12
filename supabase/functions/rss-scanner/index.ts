@@ -103,9 +103,6 @@ const FEEDS = [
   'https://news.google.com/rss/search?q=Andrew+Kibe+Kenya&hl=en-KE&gl=KE&ceid=KE:en',
   'https://news.google.com/rss/search?q=BBC+Manosphere+Messiahs+Kibe&hl=en&gl=KE&ceid=KE:en',
   'https://news.google.com/rss/search?q=%2228+Commandments%22+Kibe+Kenya&hl=en-KE&gl=KE&ceid=KE:en',
-  // Protests / community events
-  'https://news.google.com/rss/search?q=Kenya+femicide+march+protest+2026&hl=en-KE&gl=KE&ceid=KE:en',
-  'https://news.google.com/rss/search?q=Nairobi+femicide+march+women&hl=en-KE&gl=KE&ceid=KE:en',
   // Campus / university
   'https://news.google.com/rss/search?q=Kenya+university+student+killed+campus&hl=en-KE&gl=KE&ceid=KE:en',
   // Direct news sources
@@ -320,9 +317,14 @@ Return ONLY the JSON array.`
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type':'application/json','x-api-key':ANTHROPIC_KEY,'anthropic-version':'2023-06-01' },
-      body: JSON.stringify({ model:'claude-opus-4-6', max_tokens:2500, messages:[{role:'user',content:prompt}] })
+      body: JSON.stringify({ model:'claude-opus-4-8', max_tokens:2500, messages:[{role:'user',content:prompt}] })
     })
     const data = await res.json()
+    // If the model call errored (bad model, rate limit, quota), there is no
+    // `content`. Throw so we hit the catch below and fall back to PASSING default
+    // scores — otherwise every item silently scores 0 and gets filtered out,
+    // freezing the pipeline (the exact "stale for days" failure).
+    if (!res.ok || !data.content) throw new Error(data?.error?.message || `Anthropic HTTP ${res.status}`)
     const text = data.content?.[0]?.text || '[]'
     const scores = JSON.parse(text.replace(/```json|```/g,'').trim())
     return articles.map((a,i) => {
@@ -473,9 +475,12 @@ Deno.serve(async (req: Request) => {
       if (i + 8 < toClassify.length) await new Promise(r => setTimeout(r, 400))
     }
 
-    // 6. Insert qualifying articles
+    // 6. Insert qualifying articles.
+    //    Protests/marches/vigils are excluded — they're the response, not the harm,
+    //    and were repetitive/redundant in the feed.
     const toInsert = classified
-      .filter(a => a.gbv_relevance >= 4 || a.misogyny_score >= 5 || a.is_kibe_related || a.is_protest || a.content_category === 'manosphere')
+      .filter(a => !(a.is_protest || a.content_category === 'protest'))
+      .filter(a => a.gbv_relevance >= 4 || a.misogyny_score >= 5 || a.is_kibe_related || a.content_category === 'manosphere')
       .map(a => ({
         source_name:a.source, channel_name:a.source, source_url:a.url, article_url:a.url,
         article_title:stripHtml(a.title), article_snippet:stripHtml((a.snippet||'').slice(0,500)),

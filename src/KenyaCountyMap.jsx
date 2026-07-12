@@ -133,7 +133,10 @@ export default function KenyaCountyMap({ countyCounts = {} }) {
           onMouseLeave={() => setHovered(null)}>
           {Object.entries(counties).sort((a,b)=>geomArea(b[1].geom)-geomArea(a[1].geom)).map(([name, county]) => {
             const liveCount = countyCounts[name] || countyCounts[name+' County'] || 0
-            const count = Math.max(liveCount, BASELINE[name] || 0)
+            // Combined burden: historical register + verified DB. Using a SUM (not
+            // max) means every new verified case moves the county's risk, instead of
+            // being masked whenever the 12-year historical figure is higher.
+            const count = liveCount + (BASELINE[name] || 0)
             const risk  = getRisk(count)
             const d     = geom2path(county.geom)
             if(!d) return null
@@ -156,13 +159,13 @@ export default function KenyaCountyMap({ countyCounts = {} }) {
           {hovered && counties[hovered] && (() => {
             const liveCount = countyCounts[hovered] || countyCounts[hovered+' County'] || 0
             const historical = BASELINE[hovered] || 0
-            const total = Math.max(liveCount, historical)
+            const total = liveCount + historical
             const risk  = getRisk(total)
             const tx    = Math.min(Math.max(tooltip.x, 80), 400)
             const ty    = tooltip.y > 300 ? tooltip.y - 110 : tooltip.y + 12
             return (
               <g pointerEvents="none">
-                <rect x={tx-80} y={ty} width={180} height={100} fill="#180410" rx="2"/>
+                <rect x={tx-80} y={ty} width={180} height={108} fill="#180410" rx="2"/>
                 <text x={tx+10} y={ty+16} textAnchor="middle" fontFamily="'Lora',serif"
                   fontSize="13" fontWeight="700" fill="#fff">{hovered}</text>
                 <rect x={tx-78} y={ty+22} width={176} height={1} fill="rgba(255,255,255,0.15)"/>
@@ -175,11 +178,13 @@ export default function KenyaCountyMap({ countyCounts = {} }) {
                   fontSize="9" fill="rgba(255,255,255,0.5)">VERIFIED (2024–2026)</text>
                 <text x={tx+85} y={ty+56} textAnchor="end" fontFamily="'Lora',serif"
                   fontSize="12" fontWeight="700" fill="#90E870">{liveCount} cases</text>
-                <rect x={tx-78} y={ty+64} width={176} height={1} fill="rgba(255,255,255,0.1)"/>
-                <text x={tx-70} y={ty+76} fontFamily="'Nunito Sans',sans-serif"
-                  fontSize="8" fill="rgba(255,255,255,0.35)" fontStyle="italic">Historical: media, CSOs, court records</text>
-                <text x={tx-70} y={ty+87} fontFamily="'Nunito Sans',sans-serif"
-                  fontSize="8" fill="rgba(255,255,255,0.35)" fontStyle="italic">Current: FemSaidia Kenya verified DB</text>
+                <rect x={tx-78} y={ty+64} width={176} height={1} fill="rgba(255,255,255,0.25)"/>
+                <text x={tx-70} y={ty+78} fontFamily="'Nunito Sans',sans-serif"
+                  fontSize="9" fontWeight="800" fill="#fff">COMBINED (drives risk)</text>
+                <text x={tx+85} y={ty+78} textAnchor="end" fontFamily="'Lora',serif"
+                  fontSize="12" fontWeight="800" fill="#FFD9A0">{total} cases</text>
+                <text x={tx-70} y={ty+94} fontFamily="'Nunito Sans',sans-serif"
+                  fontSize="7.5" fill="rgba(255,255,255,0.35)" fontStyle="italic">Historical media/court + verified DB</text>
               </g>
             )
           })()}
