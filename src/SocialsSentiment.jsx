@@ -633,7 +633,6 @@ export default function SocialsSentimentTab() {
               const recentHL = sorted.slice(1, 8)
 
               const HighlightCard = ({h, featured}) => {
-                const [showSrc, setShowSrc] = useState(false)
                 const srcUrl   = h.embed_url || h.source_url
                 const isImg    = h.media_url && h.media_url.length > 0 && h.media_type === 'image'
                 const isVid    = h.media_url && h.media_url.length > 0 && h.media_type === 'video'
@@ -665,36 +664,29 @@ export default function SocialsSentimentTab() {
                     <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
                       color:A, marginTop:8, lineHeight:1.6 }}>↳ {h.context}</p>
                   )}
-                  {/* Compact actions — keep the card short; the heavy embed is opt-in */}
-                  <div style={{ display:'flex', alignItems:'center', gap:14, marginTop:10, flexWrap:'wrap' }}>
-                    {srcUrl && (
+                  {/* Source link kept visible */}
+                  {srcUrl && (
+                    <div style={{ marginTop:10 }}>
                       <a href={srcUrl} target="_blank" rel="noopener noreferrer"
                         style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
                           letterSpacing:'.04em', color:A, textDecoration:'none', overflowWrap:'anywhere' }}>
                         {isTT ? '▶ View on TikTok →' : isYT ? '▶ Watch →' : '🔗 View original →'}
                       </a>
-                    )}
-                    {canEmbed && (
-                      <button onClick={() => setShowSrc(v => !v)}
-                        style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
-                          letterSpacing:'.04em', textTransform:'uppercase', color:MUT,
-                          background:'none', border:'none', cursor:'pointer', padding:0 }}>
-                        {showSrc ? '▲ Hide original post' : '▸ Show original post'}
-                      </button>
-                    )}
-                  </div>
-                  {showSrc && (
-                    <>
+                    </div>
+                  )}
+                  {/* Original post — shown inline, height-capped so the column stays compact */}
+                  {canEmbed && (
+                    <div style={{ marginTop:10, maxHeight: featured?480:340, overflowY:'auto', overflowX:'hidden', borderRadius:2 }}>
                       {isImg && (
                         <img src={h.media_url} alt="Post screenshot"
-                          style={{ width:'100%', height:'auto', maxHeight:'60vh', objectFit:'contain', marginTop:10, borderRadius:2, background:'rgba(0,0,0,0.04)' }}/>
+                          style={{ width:'100%', height:'auto', objectFit:'contain', borderRadius:2, background:'rgba(0,0,0,0.04)' }}/>
                       )}
                       {isVid && (
                         <video src={h.media_url} controls playsInline preload="metadata"
-                          style={{ width:'100%', height:'auto', maxHeight:'60vh', marginTop:10, borderRadius:2, background:'#000' }}/>
+                          style={{ width:'100%', height:'auto', borderRadius:2, background:'#000' }}/>
                       )}
                       {isYT && (
-                        <div style={{ marginTop:10, position:'relative', paddingBottom:'56.25%', height:0 }}>
+                        <div style={{ position:'relative', paddingBottom:'56.25%', height:0 }}>
                           <iframe
                             src={h.embed_url.replace('watch?v=','embed/').replace('youtu.be/','www.youtube.com/embed/')}
                             style={{ position:'absolute', top:0, left:0, width:'100%', height:'100%', border:'none' }}
@@ -703,7 +695,7 @@ export default function SocialsSentimentTab() {
                       )}
                       {isX && tweetStatusUrl(h.embed_url) && <TweetEmbed url={h.embed_url}/>}
                       {isTT && tiktokVideoId(h.embed_url) && <TikTokEmbed url={h.embed_url}/>}
-                    </>
+                    </div>
                   )}
                 </div>
                 )
