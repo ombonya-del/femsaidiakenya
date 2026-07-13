@@ -555,7 +555,7 @@ export default function SocialsSentimentTab() {
         </div>
 
         {/* ── WSC (left/Intelligence) + MOTD (right/Pulse) ── */}
-        <div style={{ marginBottom:2, display: isMobile?'block':'grid', gridTemplateColumns:'1fr 1fr', gap:2, alignItems:'start' }}>
+        <div style={{ marginBottom:2, display: isMobile?'block':'grid', gridTemplateColumns:'1fr 1fr', gap:2, alignItems:'stretch' }}>
 
           {/* ── WHAT THE SCANNER CAUGHT — Intelligence side ── */}
           <div style={{ background:CRD, border:`1px solid ${BD}`, overflow:'hidden' }}>
@@ -632,7 +632,16 @@ export default function SocialsSentimentTab() {
               const latestHL = sorted[0]
               const recentHL = sorted.slice(1, 8)
 
-              const HighlightCard = ({h, featured}) => (
+              const HighlightCard = ({h, featured}) => {
+                const [showSrc, setShowSrc] = useState(false)
+                const srcUrl   = h.embed_url || h.source_url
+                const isImg    = h.media_url && h.media_url.length > 0 && h.media_type === 'image'
+                const isVid    = h.media_url && h.media_url.length > 0 && h.media_type === 'video'
+                const isYT     = h.embed_url && h.embed_url.includes('youtube')
+                const isX      = h.embed_url && (h.embed_url.includes('x.com') || h.embed_url.includes('twitter'))
+                const isTT     = h.embed_url && h.embed_url.includes('tiktok')
+                const canEmbed = isImg || isVid || isYT || (isX && tweetStatusUrl(h.embed_url)) || (isTT && tiktokVideoId(h.embed_url))
+                return (
                 <div style={{ background: featured?'#F5EEF2':'#EDE0E8',
                   border:`1px solid ${featured?A:BD}`,
                   padding:'14px 16px', borderLeft:`3px solid ${featured?'#CC1010':BD}` }}>
@@ -649,52 +658,56 @@ export default function SocialsSentimentTab() {
                     </span>
                   </div>
                   <p style={{ fontFamily:"'Lora',serif", fontSize: featured?14:12,
-                    color:TXT, lineHeight:1.8, margin:0, fontStyle:'italic' }}>
+                    color:TXT, lineHeight:1.8, margin:0, fontStyle:'italic', overflowWrap:'anywhere' }}>
                     "{h.content}"
                   </p>
                   {h.context && (
                     <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
                       color:A, marginTop:8, lineHeight:1.6 }}>↳ {h.context}</p>
                   )}
-                  {/* Media — screenshot or video */}
-                  {h.media_url && h.media_url.length > 0 && h.media_type === 'image' && (
-                    <img src={h.media_url} alt="Post screenshot"
-                      style={{ width:'100%', height:'auto', maxHeight:'80vh', objectFit:'contain', marginTop:10, borderRadius:2, background:'rgba(0,0,0,0.04)' }}/>
-                  )}
-                  {h.media_url && h.media_url.length > 0 && h.media_type === 'video' && (
-                    <video src={h.media_url} controls playsInline preload="metadata"
-                      style={{ width:'100%', height:'auto', maxHeight:'70vh', marginTop:10, borderRadius:2, background:'#000' }}/>
-                  )}
-                  {h.embed_url && h.embed_url.includes('youtube') && (
-                    <div style={{ marginTop:10, position:'relative', paddingBottom:'56.25%', height:0 }}>
-                      <iframe
-                        src={h.embed_url.replace('watch?v=','embed/').replace('youtu.be/','www.youtube.com/embed/')}
-                        style={{ position:'absolute', top:0, left:0, width:'100%', height:'100%', border:'none' }}
-                        allowFullScreen title="Video"/>
-                    </div>
-                  )}
-                  {/* X / Twitter — embed the real post (video plays inline); link fallback for non-post URLs */}
-                  {h.embed_url && (h.embed_url.includes('x.com') || h.embed_url.includes('twitter')) && (
-                    tweetStatusUrl(h.embed_url)
-                      ? <TweetEmbed url={h.embed_url}/>
-                      : <a href={h.embed_url} target="_blank" rel="noopener noreferrer"
-                          style={{ display:'inline-flex', alignItems:'center', gap:6, marginTop:10,
-                            fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, textDecoration:'none', background:'#1D9BF0', padding:'6px 12px', color:'#fff' }}>
-                          🐦 View on X →
-                        </a>
-                  )}
-                  {h.embed_url && h.embed_url.includes('tiktok') && (
-                    tiktokVideoId(h.embed_url)
-                      ? <TikTokEmbed url={h.embed_url}/>
-                      : <a href={h.embed_url} target="_blank" rel="noopener noreferrer"
-                          style={{ display:'inline-flex', alignItems:'center', gap:6, marginTop:10,
-                            fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, textDecoration:'none', background:'#000', padding:'6px 12px', color:'#fff' }}>
-                          ▶ View on TikTok →
-                        </a>
+                  {/* Compact actions — keep the card short; the heavy embed is opt-in */}
+                  <div style={{ display:'flex', alignItems:'center', gap:14, marginTop:10, flexWrap:'wrap' }}>
+                    {srcUrl && (
+                      <a href={srcUrl} target="_blank" rel="noopener noreferrer"
+                        style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                          letterSpacing:'.04em', color:A, textDecoration:'none', overflowWrap:'anywhere' }}>
+                        {isTT ? '▶ View on TikTok →' : isYT ? '▶ Watch →' : '🔗 View original →'}
+                      </a>
+                    )}
+                    {canEmbed && (
+                      <button onClick={() => setShowSrc(v => !v)}
+                        style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight:700,
+                          letterSpacing:'.04em', textTransform:'uppercase', color:MUT,
+                          background:'none', border:'none', cursor:'pointer', padding:0 }}>
+                        {showSrc ? '▲ Hide original post' : '▸ Show original post'}
+                      </button>
+                    )}
+                  </div>
+                  {showSrc && (
+                    <>
+                      {isImg && (
+                        <img src={h.media_url} alt="Post screenshot"
+                          style={{ width:'100%', height:'auto', maxHeight:'60vh', objectFit:'contain', marginTop:10, borderRadius:2, background:'rgba(0,0,0,0.04)' }}/>
+                      )}
+                      {isVid && (
+                        <video src={h.media_url} controls playsInline preload="metadata"
+                          style={{ width:'100%', height:'auto', maxHeight:'60vh', marginTop:10, borderRadius:2, background:'#000' }}/>
+                      )}
+                      {isYT && (
+                        <div style={{ marginTop:10, position:'relative', paddingBottom:'56.25%', height:0 }}>
+                          <iframe
+                            src={h.embed_url.replace('watch?v=','embed/').replace('youtu.be/','www.youtube.com/embed/')}
+                            style={{ position:'absolute', top:0, left:0, width:'100%', height:'100%', border:'none' }}
+                            allowFullScreen title="Video"/>
+                        </div>
+                      )}
+                      {isX && tweetStatusUrl(h.embed_url) && <TweetEmbed url={h.embed_url}/>}
+                      {isTT && tiktokVideoId(h.embed_url) && <TikTokEmbed url={h.embed_url}/>}
+                    </>
                   )}
                 </div>
-              )
-
+                )
+              }
               return (
                 <>
                   {latestHL && <HighlightCard h={latestHL} featured={true}/>}
