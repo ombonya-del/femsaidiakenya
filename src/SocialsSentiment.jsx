@@ -418,7 +418,19 @@ export default function SocialsSentimentTab() {
     const arts = artRes.data || []
     const vids = vidRes.data || []
     const merged = [...vids, ...arts.filter(a => a.content_type !== 'video')]
-    setArticles(merged)
+    // De-dupe repeats (the same story stored more than once, or re-headlined) so the
+    // scanner + intelligence feed don't show the same article several times. Key on a
+    // normalised title (drop trailing " - Publisher"), fall back to the URL.
+    const seenKey = new Set()
+    const deduped = merged.filter(a => {
+      const key = ((a.article_title || '').toLowerCase()
+        .replace(/\s+[-|]\s+[^-|]{2,40}$/, '')
+        .replace(/\s+/g, ' ').trim().slice(0, 80)) || (a.article_url || '')
+      if (!key || seenKey.has(key)) return false
+      seenKey.add(key)
+      return true
+    })
+    setArticles(deduped)
     setHighlights(hlRes.data || [])
     setLoading(false)
 
