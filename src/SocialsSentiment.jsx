@@ -676,7 +676,8 @@ export default function SocialsSentimentTab() {
                   )}
                   {/* Original post — shown inline, height-capped so the column stays compact */}
                   {canEmbed && (
-                    <div style={{ marginTop:10, maxHeight: featured?480:340, overflowY:'auto', overflowX:'hidden', borderRadius:2 }}>
+                    <div style={{ marginTop:10, maxHeight: featured?300:240, overflowY:'auto', overflowX:'hidden', borderRadius:2 }}>
+                      <div style={{ transform:'scale(0.72)', transformOrigin:'top left', width:'138.9%' }}>
                       {isImg && (
                         <img src={h.media_url} alt="Post screenshot"
                           style={{ width:'100%', height:'auto', objectFit:'contain', borderRadius:2, background:'rgba(0,0,0,0.04)' }}/>
@@ -695,6 +696,7 @@ export default function SocialsSentimentTab() {
                       )}
                       {isX && tweetStatusUrl(h.embed_url) && <TweetEmbed url={h.embed_url}/>}
                       {isTT && tiktokVideoId(h.embed_url) && <TikTokEmbed url={h.embed_url}/>}
+                      </div>
                     </div>
                   )}
                 </div>
