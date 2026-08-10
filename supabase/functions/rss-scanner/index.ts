@@ -78,6 +78,37 @@ async function sendCaseAlert(a: any): Promise<boolean> {
   } catch (e: any) { console.error('sendCaseAlert error:', e.message); return false }
 }
 
+// ── Classifier-down alert (Resend) ───────────────────────────────────────────
+// Fires when the AI classifier fails (e.g. Anthropic credits exhausted). Paired
+// with skip-on-failure, a scoring outage is caught in hours, not days.
+async function sendClassifierAlert(count: number, err: string): Promise<boolean> {
+  if (!RESEND_API_KEY) { console.log('Classifier alert skipped — RESEND_API_KEY not set'); return false }
+  const html = `<!DOCTYPE html><html><body style="margin:0;background:#f4f4f5;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+  <div style="max-width:560px;margin:0 auto;padding:24px">
+    <div style="background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e4e4e7">
+      <div style="background:#B3261E;padding:16px 22px">
+        <p style="margin:0;color:#fff;font-size:12px;font-weight:800;letter-spacing:.08em">SCANNER CLASSIFIER DOWN</p>
+      </div>
+      <div style="padding:22px">
+        <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#18181b">The scanner could not score <b>${count}</b> new item(s) this run, so it <b>skipped inserting them</b> (no default-scored junk added). The misogyny index will drift until this is fixed.</p>
+        <p style="margin:0 0 6px;font-size:12px;color:#71717a">Error from the AI classifier:</p>
+        <pre style="margin:0 0 16px;padding:12px;background:#fef2f2;border-radius:8px;font-size:12px;color:#B3261E;white-space:pre-wrap">${esc(err)}</pre>
+        <p style="margin:0;font-size:13px;line-height:1.6;color:#3f3f46">If this is a credit balance error, top up at <b>console.anthropic.com &rarr; Plans &amp; Billing</b>, then re-run the scanner.</p>
+      </div>
+    </div>
+    <p style="text-align:center;color:#a1a1aa;font-size:11px;margin:16px 0 0">FemSaidia Kenya &middot; automated scanner alert</p>
+  </div></body></html>`
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: ALERT_FROM, to: [ALERT_TO], subject: `FemSaidia scanner: classifier down (${count} items skipped)`, html }),
+    })
+    if (!res.ok) { console.error('Classifier alert send error:', res.status, await res.text()); return false }
+    return true
+  } catch (e: any) { console.error('sendClassifierAlert error:', e.message); return false }
+}
+
 // Strip HTML tags and decode common entities
 function stripHtml(str: string): string {
   return (str || '')
@@ -94,33 +125,39 @@ function stripHtml(str: string): string {
 
 // ── FEEDS ─────────────────────────────────────────────────────────────────────
 const FEEDS = [
-  // Core Kenya femicide/GBV — Google News (most reliable)
+  // ── Core Kenya femicide / GBV (the mission) ──
   'https://news.google.com/rss/search?q=Kenya+femicide+women+killed&hl=en-KE&gl=KE&ceid=KE:en',
   'https://news.google.com/rss/search?q=Kenya+gender+based+violence+GBV&hl=en-KE&gl=KE&ceid=KE:en',
-  'https://news.google.com/rss/search?q=Kenya+woman+killed+boyfriend+husband+2026&hl=en-KE&gl=KE&ceid=KE:en',
-  'https://news.google.com/rss/search?q=Kenya+femicide+court+convicted+2026&hl=en-KE&gl=KE&ceid=KE:en',
-  // Manosphere / Kibe pipeline
-  'https://news.google.com/rss/search?q=Andrew+Kibe+Kenya&hl=en-KE&gl=KE&ceid=KE:en',
-  'https://news.google.com/rss/search?q=BBC+Manosphere+Messiahs+Kibe&hl=en&gl=KE&ceid=KE:en',
-  'https://news.google.com/rss/search?q=%2228+Commandments%22+Kibe+Kenya&hl=en-KE&gl=KE&ceid=KE:en',
-  // Campus / university
+  'https://news.google.com/rss/search?q=Kenya+woman+killed+partner+husband&hl=en-KE&gl=KE&ceid=KE:en',
+  'https://news.google.com/rss/search?q=Kenya+femicide+court+convicted+sentenced&hl=en-KE&gl=KE&ceid=KE:en',
   'https://news.google.com/rss/search?q=Kenya+university+student+killed+campus&hl=en-KE&gl=KE&ceid=KE:en',
-  // Direct news sources
+  // ── SRHR — sexual & reproductive health and rights ──
+  'https://news.google.com/rss/search?q=Kenya+reproductive+health+rights+women&hl=en-KE&gl=KE&ceid=KE:en',
+  'https://news.google.com/rss/search?q=Kenya+teenage+pregnancy+contraception+abortion+access&hl=en-KE&gl=KE&ceid=KE:en',
+  // ── Harmful cultural / patriarchal practices ──
+  'https://news.google.com/rss/search?q=Kenya+FGM+child+marriage+girls&hl=en-KE&gl=KE&ceid=KE:en',
+  'https://news.google.com/rss/search?q=Kenya+patriarchy+gender+roles+women+rights&hl=en-KE&gl=KE&ceid=KE:en',
+  // ── Gendered disinformation / online abuse ──
+  'https://news.google.com/rss/search?q=Kenya+women+online+harassment+abuse+trolling&hl=en-KE&gl=KE&ceid=KE:en',
+  'https://news.google.com/rss/search?q=Kenya+women+journalists+politicians+online+disinformation&hl=en-KE&gl=KE&ceid=KE:en',
+  // ── Policy, law & advocacy wins ──
+  'https://news.google.com/rss/search?q=Kenya+sexual+offences+act+GBV+policy+protection&hl=en-KE&gl=KE&ceid=KE:en',
+  'https://news.google.com/rss/search?q=Kenya+women+rights+activists+justice+femicide&hl=en-KE&gl=KE&ceid=KE:en',
+  // ── Regional pulse (African feminist / GBV) ──
+  'https://news.google.com/rss/search?q=Africa+femicide+gender+violence+women+rights&hl=en&gl=KE&ceid=KE:en',
+  // ── Direct outlet ──
   'https://feeds.bbci.co.uk/news/world/africa/rss.xml',
-  // YouTube — BBC Eye (has Manosphere Messiahs content)
-  'https://www.youtube.com/feeds/videos.xml?channel_id=UCnUYZLuoy1rq1aVMwx4aTzw',
-  // Curated manosphere / red-pill creators — the street-level "Community" register.
-  // (Diversifies beyond Kibe; each item is still AI-scored, so off-topic uploads score low.)
-  'https://www.youtube.com/feeds/videos.xml?channel_id=UCYQfNWgM1W_-9WpoeCFLt-A', // Jacob Aliet — "Unplugged" male-supremacy author/coach
-  'https://anchor.fm/s/b56da78/podcast/rss',                                       // GUY CODE Kenya — red-pill podcast
-  'https://www.youtube.com/feeds/videos.xml?channel_id=UCuZTHA5RaqiVrnCYmOOv0sQ', // BTP Studios Kenya — "Financial Red Pill" series
-  'https://anchor.fm/s/34b75ed8/podcast/rss',                                      // Red Pill Podcast (KE)
-  'https://www.youtube.com/feeds/videos.xml?channel_id=UC3mEX7L5GcOnX7LVYYlHlaw', // Dialogues With Jagero — platforms Jacob Aliet / red-pill content
-  // Manosphere creators — news coverage / cross-platform mentions (feeds the Media register:
-  // profiles, interviews, backlash, op-eds about these figures wherever news indexes them).
-  'https://news.google.com/rss/search?q=%22Jacob+Aliet%22+Kenya&hl=en-KE&gl=KE&ceid=KE:en',
-  'https://news.google.com/rss/search?q=Amerix+OR+%22Eric+Amunga%22+masculinity&hl=en-KE&gl=KE&ceid=KE:en',
+  // ── Manosphere / red-pill PIPELINE — this is the misogyny SIGNAL that drives the
+  //    index's Community register. Diverse creators (NOT Kibe celebrity gossip); the
+  //    de-dupe + AI scoring keep repetition and off-topic uploads out. ──
   'https://news.google.com/rss/search?q=Kenya+manosphere+red+pill+misogyny&hl=en-KE&gl=KE&ceid=KE:en',
+  'https://news.google.com/rss/search?q=BBC+Manosphere+Messiahs+Kenya&hl=en&gl=KE&ceid=KE:en',
+  'https://news.google.com/rss/search?q=Amerix+OR+%22Eric+Amunga%22+masculinity&hl=en-KE&gl=KE&ceid=KE:en',
+  'https://www.youtube.com/feeds/videos.xml?channel_id=UCYQfNWgM1W_-9WpoeCFLt-A', // Jacob Aliet — "Unplugged"
+  'https://anchor.fm/s/b56da78/podcast/rss',                                       // GUY CODE Kenya — red-pill podcast
+  'https://www.youtube.com/feeds/videos.xml?channel_id=UCuZTHA5RaqiVrnCYmOOv0sQ', // BTP Studios — "Financial Red Pill"
+  'https://anchor.fm/s/34b75ed8/podcast/rss',                                      // Red Pill Podcast (KE)
+  'https://www.youtube.com/feeds/videos.xml?channel_id=UC3mEX7L5GcOnX7LVYYlHlaw', // Dialogues With Jagero — red-pill
 ]
 
 // Curated sources whose content is the manosphere/red-pill register. Their items
@@ -143,16 +180,28 @@ const KENYA_TERMS = [
   'karen','westlands','langata','kenyan','kenyans','kbc','nation',
 ]
 const GBV_TERMS = [
+  // Femicide / violence
   'femicide','murdered','killed','found dead','gender-based violence','gbv',
-  'domestic violence','sexual assault','rape','acid attack','strangled',
+  'domestic violence','sexual assault','rape','defilement','acid attack','strangled',
   'beaten to death','intimate partner','missing woman','body found',
-  'woman dead','woman killed','killed her','he killed','abused her',
-  'andrew kibe','kibe','lambistic','28 commandments','manosphere',
-  'femicide march','protest','rally','end femicide','campus murder',
-  'alice rianga','diana cherono','faridah','missing girl',
-  // Manosphere creators / red-pill register (for news coverage about these figures)
-  'amerix','eric amunga','jacob aliet','red pill','red-pill','high value man',
-  'masculinity coach','masculinity saturday','hypergamy','toxic masculinity',
+  'woman dead','woman killed','killed her','he killed','abused her','missing girl',
+  'sexual harassment','harassment','gender violence','violence against women',
+  // SRHR — sexual & reproductive health and rights
+  'reproductive','sexual health','contraception','family planning','abortion',
+  'teenage pregnancy','teen pregnancy','maternal','safe motherhood','menstrual',
+  // Harmful cultural / patriarchal practices
+  'fgm','female genital mutilation','child marriage','early marriage','wife inheritance',
+  'patriarchy','patriarchal','gender roles','gender equality','women rights',"women's rights",
+  'girls rights',"girls' rights",'widow',
+  // Gendered disinformation / online abuse
+  'online harassment','online abuse','cyberbullying','trolling','doxxing','doxing',
+  'disinformation','image-based abuse','revenge porn','online gender','tech-facilitated',
+  // Policy / law / advocacy
+  'sexual offences act','protection order','gbv policy','women activists','end femicide',
+  'femicide march','protest','rally','vigil','campus murder',
+  // Manosphere / red-pill IDEOLOGY (not celebrity gossip — the pipeline register)
+  'manosphere','red pill','red-pill','high value man','masculinity coach',
+  'hypergamy','toxic masculinity','anti-feminist','wife material','body count',
 ]
 
 function isKenyaGBV(title: string, snippet: string, source = ''): boolean {
@@ -299,7 +348,7 @@ async function classifyArticles(articles: any[]): Promise<any[]> {
 
   const prompt = `You are a GBV researcher analysing Kenyan news. For each article return a JSON array.
 
-Each object: "index"(1-based), "gbv_relevance"(0-10), "misogyny_score"(0-10), "sentiment"("alarming"|"negative"|"neutral"|"positive"), "tech_facilitated"(bool), "tech_platforms"(array), "content_category"("femicide"|"gbv"|"manosphere"|"protest"|"campus"|"policy"|"general"), "is_kibe_related"(bool), "is_protest"(bool).
+Each object: "index"(1-based), "gbv_relevance"(0-10), "misogyny_score"(0-10), "sentiment"("alarming"|"negative"|"neutral"|"positive"), "tech_facilitated"(bool), "tech_platforms"(array), "content_category"("femicide"|"gbv"|"manosphere"|"protest"|"campus"|"policy"|"srhr"|"disinformation"|"culture"|"general"), "is_kibe_related"(bool), "is_protest"(bool).
 
 IMPORTANT SCORING RULES:
 1. Andrew Kibe / 28 Commandments / Lambistic / Manosphere Messiahs: set is_kibe_related=true and misogyny_score 7-10 ONLY when the article is genuinely about his misogynistic rhetoric, the red-pill/manosphere ideology, his treatment of or statements about women, or critiques of that pipeline (including the BBC Manosphere Messiahs documentary). This is the ideological pipeline to femicide. Do NOT flag or inflate the score for incidental/off-topic articles that merely mention his name — e.g. his personal finances, house, car, career moves, lifestyle, health, relationships or general celebrity gossip. Those are general news: is_kibe_related=false and score them on their actual content (typically misogyny_score 0-3, gbv_relevance 0-2).
@@ -307,6 +356,9 @@ IMPORTANT SCORING RULES:
 3. Campus murders / university student femicide (JOOUST, RVIST, any Kenyan university): content_category="campus", gbv_relevance 8-10.
 4. Court cases, convictions, acquittals for femicide: content_category="policy", gbv_relevance 7-9.
 5. Manosphere / red-pill creators (e.g. Jacob Aliet / "Unplugged", Guy Code, Red Pill Podcast, BTP, Amerix, and similar "high-value man", hypergamy, female-nature, "wife material", anti-feminism content): set content_category="manosphere" and set misogyny_score by how dehumanising or contemptuous toward women the content is — red-pill framing of women as deceitful, hypergamous, or disposable is typically 6-9. These are usually ideological rather than incident reports, so gbv_relevance may be modest; that is fine. Off-topic uploads from these same sources (faith, money, sport, lifestyle with no gender angle) → content_category="general" and low scores.
+6. SRHR (reproductive health/rights, contraception, abortion access, teen pregnancy, maternal health): content_category="srhr", gbv_relevance 4-7 by how much it concerns women's bodily autonomy or access.
+7. Gendered disinformation / online abuse (trolling, doxxing, image-based abuse, coordinated harassment of women journalists/politicians/activists): content_category="disinformation", tech_facilitated=true, misogyny_score 5-8 by hostility.
+8. Harmful cultural / patriarchal practices (FGM, child/early marriage, wife inheritance, widow abuse) and patriarchy/gender-role commentary: content_category="culture", gbv_relevance 5-8 for the harmful-practice reports; opinion/commentary about patriarchy scores by its actual stance. Positive advocacy wins are still logged but sentiment="positive" and low misogyny.
 
 ARTICLES:
 ${list}
@@ -317,7 +369,10 @@ Return ONLY the JSON array.`
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type':'application/json','x-api-key':ANTHROPIC_KEY,'anthropic-version':'2023-06-01' },
-      body: JSON.stringify({ model:'claude-opus-4-8', max_tokens:2500, messages:[{role:'user',content:prompt}] })
+      body: JSON.stringify({ model:'claude-opus-4-8', max_tokens:2500, messages:[{role:'user',content:prompt}] }),
+      // Time-box the model call so a slow/hung batch can't freeze the whole scan
+      // (the caller aborts at 55s; keep each batch well under that).
+      signal: AbortSignal.timeout(40000),
     })
     const data = await res.json()
     // If the model call errored (bad model, rate limit, quota), there is no
@@ -336,8 +391,13 @@ Return ONLY the JSON array.`
     })
   } catch(e:any) {
     console.error('Claude error:', e.message)
-    return articles.map(a=>({...a,gbv_relevance:5,misogyny_score:3,sentiment:'neutral',
-      tech_facilitated:false,tech_platforms:[],content_category:'general',is_kibe_related:false,is_protest:false}))
+    // SAFEGUARD: do NOT fabricate passing fallback scores. Silently scoring everything
+    // "misogyny 3 / general" pollutes the feed and floors the index (the exact failure
+    // that hid a ~6-day credit outage). Tag the batch as failed so the caller skips it.
+    return articles.map(a=>({...a, _classifyFailed:true, _classifyError:e.message,
+      gbv_relevance:0, misogyny_score:0, sentiment:'neutral',
+      tech_facilitated:false, tech_platforms:[], content_category:'general',
+      is_kibe_related:false, is_protest:false}))
   }
 }
 
@@ -468,17 +528,27 @@ Deno.serve(async (req: Request) => {
       .slice()
       .sort((a,b) => (isManoSource(b.source||'') ? 1 : 0) - (isManoSource(a.source||'') ? 1 : 0))
       .slice(0, 24) // max 24 per run
-    const classified: any[] = []
-    for (let i = 0; i < toClassify.length; i += 8) {
-      const batch = await classifyArticles(toClassify.slice(i, i+8))
-      classified.push(...batch)
-      if (i + 8 < toClassify.length) await new Promise(r => setTimeout(r, 400))
+    // Classify batches CONCURRENTLY (each is time-boxed above) so total wall time
+    // stays well under the caller's timeout even when the model is slow — a hung
+    // batch now fails fast and is skipped, instead of freezing the whole scan.
+    const batches: any[][] = []
+    for (let i = 0; i < toClassify.length; i += 8) batches.push(toClassify.slice(i, i+8))
+    const classified: any[] = (await Promise.all(batches.map(b => classifyArticles(b)))).flat()
+
+    // 6a. SAFEGUARD: if the AI classifier failed for a batch (e.g. Anthropic credits
+    //     out), skip those items entirely — never insert default-scored junk — and
+    //     raise an alert so the outage is caught in hours, not days.
+    const classifyFailures = classified.filter(a => a._classifyFailed)
+    if (classifyFailures.length) {
+      console.error(`CLASSIFIER DOWN — skipped ${classifyFailures.length} unscored items. Error: ${classifyFailures[0]._classifyError}`)
+      await sendClassifierAlert(classifyFailures.length, classifyFailures[0]._classifyError || 'unknown')
     }
 
-    // 6. Insert qualifying articles.
+    // 6b. Insert qualifying, successfully-classified articles.
     //    Protests/marches/vigils are excluded — they're the response, not the harm,
     //    and were repetitive/redundant in the feed.
     const toInsert = classified
+      .filter(a => !a._classifyFailed)
       .filter(a => !(a.is_protest || a.content_category === 'protest'))
       .filter(a => a.gbv_relevance >= 4 || a.misogyny_score >= 5 || a.is_kibe_related || a.content_category === 'manosphere')
       .map(a => ({
@@ -520,6 +590,7 @@ Deno.serve(async (req: Request) => {
       fresh:fresh.length, stale_skipped:unique.length-fresh.length,
       kenya_gbv:relevant.length, dupes_skipped:dupesSkipped,
       new:newItems.length, classified:classified.length,
+      classifier_failed:classifyFailures.length,
       inserted:toInsert.length, case_alerts_sent:alertsSent,
       alerts_suppressed_stale:alertsSuppressedStale,
       kibe_hits:toInsert.filter(a=>a.is_kibe_related).length,
