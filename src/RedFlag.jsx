@@ -495,14 +495,39 @@ function NormSubmitForm({onClose, onSubmit}) {
   )
 }
 
+const REDFLAG_DRAFT_KEY = 'redflag_report_draft'
+const EMPTY_REPORT = {name:'',aliases:'',county:'',social_handles:'',modus_operandi:'',details:''}
+
 function PerpetratorForm({onClose}) {
-  const [form, setForm]     = useState({name:'',aliases:'',county:'',social_handles:'',modus_operandi:'',details:''})
+  // Restore an in-progress draft so leaving the page and coming back doesn't
+  // lose what was typed. Saved on every change, cleared on successful submit.
+  const savedDraft = (() => {
+    try { return JSON.parse(localStorage.getItem(REDFLAG_DRAFT_KEY) || 'null') } catch { return null }
+  })()
+  const [form, setForm]     = useState(savedDraft?.form ? {...EMPTY_REPORT, ...savedDraft.form} : EMPTY_REPORT)
   const [sending, setSending] = useState(false)
   const [done, setDone]     = useState(false)
-  const [photoUrl, setPhotoUrl] = useState('')
+  const [photoUrl, setPhotoUrl] = useState(savedDraft?.photoUrl || '')
   const [uploading, setUploading] = useState(false)
+  const [uploadErr, setUploadErr] = useState('')
   const [tsToken, setTsToken] = useState('')
   const [err, setErr] = useState('')
+
+  // Persist the draft whenever the form or attached photo changes.
+  useEffect(() => {
+    if (done) return
+    try {
+      const isEmpty = !photoUrl && Object.values(form).every(v => !v)
+      if (isEmpty) localStorage.removeItem(REDFLAG_DRAFT_KEY)
+      else localStorage.setItem(REDFLAG_DRAFT_KEY, JSON.stringify({ form, photoUrl }))
+    } catch {}
+  }, [form, photoUrl, done])
+
+  const hadDraft = !!(savedDraft && (savedDraft.photoUrl || Object.values(savedDraft.form || {}).some(Boolean)))
+  const [showDraftNote, setShowDraftNote] = useState(hadDraft)
+  const clearDraft = () => { try { localStorage.removeItem(REDFLAG_DRAFT_KEY) } catch {} }
+  const discardDraft = () => { setForm(EMPTY_REPORT); setPhotoUrl(''); setUploadErr(''); clearDraft(); setShowDraftNote(false) }
+
   const submit = async () => {
     if(!form.name.trim()||!form.modus_operandi.trim()) return
     if(!tsToken){ setErr('Please complete the verification below.'); return }
@@ -510,6 +535,7 @@ function PerpetratorForm({onClose}) {
     const { error } = await tsInsert(supabase, 'redflag_submissions', {...form, photo_url:photoUrl||null}, tsToken)
     setSending(false)
     if (error) { setErr(error.message); resetTurnstile(); setTsToken(''); return }
+    clearDraft()
     setDone(true)
     setTimeout(onClose, 1500)
   }
@@ -524,30 +550,55 @@ function PerpetratorForm({onClose}) {
           {done?<p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:14,color:'#2D7A3A',textAlign:'center',padding:20}}>✓ Report submitted. The FemSaidia team will review it.</p>:(
             <>
               <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT,lineHeight:1.7,marginBottom:16}}>Reports go to the FemSaidia Kenya admin team for verification before publishing. Please be as specific and factual as possible.</p>
+              {showDraftNote && (
+                <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',background:'rgba(255,255,255,0.5)',border:`1px solid ${BD}`,padding:'8px 12px',marginBottom:16}}>
+                  <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:TXT}}>We restored a draft you started earlier.</span>
+                  <button type="button" onClick={discardDraft} style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,fontWeight:700,color:A,background:'none',border:'none',cursor:'pointer',textDecoration:'underline',padding:0}}>Discard and start fresh</button>
+                </div>
+              )}
               {/* Photo upload */}
               <div style={{marginBottom:16}}>
                 <label style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:MUT,display:'block',marginBottom:4}}>
                   Photo evidence (optional)
                 </label>
-                <label style={{display:'inline-flex',alignItems:'center',gap:8,padding:'8px 14px',background:'rgba(255,255,255,0.6)',border:`1px solid ${BD}`,cursor:'pointer',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT}}>
-                  {uploading ? 'Uploading...' : photoUrl ? '📷 Photo attached ✓' : '📷 Attach a photo'}
-                  <input type="file" accept="image/*" style={{display:'none'}}
-                    onChange={async e => {
-                      const file = e.target.files[0]
-                      if (!file) return
-                      setUploading(true)
-                      const ext = file.name.split('.').pop()
-                      const name = `report_${Date.now()}.${ext}`
-                      const { error } = await supabase.storage.from('redflag-evidence').upload(name, file, { upsert:true })
-                      if (!error) {
-                        const { data } = supabase.storage.from('redflag-evidence').getPublicUrl(name)
-                        setPhotoUrl(data.publicUrl)
-                      }
-                      setUploading(false)
-                    }}
-                  />
-                </label>
-                {photoUrl && <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:'#2D7A3A',marginTop:4}}>✓ Photo ready to submit</p>}
+                <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                  <label style={{display:'inline-flex',alignItems:'center',gap:8,padding:'8px 14px',background:'rgba(255,255,255,0.6)',border:`1px solid ${BD}`,cursor:uploading?'wait':'pointer',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:MUT}}>
+                    {uploading ? 'Uploading…' : photoUrl ? '📷 Change photo' : '📷 Attach a photo'}
+                    <input type="file" accept="image/*" style={{display:'none'}} disabled={uploading}
+                      onChange={async e => {
+                        const file = e.target.files[0]
+                        if (!file) return
+                        setUploadErr('')
+                        if (!file.type.startsWith('image/')) {
+                          setUploadErr('Please choose an image file.'); e.target.value = ''; return
+                        }
+                        if (file.size > 5 * 1024 * 1024) {
+                          setUploadErr('That image is larger than 5 MB. Please choose a smaller one.'); e.target.value = ''; return
+                        }
+                        setUploading(true)
+                        const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+                        const name = `report_${Date.now()}.${ext}`
+                        const { error } = await supabase.storage.from('redflag-evidence').upload(name, file, { upsert:true, contentType:file.type })
+                        if (!error) {
+                          const { data } = supabase.storage.from('redflag-evidence').getPublicUrl(name)
+                          setPhotoUrl(data.publicUrl)
+                        } else {
+                          setUploadErr('Could not upload the photo. You can still submit the report without it.')
+                        }
+                        setUploading(false)
+                        e.target.value = ''
+                      }}
+                    />
+                  </label>
+                  {photoUrl && !uploading && (
+                    <button type="button" onClick={() => { setPhotoUrl(''); setUploadErr('') }}
+                      style={{display:'inline-flex',alignItems:'center',gap:5,padding:'8px 12px',background:'none',border:`1px solid ${BD}`,cursor:'pointer',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:A}}>
+                      <X size={12}/> Remove photo
+                    </button>
+                  )}
+                </div>
+                {photoUrl && !uploading && <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:'#2D7A3A',marginTop:4}}>✓ Photo attached — ready to submit</p>}
+                {uploadErr && <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:A,marginTop:4}}>{uploadErr}</p>}
               </div>
               {[{key:'name',label:'Name or known identity *',placeholder:'Full name or commonly known as...',multiline:false},{key:'aliases',label:'Aliases / nicknames',placeholder:'Other names used...',multiline:false},{key:'county',label:'County / Area',placeholder:'Where they operate...',multiline:false},{key:'social_handles',label:'Social media handles',placeholder:'@username on X, Instagram, TikTok...',multiline:false},{key:'modus_operandi',label:'How they operate *',placeholder:'Describe their typical approach, methods, patterns...',multiline:true},{key:'details',label:'Additional details',placeholder:'Any other relevant information...',multiline:true}].map(field=>(
                 <div key={field.key} style={{marginBottom:12}}>

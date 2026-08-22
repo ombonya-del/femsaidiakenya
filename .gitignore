@@ -36,3 +36,6 @@ vite.config.js.timestamp-*.mjs
 # Python
 __pycache__/
 *.pyc
+
+# secrets (service_role key) — never commit
+scripts/.secrets

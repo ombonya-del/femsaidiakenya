@@ -1780,8 +1780,8 @@ export default function App() {
           {activeTab==='halafu'          && <HalaFuTab isMobile={isMobile}/>}
           {activeTab==='survival'        && <SurvivalGuideTab/>}
           {activeTab==='redflag'         && <RedFlagTab/>}
-          {activeTab==='petition'        && <PetitionTab/>}
-          {activeTab==='report'          && <ReportTab/>}
+          {activeTab==='petition'        && <PetitionTab isMobile={isMobile}/>}
+          {activeTab==='report'          && <ReportTab isMobile={isMobile}/>}
           {activeTab==='partners'        && <PartnersTab/>}
           {activeTab==='sentiment'       && <SocialsSentimentTab/>}
           {activeTab==='tech-tracker'    && <TechTrackerTab/>}

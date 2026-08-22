@@ -1841,7 +1841,7 @@ def _dv_wrap(c, text, x, y_top, w, h, font, size, col, lead=None):
         if cy < y_top - h + size: break
         c.drawString(x, cy, ln); cy -= lead
 
-def _dv_hdr(c, brief, snap, pg):
+def _dv_hdr(c, brief, snap, pg, total=2):
     c.setFillColor(HexColor('#180410'))
     c.rect(0, H-36, W, 36, fill=1, stroke=0)
     c.setFillColor(BRAND); c.rect(0, H-36, W, 3, fill=1, stroke=0)
@@ -1850,15 +1850,15 @@ def _dv_hdr(c, brief, snap, pg):
     lbl = brief.get('period_label', snap.get('period',''))
     c.setFont(FR, 6); c.setFillColor(MUTED)
     c.drawString(MAR, H-30, str(lbl))
-    c.drawRightString(W-MAR, H-22, f"{pg} / 2")
+    c.drawRightString(W-MAR, H-22, f"{pg} / {total}")
 
-def _dv_ftr(c, pg):
+def _dv_ftr(c, pg, total=2):
     c.setFillColor(CSEP); c.rect(MAR, 36, CW, 0.4, fill=1, stroke=0)
     c.setFont(FR, 5); c.setFillColor(MUTED)
     c.drawString(MAR, 26,
         "FemSaidia Kenya \u00b7 femsaidiakenya.org \u00b7 halafu@femsaidiakenya.org"
         " \u00b7 A woman is killed every 47 hours in Kenya.")
-    c.drawRightString(W-MAR, 26, f"{pg} / 2")
+    c.drawRightString(W-MAR, 26, f"{pg} / {total}")
 
 # ── Index strip — FIXED: all elements stay inside the dark band ───────────────
 def _dv_index(c, brief, snap):
@@ -2390,24 +2390,72 @@ def _strategy_breakdown(cases):
     return segs, legend
 
 
+def _petition_breakdown():
+    """Petition ring: the four demands weighted by editorial priority, plus the
+    live signature count for the ring centre."""
+    SHORT = {'01': 'Declare disaster', '02': 'Crime Unit',
+             '03': 'Victims Act', '04': 'Taskforce'}
+    segs   = [(d['color'], d['weight']) for d in PETITION_DEMANDS]
+    legend = [(f"{d['n']} {SHORT[d['n']]}", d['color'], d['weight']) for d in PETITION_DEMANDS]
+    return segs, legend, fetch_petition_count()
+
+
+def _dv_donut_col3(c, x, y_top, w, slot_h, title, segs, legend, accent, bg,
+                   center_value=None, center_label='CASES', count_in_legend=True):
+    """Compact donut column (3-up): band + centred donut + legend beneath."""
+    cur = _dv_band(c, x, y_top, w, title, accent)
+    content = slot_h - 14
+    c.setFillColor(bg); c.rect(x, cur-content, w, content, fill=1, stroke=0)
+    _dv_lbar(c, x, cur-content, content, accent)
+    seg_total = sum(n for _, n in segs) or 1
+    cv = center_value if center_value is not None else int(seg_total)
+
+    cx, cy, r, sw = x + w/2, cur - 46, 30, 13
+    c.setLineCap(0)
+    c.setStrokeColor(CSEP); c.setLineWidth(sw); c.circle(cx, cy, r, stroke=1, fill=0)
+    start = 90.0
+    for color, n in segs:
+        if n <= 0: continue
+        ext = -(float(n)/seg_total)*360.0
+        c.setStrokeColor(color); c.setLineWidth(sw)
+        c.arc(cx-r, cy-r, cx+r, cy+r, start, ext); start += ext
+    c.setFont(FB, 15); c.setFillColor(HexColor('#180410'))
+    c.drawCentredString(cx, cy-3, f"{cv:,}" if cv else "\u2014")
+    c.setFont(FR, 5.5); c.setFillColor(MUTED)
+    c.drawCentredString(cx, cy-13, center_label)
+
+    ly = cur - 88
+    for label, color, n in legend:
+        pct = round(n/seg_total*100) if seg_total else 0
+        c.setFillColor(color); c.rect(x+10, ly-7, 7, 7, fill=1, stroke=0)
+        c.setFont(FB, 6.5); c.setFillColor(HexColor('#180410'))
+        c.drawString(x+21, ly-6, label)
+        if count_in_legend:
+            c.setFont(FR, 6.5); c.setFillColor(MUTED)
+            c.drawRightString(x+w-26, ly-6, str(n))
+        c.setFont(FB, 6.5); c.setFillColor(HexColor('#9A7A88'))
+        c.drawRightString(x+w-8, ly-6, f"{pct}%")
+        ly -= 12.5
+    return cur - content
+
+
 def _dv_donut_row(c, y_top, case_mix):
-    """Full-width row: archetype + response-strategy donuts, side by side."""
+    """Full-width header row: archetype + response-strategy + petition donuts, 3-up."""
     a_segs, a_leg = _archetype_breakdown(case_mix)
     s_segs, s_leg = _strategy_breakdown(case_mix)
-    _dv_donut_col(c, _DV_LX, y_top, _DV_CW2, _DR_H,
-                  "Cases by Archetype \u00b7 Relationship Pattern",
-                  "The relationship pattern behind each published case.",
-                  a_segs, a_leg, BRAND, HexColor('#fff8f8'),
-                  "Each published femicide, mapped to the relationship pattern behind it - from "
-                  "first relationships (Naive) to the separation-triggered danger of on/off "
-                  "partnerships (On & Off). It shows who is being killed, and when in a relationship.")
-    _dv_donut_col(c, _DV_RX, y_top, _DV_CW2, _DR_H,
-                  "Cases by Response Strategy \u00b7 Halafu? Lane",
-                  "Which Halafu? lane is best placed to interrupt each case.",
-                  s_segs, s_leg, HexColor('#1A2035'), HexColor('#f9fafb'),
-                  "Each case routed to the Halafu? lane best placed to interrupt it - Understand "
-                  "the drivers, Interrupt the escalation, or Build what prevents the next death. "
-                  "It shows where the response effort is concentrated.")
+    p_segs, p_leg, sig = _petition_breakdown()
+    gap = 8
+    w3  = (CW - 2*gap) / 3
+    x1  = _DV_LX
+    x2  = _DV_LX + w3 + gap
+    x3  = _DV_LX + 2*(w3 + gap)
+    _dv_donut_col3(c, x1, y_top, w3, _DR_H, "Cases by Archetype",
+                   a_segs, a_leg, BRAND, HexColor('#fff8f8'))
+    _dv_donut_col3(c, x2, y_top, w3, _DR_H, "Cases by Response Lane",
+                   s_segs, s_leg, HexColor('#1A2035'), HexColor('#f9fafb'))
+    _dv_donut_col3(c, x3, y_top, w3, _DR_H, "The Petition \u00b7 4 Demands by Priority",
+                   p_segs, p_leg, HexColor('#C05010'), HexColor('#fff7f0'),
+                   center_value=sig, center_label='SIGNED', count_in_legend=False)
 
 
 def _dv_county_col(c, x, y_top, w, slot_h, cases):
@@ -2515,10 +2563,71 @@ def _dv_donut_card(c, x, y_top, w, title, tag, segs, legend, expl_head, expl):
     return y_top - CH
 
 
+# ── Petition — the four demands, by priority ─────────────────────────────────
+# The public petition (femsaidiakenya.org → Act → Petition) carries four demands.
+# There is no per-demand vote in the data, so the ring is weighted by the desk's
+# editorial priority (weights sum to 100 — adjust here to re-prioritise). The
+# headline number in the ring centre is the live petition signature count.
+PETITION_DEMANDS = [
+    {'n': '01', 'title': 'Declare femicide a national disaster', 'weight': 34,
+     'color': HexColor('#8A1030'),
+     'body': 'Compel the national government and all 47 county governments to formally '
+             'declare femicide a national disaster and ring-fence dedicated resources '
+             '— financial, institutional and human — to combat it.'},
+    {'n': '02', 'title': 'Establish a Special Victims Crime Unit', 'weight': 27,
+     'color': HexColor('#C05010'),
+     'body': 'A dedicated unit within the DCI to investigate femicide, GBV and '
+             'tech-facilitated GBV crimes, with ring-fenced funding and specialised training.'},
+    {'n': '03', 'title': 'Pass the Special Victims Act', 'weight': 22,
+     'color': HexColor('#1A3F6F'),
+     'body': 'Legislation through the National Assembly, Senate and all 47 County Assemblies '
+             'that explicitly criminalises femicide and tech-facilitated GBV in Kenya.'},
+    {'n': '04', 'title': 'Establish a Special Victims Taskforce', 'weight': 17,
+     'color': HexColor('#7A4ABA'),
+     'body': 'A permanent taskforce that tracks femicide and tech-facilitated GBV through '
+             'rigorous research and makes binding policy recommendations.'},
+]
+
+
+def fetch_petition_count():
+    """Live count of petition signatures (0 on any failure).
+
+    petition_signatures is RLS-locked (anon may INSERT, not SELECT), so we call
+    the public SECURITY DEFINER RPC petition_signature_count() which returns only
+    the aggregate. Falls back to a REST count in case the RPC isn't present yet."""
+    import requests as _req
+    hdr = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
+    try:
+        r = _req.post(f"{SUPABASE_URL}/rest/v1/rpc/petition_signature_count",
+                      headers={**hdr, "Content-Type": "application/json"},
+                      json={}, timeout=10)
+        if r.ok:
+            v = r.json()
+            if isinstance(v, int):
+                return v
+            if isinstance(v, str) and v.isdigit():
+                return int(v)
+    except Exception:
+        pass
+    try:
+        r = _req.get(
+            f"{SUPABASE_URL}/rest/v1/petition_signatures?select=id",
+            headers={**hdr, "Prefer": "count=exact", "Range": "0-0"},
+            timeout=10)
+        cr = r.headers.get("content-range", "")   # e.g. "0-0/1234"
+        if "/" in cr:
+            tail = cr.split("/")[-1]
+            if tail.isdigit():
+                return int(tail)
+    except Exception:
+        pass
+    return 0
+
+
 def page_double(c, brief, snap):
     """2-page double-column brief — zero gaps, all sections filled.
-    The archetype + response-strategy donuts sit inline on page 2 (in place of
-    the old campus-pipeline and 7-week-trend blocks), so the brief stays 2 pages."""
+    The archetype, response-strategy and petition donuts sit 3-up in the page-1
+    header row, so the petition rides along without adding a page."""
     live_cases = fetch_live_cases(limit=6)
     case_mix   = fetch_case_breakdowns()
 

@@ -4,9 +4,10 @@ name: X poller
 # searches, and the "Femsaidiakenya" List (set X_LIST_FEMSAIDIA) — into
 # sentiment_articles (Community Pulse) and the MOTD review queue.
 
+# NOTE: X API path disabled (credits depleted / 402). Kept for manual use only if
+# you fund the X API again. Otherwise FemSaidia's X sentiment is refreshed via the
+# browser-based scheduled task (no API).
 on:
-  schedule:
-    - cron: '0 6 * * 1'   # Mondays 06:00 UTC
   workflow_dispatch:
 
 env:

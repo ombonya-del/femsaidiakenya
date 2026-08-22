@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import {
   LogOut, CheckCircle, XCircle, AlertTriangle, Edit2, Save, X,
@@ -1110,8 +1110,8 @@ function CasesTab() {
             {loading ? (
               <tr><td colSpan={7} style={{ textAlign:'center', color:MUT, padding:20 }}>Loading...</td></tr>
             ) : cases.map(c => (
-              <>
-                <tr key={c.id} style={{ background:c.published?'#fff':'rgba(180,150,160,0.2)', borderBottom:`1px solid ${BD}` }}>
+              <Fragment key={c.id}>
+                <tr style={{ background:c.published?'#fff':'rgba(180,150,160,0.2)', borderBottom:`1px solid ${BD}` }}>
                   <td style={{ padding:'8px 12px', fontWeight:700 }}>{c.victim_name||'Unknown'}</td>
                   <td style={{ padding:'8px 12px' }}>{c.county}</td>
                   <td style={{ padding:'8px 12px', color:MUT, fontSize:11 }}>{c.incident_date?new Date(c.incident_date).toLocaleDateString(['en-KE','en-GB']):'-'}</td>
@@ -1138,13 +1138,13 @@ function CasesTab() {
                   </td>
                 </tr>
                 {editing===c.id && (
-                  <tr key={`edit-${c.id}`}>
+                  <tr>
                     <td colSpan={7} style={{ padding:0 }}>
                       <CaseForm data={editData} setData={setEditData} onSave={()=>saveEdit(c.id)} onCancel={()=>setEditing(null)} saveLabel="Save changes"/>
                     </td>
                   </tr>
                 )}
-              </>
+              </Fragment>
             ))}
           </tbody>
         </table>
@@ -3474,6 +3474,16 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   const [tab, setTab]         = useState('submissions')
   const [openGroup, setOpenGroup] = useState(null)
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' ? window.innerWidth < 768 : false
+  )
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    setIsMobile(mq.matches)
+    const handler = e => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -3495,8 +3505,8 @@ export default function App() {
   if (!session) return <LoginScreen/>
 
   return (
-    <div style={{ fontFamily:"'Nunito Sans',sans-serif", color:TXT, minHeight:'100vh', background:BG, width:'100%' }}>
-      <header style={{ background:'#6B3A50', padding:'0 12px', display:'flex', alignItems:'center', gap:0, flexWrap:'wrap' }}>
+    <div style={{ fontFamily:"'Nunito Sans',sans-serif", color:TXT, minHeight:'100vh', background:BG, width:'100%', overflowX:'hidden' }}>
+      <header style={{ background:'#6B3A50', padding: isMobile ? '0 8px' : '0 12px', display:'flex', alignItems:'center', gap:0, flexWrap:'wrap', rowGap:2 }}>
         <div style={{ padding:'14px 0', marginRight:16, fontFamily:"'Lora',serif", fontSize:16, fontWeight:700, color:'#fff', whiteSpace:'nowrap' }}>
           FemSaidia Admin
         </div>
@@ -3546,7 +3556,7 @@ export default function App() {
         </button>
       </header>
 
-      <main style={{ padding:'24px', maxWidth:1100, margin:'0 auto' }}>
+      <main style={{ padding: isMobile ? '14px 12px' : '24px', maxWidth:1100, margin:'0 auto', width:'100%' }}>
         {tab==='kaarada'     && <KaaRadaAdminTab/>}
         {tab==='submissions' && <SubmissionsTab/>}
         {tab==='profiles'    && <ProfilesTab/>}

@@ -523,13 +523,20 @@ function FieldIntelligence({ open: openProp, onToggle } = {}) {
       {/* Always-visible actions — Preview + Download; the heavy dashboard/synthesis collapses below */}
       <div style={{ display:'flex', gap:8, flexWrap:'wrap', padding:'14px 16px' }}>
         <button
-          onClick={e => { e.stopPropagation(); setPreviewOpen(true) }}
+          onClick={e => {
+            e.stopPropagation()
+            // Mobile browsers can't render a PDF inside an in-page <iframe>
+            // (iOS Safari shows a blank frame). Open it as its own tab, which
+            // every mobile browser renders natively. Desktop keeps the modal.
+            if (isMobile) window.open(BRIEF_URL, '_blank', 'noopener,noreferrer')
+            else setPreviewOpen(true)
+          }}
           style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
             padding:'10px 16px', background:'#8A1030',
             border:'1px solid rgba(138,16,48,0.8)', color:'#fff', cursor:'pointer',
             display:'inline-flex', alignItems:'center', gap:6, flex: isMobile ? '1 1 100%' : '0 0 auto',
             justifyContent:'center' }}>
-          👁 Preview Intel Brief
+          👁 {isMobile ? 'Open Intel Brief' : 'Preview Intel Brief'}
         </button>
         <a href={BRIEF_URL}
           target="_blank" rel="noopener noreferrer"

@@ -51,7 +51,7 @@ const AGE_RANGES = [
   { v:'unknown',  l:'Unknown' },
 ]
 
-export default function ReportTab() {
+export default function ReportTab({ isMobile = false }) {
   const [step, setStep]       = useState(1)
   const [tsToken, setTsToken] = useState('')
   const [loading, setLoading] = useState(false)
@@ -104,9 +104,9 @@ export default function ReportTab() {
   }
 
   const inputStyle = {
-    width:'100%', fontFamily:"'Nunito Sans',sans-serif", fontSize:13,
+    width:'100%', fontFamily:"'Nunito Sans',sans-serif", fontSize:16,
     color:TXT, background:'#DDD0D0', border:`1px solid ${BD}`,
-    padding:'9px 12px', outline:'none', marginTop:4,
+    padding:'11px 12px', outline:'none', marginTop:4,
   }
   const labelStyle = {
     fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif",
@@ -121,7 +121,7 @@ export default function ReportTab() {
       {/* Header */}
       <div style={{ borderBottom:`1px solid ${BD}`, paddingBottom:20, marginBottom:24 }}>
         <p className="label" style={{ marginBottom:8, color:A }}>Phase C · Incident reporting pipeline</p>
-        <h1 className="serif" style={{ fontSize:36, fontWeight:700, color:TXT }}>Report an incident</h1>
+        <h1 className="serif" style={{ fontSize:isMobile?26:36, fontWeight:700, color:TXT }}>Report an incident</h1>
         <p style={{ fontSize:13, color:MUT, marginTop:8, fontFamily:"'Nunito Sans',sans-serif", fontWeight:300, lineHeight:1.8, maxWidth:680 }}>
           Use this form to report a femicide, assault, disappearance or gender-based violence incident in Kenya.
           Every report is reviewed by our admin team and may be published on the public dashboard.
@@ -150,9 +150,9 @@ export default function ReportTab() {
         </div>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:2 }}>
+      <div style={{ display:'grid', gridTemplateColumns:isMobile?'1fr':'2fr 1fr', gap:isMobile?16:24, alignItems:'start' }}>
         {/* Form */}
-        <div className="card" style={{ padding:24 }}>
+        <div className="card" style={{ padding:isMobile?18:24 }}>
           {success ? (
             <div style={{ textAlign:'center', padding:'32px 0' }}>
               <div style={{ width:52, height:52, borderRadius:'50%', background:'#C8D8C0', border:'2px solid #60A050', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>

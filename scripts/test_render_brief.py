@@ -58,6 +58,7 @@ def main():
     # Patch every network-touching fetch with fixtures.
     gb.fetch_live_cases = lambda limit=6: LIVE_CASES
     gb.fetch_case_breakdowns = lambda: CASE_MIX
+    gb.fetch_petition_count = lambda: 1487
     gb.parse_snap = lambda b: SNAP
 
     out = os.path.join(tempfile.gettempdir(), "test_brief.pdf")
