@@ -314,6 +314,19 @@ function normUrl(u: string): string {
     .replace(/#.*$/, '').replace(/\/+$/, '')
 }
 
+// Collapse alert candidates to one per normalised title, so two re-headlined
+// variants that slipped into the same insert batch still email only once.
+function eligibleTitleDedup(rows: any[]): any[] {
+  const seen = new Set<string>(), out: any[] = []
+  for (const r of rows) {
+    const k = normTitle(r.article_title || r.title || '')
+    if (k && seen.has(k)) continue
+    if (k) seen.add(k)
+    out.push(r)
+  }
+  return out
+}
+
 // ── DEDUP (accurate, archive-size-proof) ──────────────────────────────────────
 // A plain select caps at 1000 rows, so once the archive grew past that the old
 // check went blind to everything older — the cause of repeat / stale alerts.
@@ -337,6 +350,21 @@ async function findExisting(items: any[]): Promise<{ titles: Set<string>, urls: 
   for (const c of chunk(titles, 80)) {
     const { data } = await supabase.from('sentiment_articles').select('article_title').in('article_title', c)
     for (const r of data || []) if (r.article_title) existingTitles.add(normTitle(r.article_title))
+  }
+  // Recent-window backfill: the exact .in() lookups above miss a story that
+  // arrives re-headlined (Google News rotates a trailing " - Publisher" suffix),
+  // so it was re-inserted AND re-emailed every run. Pull a bounded recent window
+  // and add its NORMALISED title/url keys, so normTitle/normUrl collapse those
+  // variants to one key and the story is recognised as already stored.
+  const since = new Date(Date.now() - (ALERT_MAX_AGE_DAYS + 15) * 24 * 60 * 60 * 1000).toISOString()
+  const { data: recent } = await supabase.from('sentiment_articles')
+    .select('article_title,article_url')
+    .gte('scanned_at', since)
+    .order('scanned_at', { ascending: false })
+    .limit(3000)
+  for (const r of recent || []) {
+    if (r.article_title) existingTitles.add(normTitle(r.article_title))
+    if (r.article_url)   existingUrls.add(normUrl(r.article_url))
   }
   return { titles: existingTitles, urls: existingUrls }
 }
@@ -575,11 +603,17 @@ Deno.serve(async (req: Request) => {
         console.log(`Inserted ${toInsert.length} articles`)
         // Email a case alert only for high-probability cases that are genuinely recent
         // by publish date. Old resurfaced cases are stored above but not emailed.
-        const eligible  = toInsert.filter(a => (a.gbv_relevance ?? 0) >= ALERT_THRESHOLD)
+        const eligible  = eligibleTitleDedup(toInsert.filter(a => (a.gbv_relevance ?? 0) >= ALERT_THRESHOLD))
         const highCases = eligible.filter(a => alertFresh(a.published_at))
         alertsSuppressedStale = eligible.length - highCases.length
-        for (const a of highCases) { if (await sendCaseAlert(a)) alertsSent++ }
-        if (eligible.length) console.log(`Case alerts: ${alertsSent}/${highCases.length} sent, ${alertsSuppressedStale} suppressed (stale/undated)`)
+        // Backstop: never send more than a handful of alerts in one run, so a
+        // dedup miss or feed flood can't turn into an inbox flood.
+        const MAX_ALERTS_PER_RUN = 6
+        const toAlert = highCases.slice(0, MAX_ALERTS_PER_RUN)
+        for (const a of toAlert) { if (await sendCaseAlert(a)) alertsSent++ }
+        if (highCases.length > MAX_ALERTS_PER_RUN)
+          console.warn(`Case alerts capped: ${highCases.length} eligible, sent ${MAX_ALERTS_PER_RUN}`)
+        if (eligible.length) console.log(`Case alerts: ${alertsSent}/${Math.min(highCases.length,MAX_ALERTS_PER_RUN)} sent, ${alertsSuppressedStale} suppressed (stale/undated)`)
       }
     }
 

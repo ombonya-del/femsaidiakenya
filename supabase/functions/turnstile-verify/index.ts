@@ -15,7 +15,9 @@ const CORS = {
 
 // Only these columns are accepted from the client, per table. Anything else is dropped.
 const ALLOWED: Record<string, string[]> = {
-  redflag_submissions:  ['name', 'aliases', 'county', 'social_handles', 'modus_operandi', 'details', 'photo_url'],
+  redflag_submissions:  ['accused_name', 'accused_aliases', 'accused_county', 'platforms', 'social_link',
+                         'modus_operandi', 'additional_info', 'court_ref', 'photo_url',
+                         'submitter_name', 'submitter_email', 'submitter_phone', 'terms_accepted', 'certifies_truth'],
   incident_reports:     ['incident_date', 'county', 'location', 'incident_type', 'description', 'victim_age_range',
                          'tech_facilitated', 'tech_details', 'source_url', 'source_type', 'reported_to_police',
                          'ob_number', 'submitter_name', 'submitter_email', 'submitter_phone', 'terms_accepted'],

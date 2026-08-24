@@ -238,9 +238,9 @@ function SubmissionsTab() {
 
   const approve = async (sub) => {
     await supabase.from('redflag_profiles').insert([{
-      name: sub.name, aliases: sub.aliases, county: sub.county,
-      social_handles: sub.social_handles, modus_operandi: sub.modus_operandi,
-      details: sub.details, tier: 3, status: 'approved'
+      name: sub.accused_name, aliases: sub.accused_aliases, county: sub.accused_county,
+      social_handles: sub.platforms, modus_operandi: sub.modus_operandi,
+      details: sub.additional_info, tier: 3, status: 'approved'
     }])
     await update(sub.id, { status:'approved' })
   }
@@ -269,9 +269,9 @@ function SubmissionsTab() {
         <div key={sub.id} style={{ background:CRD, border:`1px solid ${BD}`, marginBottom:12, padding:16 }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10 }}>
             <div>
-              <div style={{ fontFamily:"'Lora',serif", fontSize:16, fontWeight:700, color:TXT }}>{sub.name}</div>
+              <div style={{ fontFamily:"'Lora',serif", fontSize:16, fontWeight:700, color:TXT }}>{sub.accused_name || '(no name)'}</div>
               <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT, marginTop:3 }}>
-                {sub.county && `${sub.county} · `}
+                {sub.accused_county && `${sub.accused_county} · `}
                 {sub.created_at && new Date(sub.created_at).toLocaleDateString(['en-KE','en-GB'],{day:'numeric',month:'short',year:'numeric'})}
               </div>
             </div>
@@ -283,7 +283,7 @@ function SubmissionsTab() {
 
           {editing===sub.id ? (
             <div>
-              {['name','aliases','county','social_handles','modus_operandi','details'].map(k => (
+              {['accused_name','accused_aliases','accused_county','platforms','social_link','modus_operandi','additional_info','court_ref'].map(k => (
                 <div key={k} style={{ marginBottom:8 }}>
                   <label style={labelSt}>{k.replace(/_/g,' ')}</label>
                   <input value={editData[k]||''} onChange={e=>setEditData({...editData,[k]:e.target.value})}
@@ -305,10 +305,22 @@ function SubmissionsTab() {
             </div>
           ) : (
             <div>
-              {sub.aliases && <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT, marginBottom:4 }}>Also: {sub.aliases}</p>}
-              {sub.social_handles && <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT, marginBottom:4 }}>Social: {sub.social_handles}</p>}
+              {sub.accused_aliases && <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT, marginBottom:4 }}>Also: {sub.accused_aliases}</p>}
+              {sub.platforms && <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT, marginBottom:4 }}>Platforms: {sub.platforms}</p>}
+              {sub.social_link && <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT, marginBottom:4, overflowWrap:'anywhere' }}>Link: <a href={sub.social_link} target="_blank" rel="noopener noreferrer" style={{ color:A }}>{sub.social_link}</a></p>}
               <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:13, color:TXT, lineHeight:1.6, marginBottom:10 }}>{sub.modus_operandi}</p>
-              {sub.details && <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT }}>{sub.details}</p>}
+              {sub.additional_info && <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT, marginBottom:8 }}>{sub.additional_info}</p>}
+              {sub.court_ref && <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT, marginBottom:8 }}>Court/OB ref: {sub.court_ref}</p>}
+              {sub.photo_url && <a href={sub.photo_url} target="_blank" rel="noopener noreferrer" style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:A, display:'inline-block', marginBottom:8 }}>📷 View photo evidence</a>}
+              <div style={{ borderTop:`1px solid ${BD}`, marginTop:6, paddingTop:8 }}>
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT, letterSpacing:'.06em', textTransform:'uppercase', marginBottom:3 }}>Reporter (confidential)</p>
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:TXT, overflowWrap:'anywhere' }}>
+                  {sub.submitter_name ? `${sub.submitter_name} · ` : ''}{sub.submitter_email || '—'}{sub.submitter_phone ? ` · ${sub.submitter_phone}` : ''}
+                </p>
+                <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color: (sub.certifies_truth && sub.terms_accepted) ? '#166534' : '#8A1030', marginTop:3 }}>
+                  {(sub.certifies_truth && sub.terms_accepted) ? '✓ Certified truthful · terms accepted' : '⚠ Not fully certified'}
+                </p>
+              </div>
             </div>
           )}
 
@@ -3099,6 +3111,67 @@ const TAB_GROUPS = [
 
 const TABS = TAB_GROUPS.flatMap(g => g.tabs)
 
+// Label lookup for every tab id (used by the mobile sub-tab bar).
+const TAB_LABEL = {}
+TAB_GROUPS.forEach(g => g.tabs.forEach(t => { TAB_LABEL[t.id] = t.label }))
+
+// ── MOBILE NAV — the 17 tabs bundled into 5 bottom-nav buckets, mirroring the
+// public FemSaidia app (bottom nav + per-bucket sub-tab bar). Desktop keeps the
+// header nav above; this only renders < 768px.
+const MOBILE_GROUPS = [
+  { id:'inbox',     label:'Inbox',     icon:<Flag size={19}/>,       tabs:['submissions','contacts','codes'] },
+  { id:'intel',     label:'Intel',     icon:<BarChart2 size={19}/>,  tabs:['cases','highlights','pulse','analytics'] },
+  { id:'redflag',   label:'Red Flag',  icon:<Shield size={19}/>,     tabs:['kaarada','profiles','archetypes','voices','lindalinda'] },
+  { id:'community', label:'Community', icon:<Heart size={19}/>,      tabs:['memorial','responders'] },
+  { id:'halafu',    label:'Halafu?',   icon:<FileText size={19}/>,   tabs:['donors','intel-briefs','saint'] },
+]
+
+function AdminSubTabBar({ tabs, active, onPick }) {
+  return (
+    <div style={{ position:'sticky', top:0, zIndex:90, background:'#6B3A50',
+      borderBottom:'1px solid rgba(255,255,255,0.12)', display:'flex', overflowX:'auto',
+      padding:'0 6px', WebkitOverflowScrolling:'touch', scrollbarWidth:'none', msOverflowStyle:'none' }}>
+      {tabs.map(id => {
+        const on = active === id
+        return (
+          <button key={id} onClick={() => onPick(id)}
+            style={{ flexShrink:0, background:'none', border:'none',
+              borderBottom:`2px solid ${on ? '#FFB0C0' : 'transparent'}`,
+              color: on ? '#fff' : 'rgba(255,255,255,0.65)', fontWeight: on ? 700 : 500,
+              fontSize:13, padding:'11px 12px', whiteSpace:'nowrap',
+              fontFamily:"'Nunito Sans',sans-serif", cursor:'pointer' }}>
+            {TAB_LABEL[id] || id}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function AdminBottomNav({ groups, activeGroupId, onTapGroup }) {
+  return (
+    <nav style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:200, background:'#4A1A30',
+      borderTop:'2px solid #6B3A50', display:'flex', paddingBottom:'env(safe-area-inset-bottom, 4px)' }}>
+      {groups.map(g => {
+        const on = activeGroupId === g.id
+        const clr = on ? '#fff' : 'rgba(255,255,255,0.6)'
+        return (
+          <button key={g.id} onClick={() => onTapGroup(g)}
+            style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center',
+              justifyContent:'center', gap:3, padding:'8px 2px 6px', background:'none',
+              border:'none', cursor:'pointer', position:'relative', WebkitTapHighlightColor:'transparent' }}>
+            {on && <span style={{ position:'absolute', top:0, left:'50%', transform:'translateX(-50%)',
+              width:26, height:2, background:'#FFB0C0', borderRadius:'0 0 2px 2px' }}/>}
+            <span style={{ color:clr, display:'flex', lineHeight:1 }}>{g.icon}</span>
+            <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10, fontWeight: on ? 700 : 500,
+              color:clr, lineHeight:1 }}>{g.label}</span>
+          </button>
+        )
+      })}
+    </nav>
+  )
+}
+
 // ── ROOT APP ──────────────────────────────────────────────────────────────────
 
 // ── Community Pulse — manual social-post entry ────────────────────────────────
@@ -3504,13 +3577,18 @@ export default function App() {
 
   if (!session) return <LoginScreen/>
 
+  // Mobile bucket the current tab belongs to (for the bottom nav + sub-tab bar).
+  const activeMobileGroupId = MOBILE_GROUPS.find(g => g.tabs.includes(tab))?.id || 'inbox'
+  const currentMobileGroup  = MOBILE_GROUPS.find(g => g.id === activeMobileGroupId)
+  const tapMobileGroup = (g) => { if (!g.tabs.includes(tab)) setTab(g.tabs[0]) }
+
   return (
     <div style={{ fontFamily:"'Nunito Sans',sans-serif", color:TXT, minHeight:'100vh', background:BG, width:'100%', overflowX:'hidden' }}>
-      <header style={{ background:'#6B3A50', padding: isMobile ? '0 8px' : '0 12px', display:'flex', alignItems:'center', gap:0, flexWrap:'wrap', rowGap:2 }}>
-        <div style={{ padding:'14px 0', marginRight:16, fontFamily:"'Lora',serif", fontSize:16, fontWeight:700, color:'#fff', whiteSpace:'nowrap' }}>
+      <header style={{ background:'#6B3A50', padding: isMobile ? '0 12px' : '0 12px', display:'flex', alignItems:'center', gap:0, flexWrap:'wrap', rowGap:2 }}>
+        <div style={{ padding:'14px 0', marginRight:16, fontFamily:"'Lora',serif", fontSize: isMobile ? 17 : 16, fontWeight:700, color:'#fff', whiteSpace:'nowrap' }}>
           FemSaidia Admin
         </div>
-        {TAB_GROUPS.map(g => {
+        {!isMobile && TAB_GROUPS.map(g => {
           const groupActive = g.tabs.some(t => t.id === tab)
           if (g.standalone) return (
             <button key={g.id}
@@ -3556,7 +3634,15 @@ export default function App() {
         </button>
       </header>
 
-      <main style={{ padding: isMobile ? '14px 12px' : '24px', maxWidth:1100, margin:'0 auto', width:'100%' }}>
+      {/* Mobile: per-bucket sub-tab bar under the header */}
+      {isMobile && currentMobileGroup && currentMobileGroup.tabs.length > 1 && (
+        <AdminSubTabBar tabs={currentMobileGroup.tabs} active={tab} onPick={setTab}/>
+      )}
+
+      <main style={{
+        padding: isMobile ? '14px 12px' : '24px',
+        paddingBottom: isMobile ? 'calc(64px + env(safe-area-inset-bottom, 0px) + 16px)' : '24px',
+        maxWidth:1100, margin:'0 auto', width:'100%' }}>
         {tab==='kaarada'     && <KaaRadaAdminTab/>}
         {tab==='submissions' && <SubmissionsTab/>}
         {tab==='profiles'    && <ProfilesTab/>}
@@ -3581,6 +3667,11 @@ export default function App() {
         <a href="https://femsaidiakenya.org/privacy.html" target="_blank" rel="noopener noreferrer"
           style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif", textDecoration:'none' }}>Privacy Policy</a>
       </footer>
+
+      {/* Mobile: bundled bottom nav (5 buckets), mirroring the public app */}
+      {isMobile && (
+        <AdminBottomNav groups={MOBILE_GROUPS} activeGroupId={activeMobileGroupId} onTapGroup={tapMobileGroup}/>
+      )}
     </div>
   )
 }

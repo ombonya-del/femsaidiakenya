@@ -496,7 +496,30 @@ function NormSubmitForm({onClose, onSubmit}) {
 }
 
 const REDFLAG_DRAFT_KEY = 'redflag_report_draft'
-const EMPTY_REPORT = {name:'',aliases:'',county:'',social_handles:'',modus_operandi:'',details:''}
+// Keys map 1:1 to redflag_submissions columns. accused_* = the person reported;
+// submitter_* = the reporter (kept confidential); the two certifications are
+// required by the table (NOT NULL) and by us — naming someone carries weight.
+const EMPTY_REPORT = {
+  accused_name:'', accused_aliases:'', accused_county:'', platforms:'', social_link:'',
+  modus_operandi:'', additional_info:'', court_ref:'',
+  submitter_name:'', submitter_email:'', submitter_phone:'',
+  terms_accepted:false, certifies_truth:false,
+}
+const ACCUSED_FIELDS = [
+  {key:'accused_name',    label:'Name or known identity *',   ph:'Full name or commonly known as…',        multiline:false},
+  {key:'accused_aliases', label:'Aliases / nicknames',        ph:'Other names used…',                       multiline:false},
+  {key:'accused_county',  label:'County / area they operate in *', ph:'e.g. Nairobi, Westlands',           multiline:false},
+  {key:'platforms',       label:'Platforms / social handles', ph:'@username on X, Instagram, TikTok…',       multiline:false},
+  {key:'social_link',     label:'Link to a profile or post',  ph:'https://…',                                multiline:false},
+  {key:'modus_operandi',  label:'How they operate *',         ph:'Their typical approach, methods, patterns…', multiline:true},
+  {key:'additional_info', label:'Additional details',         ph:'Any other relevant information…',          multiline:true},
+  {key:'court_ref',       label:'Court / OB reference',       ph:'If any legal case exists (optional)',      multiline:false},
+]
+const REPORTER_FIELDS = [
+  {key:'submitter_name',  label:'Your name',   ph:'Optional',         type:'text'},
+  {key:'submitter_email', label:'Your email',  ph:'name@example.com', type:'email'},
+  {key:'submitter_phone', label:'Your phone',  ph:'07XX XXX XXX',     type:'tel'},
+]
 
 function PerpetratorForm({onClose}) {
   // Restore an in-progress draft so leaving the page and coming back doesn't
@@ -528,17 +551,42 @@ function PerpetratorForm({onClose}) {
   const clearDraft = () => { try { localStorage.removeItem(REDFLAG_DRAFT_KEY) } catch {} }
   const discardDraft = () => { setForm(EMPTY_REPORT); setPhotoUrl(''); setUploadErr(''); clearDraft(); setShowDraftNote(false) }
 
+  // Reporter must give at least ONE contact — email or phone (not both). If an
+  // email is given it must look valid.
+  const emailProvided = form.submitter_email.trim().length > 0
+  const emailValid    = !emailProvided || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.submitter_email)
+  const contactOk     = emailProvided || form.submitter_phone.trim().length > 0
+  const valid = form.accused_name.trim() && form.accused_county.trim() && form.modus_operandi.trim()
+    && contactOk && emailValid && form.terms_accepted && form.certifies_truth
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
   const submit = async () => {
-    if(!form.name.trim()||!form.modus_operandi.trim()) return
+    if (!valid) {
+      setErr('Please complete the required fields (*), give at least one contact (email or phone), and tick both confirmations.')
+      return
+    }
     if(!tsToken){ setErr('Please complete the verification below.'); return }
     setSending(true); setErr('')
-    const { error } = await tsInsert(supabase, 'redflag_submissions', {...form, photo_url:photoUrl||null}, tsToken)
+    const payload = {
+      ...form,
+      submitter_email: form.submitter_email.trim() ? form.submitter_email.trim().toLowerCase() : null,
+      submitter_phone: form.submitter_phone.trim() || null,
+      submitter_name:  form.submitter_name.trim()  || null,
+      photo_url: photoUrl || null,
+    }
+    const { error } = await tsInsert(supabase, 'redflag_submissions', payload, tsToken)
     setSending(false)
     if (error) { setErr(error.message); resetTurnstile(); setTsToken(''); return }
     clearDraft()
     setDone(true)
-    setTimeout(onClose, 1500)
+    setTimeout(onClose, 1800)
   }
+
+  const labelSt = {fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:MUT,display:'block',marginBottom:4}
+  const fieldSt = {width:'100%',padding:'9px 12px',fontFamily:"'Nunito Sans',sans-serif",fontSize:16,background:'rgba(255,255,255,0.6)',border:`1px solid ${BD}`,color:TXT,outline:'none',boxSizing:'border-box'}
+  const sectionSt = {fontFamily:"'Lora',serif",fontSize:13,fontWeight:700,color:A,margin:'6px 0 10px'}
+
   return (
     <div style={{position:'fixed',inset:0,background:'rgba(24,4,16,0.8)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}} onClick={onClose}>
       <div style={{background:BG,border:`2px solid ${A}`,maxWidth:560,width:'100%',maxHeight:'90vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
@@ -600,19 +648,47 @@ function PerpetratorForm({onClose}) {
                 {photoUrl && !uploading && <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:'#2D7A3A',marginTop:4}}>✓ Photo attached — ready to submit</p>}
                 {uploadErr && <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:A,marginTop:4}}>{uploadErr}</p>}
               </div>
-              {[{key:'name',label:'Name or known identity *',placeholder:'Full name or commonly known as...',multiline:false},{key:'aliases',label:'Aliases / nicknames',placeholder:'Other names used...',multiline:false},{key:'county',label:'County / Area',placeholder:'Where they operate...',multiline:false},{key:'social_handles',label:'Social media handles',placeholder:'@username on X, Instagram, TikTok...',multiline:false},{key:'modus_operandi',label:'How they operate *',placeholder:'Describe their typical approach, methods, patterns...',multiline:true},{key:'details',label:'Additional details',placeholder:'Any other relevant information...',multiline:true}].map(field=>(
+              <p style={sectionSt}>The person you’re reporting</p>
+              {ACCUSED_FIELDS.map(field=>(
                 <div key={field.key} style={{marginBottom:12}}>
-                  <label style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:MUT,display:'block',marginBottom:4}}>{field.label}</label>
+                  <label style={labelSt}>{field.label}</label>
                   {field.multiline?(
-                    <textarea value={form[field.key]} onChange={e=>setForm({...form,[field.key]:e.target.value})} placeholder={field.placeholder} rows={3} style={{width:'100%',padding:'8px 12px',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,background:'rgba(255,255,255,0.6)',border:`1px solid ${BD}`,color:TXT,outline:'none',resize:'vertical',boxSizing:'border-box'}}/>
+                    <textarea value={form[field.key]} onChange={e=>set(field.key,e.target.value)} placeholder={field.ph} rows={3} style={{...fieldSt,resize:'vertical'}}/>
                   ):(
-                    <input value={form[field.key]} onChange={e=>setForm({...form,[field.key]:e.target.value})} placeholder={field.placeholder} style={{width:'100%',padding:'8px 12px',fontFamily:"'Nunito Sans',sans-serif",fontSize:12,background:'rgba(255,255,255,0.6)',border:`1px solid ${BD}`,color:TXT,outline:'none',boxSizing:'border-box'}}/>
+                    <input value={form[field.key]} onChange={e=>set(field.key,e.target.value)} placeholder={field.ph} style={fieldSt}/>
                   )}
                 </div>
               ))}
+
+              <div style={{borderTop:`1px solid ${BD}`,margin:'18px 0 12px',paddingTop:14}}>
+                <p style={sectionSt}>Your details</p>
+                <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,lineHeight:1.6,marginBottom:12}}>
+                  Kept strictly confidential and never published. Give <strong>at least one</strong> way to reach you — an email <strong>or</strong> a phone number — so we can verify the report and, if necessary, follow up.
+                </p>
+                {REPORTER_FIELDS.map(field=>(
+                  <div key={field.key} style={{marginBottom:12}}>
+                    <label style={labelSt}>{field.label}</label>
+                    <input type={field.type} value={form[field.key]} onChange={e=>set(field.key,e.target.value)} placeholder={field.ph} style={fieldSt}/>
+                  </div>
+                ))}
+              </div>
+
+              <label style={{display:'flex',gap:10,alignItems:'flex-start',cursor:'pointer',marginBottom:10}}>
+                <input type="checkbox" checked={form.certifies_truth} onChange={e=>set('certifies_truth',e.target.checked)} style={{marginTop:3,flexShrink:0,accentColor:A}}/>
+                <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:TXT,lineHeight:1.6}}>
+                  I certify that, to the best of my knowledge, this information is true and accurate.
+                </span>
+              </label>
+              <label style={{display:'flex',gap:10,alignItems:'flex-start',cursor:'pointer',marginBottom:14}}>
+                <input type="checkbox" checked={form.terms_accepted} onChange={e=>set('terms_accepted',e.target.checked)} style={{marginTop:3,flexShrink:0,accentColor:A}}/>
+                <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:TXT,lineHeight:1.6}}>
+                  I understand this report will be reviewed by the FemSaidia team before anything is published, and that knowingly submitting false information may have legal consequences.
+                </span>
+              </label>
+
               <TurnstileWidget onVerify={setTsToken} />
-              {err && <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:A,margin:'0 0 8px'}}>{err}</p>}
-              <button onClick={submit} disabled={sending||!form.name||!form.modus_operandi||!tsToken} style={{display:'inline-flex',alignItems:'center',gap:6,fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,padding:'10px 20px',background:A,color:'#fff',border:'none',cursor:form.name&&form.modus_operandi&&tsToken?'pointer':'not-allowed',opacity:form.name&&form.modus_operandi&&tsToken?1:0.5}}>
+              {err && <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:A,margin:'0 0 8px',fontWeight:600}}>{err}</p>}
+              <button onClick={submit} disabled={sending||!valid||!tsToken} style={{display:'inline-flex',alignItems:'center',gap:6,fontFamily:"'Nunito Sans',sans-serif",fontSize:13,fontWeight:700,padding:'12px 22px',background:A,color:'#fff',border:'none',cursor:(valid&&tsToken&&!sending)?'pointer':'not-allowed',opacity:(valid&&tsToken)?1:0.5}}>
                 <Send size={13}/> {sending?'Submitting…':'Submit report'}
               </button>
             </>
