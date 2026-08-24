@@ -232,16 +232,40 @@ function SubmissionsTab() {
   useEffect(() => { load() }, [])
 
   const update = async (id, updates) => {
-    await supabase.from('redflag_submissions').update(updates).eq('id',id)
+    // .select() returns the changed rows — if RLS silently filters the update to
+    // zero rows (the "button does nothing, status stays pending" bug), there's no
+    // error but data is empty, so we can detect and report it instead of failing quietly.
+    const { data, error } = await supabase.from('redflag_submissions').update(updates).eq('id', id).select()
+    if (error) { window.alert('Could not update this submission:\n' + error.message); return false }
+    if (!data || data.length === 0) {
+      window.alert('The update didn’t take effect — your admin account may not have permission to modify Red Flag submissions (row-level security). Run the redflag_admin_rls SQL, then try again.')
+      return false
+    }
     load(); setEditing(null)
+    return true
   }
 
   const approve = async (sub) => {
-    await supabase.from('redflag_profiles').insert([{
-      name: sub.accused_name, aliases: sub.accused_aliases, county: sub.accused_county,
-      social_handles: sub.platforms, modus_operandi: sub.modus_operandi,
-      details: sub.additional_info, tier: 3, status: 'approved'
+    // redflag_profiles columns: name, aliases, county, modus_operandi,
+    // platforms (text[]), social_link, photo_url, court_ref, admin_notes,
+    // tier (text: reported|corroborated|convicted), status, submission_count.
+    const toArr = (v) => { const a = (v || '').split(',').map(s => s.trim()).filter(Boolean); return a.length ? a : null }
+    const platformsArr = toArr(sub.platforms)
+    const { error: pErr } = await supabase.from('redflag_profiles').insert([{
+      name:           sub.accused_name,
+      aliases:        toArr(sub.accused_aliases),
+      county:         sub.accused_county,
+      modus_operandi: sub.modus_operandi,
+      platforms:      platformsArr,
+      social_link:    sub.social_link || null,
+      photo_url:      sub.photo_url || null,
+      court_ref:      sub.court_ref || null,
+      admin_notes:    sub.additional_info || null,
+      tier:           'reported',
+      status:         'approved',
+      submission_count: 1,
     }])
+    if (pErr) { window.alert('Could not publish the profile:\n' + pErr.message); return }
     await update(sub.id, { status:'approved' })
   }
 
