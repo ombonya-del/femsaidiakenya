@@ -148,16 +148,27 @@ function TierBadge({tier}) {
   return <span style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:9,fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',padding:'2px 8px',background:c.bg,color:'#fff'}}>{c.l}</span>
 }
 
+// aliases + platforms are stored as text[] arrays — join for display.
+const asList = (v) => Array.isArray(v) ? v.filter(Boolean).join(', ') : (v || '')
+
 function ProfileCard({p, onClick}) {
+  const aliases = asList(p.aliases)
   return (
-    <div onClick={()=>onClick(p)} style={{background:CRD,border:`1px solid ${BD}`,padding:16,cursor:'pointer',borderLeft:`3px solid ${A}`}}
+    <div onClick={()=>onClick(p)} style={{background:CRD,border:`1px solid ${BD}`,cursor:'pointer',borderLeft:`3px solid ${A}`,overflow:'hidden'}}
       onMouseEnter={e=>e.currentTarget.style.background='#B89AAA'} onMouseLeave={e=>e.currentTarget.style.background=CRD}>
-      <div style={{display:'flex',justifyContent:'space-between',marginBottom:8}}>
-        <div style={{fontFamily:"'Lora',serif",fontSize:15,fontWeight:700,color:TXT}}>{p.name}</div>
-        <TierBadge tier={p.tier}/>
+      {p.photo_url && (
+        <img src={p.photo_url} alt="" loading="lazy"
+          style={{width:'100%',height:150,objectFit:'cover',display:'block'}}
+          onError={e=>{e.currentTarget.style.display='none'}}/>
+      )}
+      <div style={{padding:16}}>
+        <div style={{display:'flex',justifyContent:'space-between',marginBottom:8}}>
+          <div style={{fontFamily:"'Lora',serif",fontSize:15,fontWeight:700,color:TXT}}>{p.name}</div>
+          <TierBadge tier={p.tier}/>
+        </div>
+        {aliases&&<p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,marginBottom:6}}>Also known as: {aliases}</p>}
+        <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT}}>{p.county&&`${p.county} · `}{p.modus_operandi?.slice(0,80)}…</p>
       </div>
-      {p.aliases&&<p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,marginBottom:6}}>Also known as: {p.aliases}</p>}
-      <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT}}>{p.county&&`${p.county} · `}{p.modus_operandi?.slice(0,80)}…</p>
     </div>
   )
 }
@@ -172,10 +183,18 @@ function ProfileModal({p, onClose}) {
           <button onClick={onClose} style={{background:'none',border:'none',color:'rgba(255,255,255,0.5)',cursor:'pointer'}}><X size={18}/></button>
         </div>
         <div style={{padding:20}}>
-          {[['Also known as',p.aliases],['County / Location',p.county],['Social media',p.social_handles],['Modus operandi',p.modus_operandi],['Additional details',p.details]].filter(([,v])=>v).map(([label,val],i)=>(
+          {p.photo_url && (
+            <img src={p.photo_url} alt="" loading="lazy"
+              onClick={()=>window.open(p.photo_url,'_blank')}
+              style={{width:'100%',maxHeight:320,objectFit:'contain',background:'#000',borderRadius:4,marginBottom:16,cursor:'pointer'}}
+              onError={e=>{e.currentTarget.style.display='none'}}/>
+          )}
+          {[['Also known as',asList(p.aliases)],['County / Location',p.county],['Platforms',asList(p.platforms)],['Link',p.social_link],['Modus operandi',p.modus_operandi],['Court / OB reference',p.court_ref]].filter(([,v])=>v).map(([label,val],i)=>(
             <div key={i} style={{marginBottom:14}}>
               <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:MUT,marginBottom:4}}>{label}</div>
-              <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:TXT}}>{val}</div>
+              <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:13,color:TXT,overflowWrap:'anywhere'}}>
+                {label==='Link' ? <a href={val} target="_blank" rel="noopener noreferrer" style={{color:A}}>{val}</a> : val}
+              </div>
             </div>
           ))}
           <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,borderTop:`1px solid ${BD}`,paddingTop:12,marginTop:12,lineHeight:1.6}}>⚠️ Reports are community-submitted and reviewed by the FemSaidia Kenya team. This is not a conviction. If you have additional information, submit a report below.</p>
