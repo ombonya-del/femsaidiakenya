@@ -154,20 +154,20 @@ const asList = (v) => Array.isArray(v) ? v.filter(Boolean).join(', ') : (v || ''
 function ProfileCard({p, onClick}) {
   const aliases = asList(p.aliases)
   return (
-    <div onClick={()=>onClick(p)} style={{background:CRD,border:`1px solid ${BD}`,cursor:'pointer',borderLeft:`3px solid ${A}`,overflow:'hidden'}}
+    <div onClick={()=>onClick(p)} style={{background:CRD,border:`1px solid ${BD}`,cursor:'pointer',borderLeft:`3px solid ${A}`,display:'flex',gap:12,padding:12,alignItems:'flex-start'}}
       onMouseEnter={e=>e.currentTarget.style.background='#B89AAA'} onMouseLeave={e=>e.currentTarget.style.background=CRD}>
       {p.photo_url && (
         <img src={p.photo_url} alt="" loading="lazy"
-          style={{width:'100%',height:150,objectFit:'cover',display:'block'}}
+          style={{width:64,height:64,objectFit:'cover',borderRadius:4,flexShrink:0,background:'#00000010'}}
           onError={e=>{e.currentTarget.style.display='none'}}/>
       )}
-      <div style={{padding:16}}>
-        <div style={{display:'flex',justifyContent:'space-between',marginBottom:8}}>
-          <div style={{fontFamily:"'Lora',serif",fontSize:15,fontWeight:700,color:TXT}}>{p.name}</div>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{display:'flex',justifyContent:'space-between',gap:8,marginBottom:6}}>
+          <div style={{fontFamily:"'Lora',serif",fontSize:15,fontWeight:700,color:TXT,overflowWrap:'anywhere'}}>{p.name}</div>
           <TierBadge tier={p.tier}/>
         </div>
-        {aliases&&<p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,marginBottom:6}}>Also known as: {aliases}</p>}
-        <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT}}>{p.county&&`${p.county} · `}{p.modus_operandi?.slice(0,80)}…</p>
+        {aliases&&<p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,marginBottom:4}}>Also known as: {aliases}</p>}
+        <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,lineHeight:1.5}}>{p.county&&`${p.county} · `}{p.modus_operandi?.slice(0,80)}…</p>
       </div>
     </div>
   )
@@ -186,7 +186,7 @@ function ProfileModal({p, onClose}) {
           {p.photo_url && (
             <img src={p.photo_url} alt="" loading="lazy"
               onClick={()=>window.open(p.photo_url,'_blank')}
-              style={{width:'100%',maxHeight:320,objectFit:'contain',background:'#000',borderRadius:4,marginBottom:16,cursor:'pointer'}}
+              style={{width:'100%',maxHeight:240,objectFit:'contain',background:'#000',borderRadius:4,marginBottom:16,cursor:'pointer'}}
               onError={e=>{e.currentTarget.style.display='none'}}/>
           )}
           {[['Also known as',asList(p.aliases)],['County / Location',p.county],['Platforms',asList(p.platforms)],['Link',p.social_link],['Modus operandi',p.modus_operandi],['Court / OB reference',p.court_ref]].filter(([,v])=>v).map(([label,val],i)=>(
