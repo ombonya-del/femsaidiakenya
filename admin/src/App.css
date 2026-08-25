@@ -144,17 +144,13 @@ body {
 /* Media never overflows its container */
 img, video { max-width: 100%; height: auto; }
 
-/* Mobile: wide data tables scroll inside their own box instead of pushing the
-   whole admin sideways ("parts extended out of the screen"). */
+/* Dense entry forms (Case Tracker etc.) — 4-up on desktop, 2-up on phones so
+   the fields don't get squeezed. Defined here (not inline) so the media query
+   can override it. */
+.admin-form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+
 @media (max-width: 767px) {
-  main table {
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    white-space: nowrap;
-  }
+  .admin-form-grid { grid-template-columns: repeat(2, 1fr); }
   .nav-tab { padding: 9px 8px; }
 }
 

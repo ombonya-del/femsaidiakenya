@@ -56,7 +56,7 @@ const HALAFU_LANES = [
 // ── CASE FORM (module level — prevents input focus loss) ──────────────────────
 const CaseForm = ({ data, setData, onSave, onCancel, saveLabel }) => (
   <div style={{ background:'#D4BCBC', border:`1px solid ${BD}`, padding:18, marginBottom:2 }}>
-    <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
+    <div className="admin-form-grid">
       {[
         {l:'Victim name (if known)', k:'victim_name'},
         {l:'County',     k:'county', type:'county'},
@@ -274,13 +274,13 @@ function SubmissionsTab() {
 
   return (
     <div>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:10, flexWrap:'wrap', marginBottom:20 }}>
         <h2 style={{ fontFamily:"'Lora',serif", fontSize:22, fontWeight:700, color:TXT }}>Red Flag Submissions</h2>
-        <div style={{ display:'flex', gap:8 }}>
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
           {['pending','approved','rejected','all'].map(f => (
             <button key={f} onClick={() => setFilter(f)}
               style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
-                padding:'5px 12px', border:`1px solid ${BD}`, cursor:'pointer',
+                padding:'6px 12px', border:`1px solid ${BD}`, cursor:'pointer', whiteSpace:'nowrap',
                 background: filter===f ? A : CRD, color: filter===f ? '#fff' : MUT }}>
               {f} ({counts[f]})
             </button>
