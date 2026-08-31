@@ -3114,6 +3114,7 @@ const TAB_GROUPS = [
       { id:'cases',      label:'Case tracker',    icon:<FileText size={14}/> },
       { id:'highlights', label:'Misogyny of Day', icon:<AlertTriangle size={14}/> },
       { id:'pulse',      label:'Community Pulse',  icon:<MessageSquare size={14}/> },
+      { id:'memorial',   label:'We Remember',     icon:<Heart size={14}/> },
   ]},
   { id:'redflag', label:'Red Flag', color:'#8A1030', standalone:false, tabs:[
       { id:'kaarada',    label:'KaaRada',      icon:<Shield size={14}/> },
@@ -3122,9 +3123,8 @@ const TAB_GROUPS = [
       { id:'voices',     label:'Voices',       icon:<MessageSquare size={14}/> },
       { id:'lindalinda', label:'LindaLinda',   icon:<Shield size={14}/> },
   ]},
-  { id:'community', label:'Community', color:'#1A5A2A', standalone:false, tabs:[
-      { id:'memorial',   label:'We Remember',     icon:<Heart size={14}/> },
-      { id:'responders', label:'Itika Responders', icon:<Shield size={14}/> },
+  { id:'itika', label:'Itika', color:'#1A5A2A', standalone:true, tabs:[
+      { id:'responders', label:'Itika Command', icon:<Send size={14}/> },
   ]},
   { id:'halafu', label:'Halafu?', color:'#8A4010', standalone:false, tabs:[
       { id:'donors', label:'Donor Interest', icon:<Flag size={14}/> },
@@ -3156,10 +3156,10 @@ const TAB_SHORT = {
 // public FemSaidia app (bottom nav + per-bucket sub-tab bar). Desktop keeps the
 // header nav above; this only renders < 768px.
 const MOBILE_GROUPS = [
-  { id:'inbox',     label:'Inbox',     icon:<Flag size={19}/>,       tabs:['submissions','contacts','codes'] },
-  { id:'intel',     label:'Intel',     icon:<BarChart2 size={19}/>,  tabs:['cases','highlights','pulse','analytics'] },
-  { id:'redflag',   label:'Red Flag',  icon:<Shield size={19}/>,     tabs:['kaarada','profiles','archetypes','voices','lindalinda'] },
-  { id:'community', label:'Community', icon:<Heart size={19}/>,      tabs:['memorial','responders'] },
+  { id:'inbox',   label:'Inbox',    icon:<Flag size={19}/>,       tabs:['submissions','contacts','codes','analytics'] },
+  { id:'intel',   label:'Intel',    icon:<BarChart2 size={19}/>,  tabs:['cases','highlights','pulse','memorial'] },
+  { id:'redflag', label:'Red Flag', icon:<Shield size={19}/>,     tabs:['kaarada','profiles','archetypes','voices','lindalinda'] },
+  { id:'itika',   label:'Itika',    icon:<Send size={19}/>,       tabs:['responders'] },
   { id:'halafu',    label:'Halafu?',   icon:<FileText size={19}/>,   tabs:['donors','intel-briefs','saint'] },
 ]
 
