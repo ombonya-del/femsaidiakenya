@@ -3139,6 +3139,19 @@ const TABS = TAB_GROUPS.flatMap(g => g.tabs)
 const TAB_LABEL = {}
 TAB_GROUPS.forEach(g => g.tabs.forEach(t => { TAB_LABEL[t.id] = t.label }))
 
+// Shorter labels for the mobile sub-tab bar only (desktop keeps the full names),
+// so a bucket's tabs all fit on screen without the last one scrolling off.
+const TAB_SHORT = {
+  cases:        'Cases',
+  highlights:   'MOTD',
+  pulse:        'Pulse',
+  codes:        'Codes',
+  archetypes:   'JiJue',
+  responders:   'Responders',
+  memorial:     'Remember',
+  'intel-briefs': 'Briefs',
+}
+
 // ── MOBILE NAV — the 17 tabs bundled into 5 bottom-nav buckets, mirroring the
 // public FemSaidia app (bottom nav + per-bucket sub-tab bar). Desktop keeps the
 // header nav above; this only renders < 768px.
@@ -3164,7 +3177,7 @@ function AdminSubTabBar({ tabs, active, onPick }) {
               color: on ? '#fff' : 'rgba(255,255,255,0.65)', fontWeight: on ? 700 : 500,
               fontSize:13, padding:'11px 12px', whiteSpace:'nowrap',
               fontFamily:"'Nunito Sans',sans-serif", cursor:'pointer' }}>
-            {TAB_LABEL[id] || id}
+            {TAB_SHORT[id] || TAB_LABEL[id] || id}
           </button>
         )
       })}
