@@ -5,9 +5,10 @@ const SUPABASE_URL     = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 const supabase         = createClient(SUPABASE_URL, SUPABASE_SERVICE)
 
-// ── Case-alert email (Resend) ────────────────────────────────────────────────
-// Fires when the scanner inserts a high-probability case (gbv_relevance >= 8),
-// so new cases are never missed between manual admin checks.
+// ── Femicide-alert email (Resend) ────────────────────────────────────────────
+// Fires ONLY when the scanner detects an actual femicide (is_femicide), so a new
+// killing is never missed between manual admin checks. Misogyny/GBV/manosphere
+// content is still scanned and stored for the index — it just doesn't email.
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || ''
 const ALERT_TO       = Deno.env.get('CASE_ALERT_TO')   || 'ombonya@gmail.com'
 const ALERT_FROM     = Deno.env.get('CASE_ALERT_FROM') || 'FemSaidia Alert <alerts@femsaidiakenya.org>'
@@ -33,7 +34,7 @@ async function sendCaseAlert(a: any): Promise<boolean> {
   <div style="max-width:560px;margin:0 auto;padding:24px">
     <div style="background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e4e4e7">
       <div style="background:#B3261E;padding:16px 22px">
-        <p style="margin:0;color:#fff;font-size:12px;font-weight:800;letter-spacing:.08em">🚨 HIGH-PROBABILITY CASE DETECTED</p>
+        <p style="margin:0;color:#fff;font-size:12px;font-weight:800;letter-spacing:.08em">🚨 FEMICIDE CASE DETECTED</p>
       </div>
       <div style="padding:22px">
         <h1 style="margin:0 0 6px;font-size:19px;line-height:1.3;color:#18181b">${title}</h1>
@@ -69,7 +70,7 @@ async function sendCaseAlert(a: any): Promise<boolean> {
       headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         from: ALERT_FROM, to: [ALERT_TO],
-        subject: `🚨 New case (GBV ${a.gbv_relevance}/10): ${stripHtml(a.article_title || a.title || '').slice(0, 70)}`,
+        subject: `🚨 New femicide case: ${stripHtml(a.article_title || a.title || '').slice(0, 80)}`,
         html,
       }),
     })
@@ -376,9 +377,10 @@ async function classifyArticles(articles: any[]): Promise<any[]> {
 
   const prompt = `You are a GBV researcher analysing Kenyan news. For each article return a JSON array.
 
-Each object: "index"(1-based), "gbv_relevance"(0-10), "misogyny_score"(0-10), "sentiment"("alarming"|"negative"|"neutral"|"positive"), "tech_facilitated"(bool), "tech_platforms"(array), "content_category"("femicide"|"gbv"|"manosphere"|"protest"|"campus"|"policy"|"srhr"|"disinformation"|"culture"|"general"), "is_kibe_related"(bool), "is_protest"(bool).
+Each object: "index"(1-based), "gbv_relevance"(0-10), "misogyny_score"(0-10), "sentiment"("alarming"|"negative"|"neutral"|"positive"), "tech_facilitated"(bool), "tech_platforms"(array), "content_category"("femicide"|"gbv"|"manosphere"|"protest"|"campus"|"policy"|"srhr"|"disinformation"|"culture"|"general"), "is_kibe_related"(bool), "is_protest"(bool), "is_femicide"(bool).
 
 IMPORTANT SCORING RULES:
+0. is_femicide=true ONLY when the article reports an ACTUAL femicide in Kenya — a woman or girl killed, found murdered/dead in suspicious circumstances, or the victim of an attempted killing — OR a court case/conviction/sentencing about such a killing. This is the incident itself. is_femicide=false for general GBV, assault, harassment, rape-without-death, missing-person appeals, manosphere/red-pill opinion, policy debate, protest/activism, SRHR, culture or commentary. When true, content_category="femicide" (or "campus" for a university killing) and gbv_relevance 8-10.
 1. Andrew Kibe / 28 Commandments / Lambistic / Manosphere Messiahs: set is_kibe_related=true and misogyny_score 7-10 ONLY when the article is genuinely about his misogynistic rhetoric, the red-pill/manosphere ideology, his treatment of or statements about women, or critiques of that pipeline (including the BBC Manosphere Messiahs documentary). This is the ideological pipeline to femicide. Do NOT flag or inflate the score for incidental/off-topic articles that merely mention his name — e.g. his personal finances, house, car, career moves, lifestyle, health, relationships or general celebrity gossip. Those are general news: is_kibe_related=false and score them on their actual content (typically misogyny_score 0-3, gbv_relevance 0-2).
 2. Protest / march / rally / vigil about femicide or GBV: is_protest=true, gbv_relevance 7-8.
 3. Campus murders / university student femicide (JOOUST, RVIST, any Kenyan university): content_category="campus", gbv_relevance 8-10.
@@ -415,7 +417,8 @@ Return ONLY the JSON array.`
       return { ...a, gbv_relevance:s.gbv_relevance??0, misogyny_score:s.misogyny_score??0,
         sentiment:s.sentiment??'neutral', tech_facilitated:s.tech_facilitated??false,
         tech_platforms:s.tech_platforms??[], content_category:s.content_category??'general',
-        is_kibe_related:s.is_kibe_related??false, is_protest:s.is_protest??false }
+        is_kibe_related:s.is_kibe_related??false, is_protest:s.is_protest??false,
+        is_femicide:s.is_femicide??false }
     })
   } catch(e:any) {
     console.error('Claude error:', e.message)
@@ -425,7 +428,7 @@ Return ONLY the JSON array.`
     return articles.map(a=>({...a, _classifyFailed:true, _classifyError:e.message,
       gbv_relevance:0, misogyny_score:0, sentiment:'neutral',
       tech_facilitated:false, tech_platforms:[], content_category:'general',
-      is_kibe_related:false, is_protest:false}))
+      is_kibe_related:false, is_protest:false, is_femicide:false}))
   }
 }
 
@@ -575,7 +578,9 @@ Deno.serve(async (req: Request) => {
     // 6b. Insert qualifying, successfully-classified articles.
     //    Protests/marches/vigils are excluded — they're the response, not the harm,
     //    and were repetitive/redundant in the feed.
-    const toInsert = classified
+    // `enriched` carries the femicide flag for the email gate; the DB payload
+    // (toInsert) strips it, since sentiment_articles has no is_femicide column.
+    const enriched = classified
       .filter(a => !a._classifyFailed)
       .filter(a => !(a.is_protest || a.content_category === 'protest'))
       .filter(a => a.gbv_relevance >= 4 || a.misogyny_score >= 5 || a.is_kibe_related || a.content_category === 'manosphere')
@@ -592,8 +597,10 @@ Deno.serve(async (req: Request) => {
         content_category:a.content_category||'general',
         is_kibe_related:a.is_kibe_related||false,
         is_protest:a.is_protest||false,
+        is_femicide:a.is_femicide||false,   // in-memory only (not a DB column)
         scanned_at:new Date().toISOString(),
       }))
+    const toInsert = enriched.map(({ is_femicide, ...row }) => row)
 
     let alertsSent = 0, alertsSuppressedStale = 0
     if (toInsert.length) {
@@ -601,9 +608,10 @@ Deno.serve(async (req: Request) => {
       if (error) console.error('Insert error:', error.message)
       else {
         console.log(`Inserted ${toInsert.length} articles`)
-        // Email a case alert only for high-probability cases that are genuinely recent
-        // by publish date. Old resurfaced cases are stored above but not emailed.
-        const eligible  = eligibleTitleDedup(toInsert.filter(a => (a.gbv_relevance ?? 0) >= ALERT_THRESHOLD))
+        // Email an alert ONLY for a confirmed femicide that's genuinely recent by
+        // publish date. All misogyny/GBV content above is still scanned and stored —
+        // it just doesn't trigger the email. Old resurfaced cases stay quiet.
+        const eligible  = eligibleTitleDedup(enriched.filter(a => a.is_femicide))
         const highCases = eligible.filter(a => alertFresh(a.published_at))
         alertsSuppressedStale = eligible.length - highCases.length
         // Backstop: never send more than a handful of alerts in one run, so a
