@@ -399,7 +399,7 @@ Return ONLY the JSON array.`
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type':'application/json','x-api-key':ANTHROPIC_KEY,'anthropic-version':'2023-06-01' },
-      body: JSON.stringify({ model:'claude-opus-4-8', max_tokens:2500, messages:[{role:'user',content:prompt}] }),
+      body: JSON.stringify({ model:'claude-opus-5', max_tokens:2500, messages:[{role:'user',content:prompt}] }),
       // Time-box the model call so a slow/hung batch can't freeze the whole scan
       // (the caller aborts at 55s; keep each batch well under that).
       signal: AbortSignal.timeout(40000),
