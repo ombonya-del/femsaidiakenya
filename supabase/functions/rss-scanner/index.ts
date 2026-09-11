@@ -413,7 +413,7 @@ Return ONLY the JSON array.`
     const text = data.content?.find((b:any)=>b.type==='text')?.text || '[]'
     const scores = JSON.parse(text.replace(/```json|```/g,'').trim())
     return articles.map((a,i) => {
-      const s = scores.find((x:any)=>x.index===i+1)||{}
+      const s = scores.find((x:any)=>Number(x.index)===i+1)||scores[i]||{}
       return { ...a, gbv_relevance:s.gbv_relevance??0, misogyny_score:s.misogyny_score??0,
         sentiment:s.sentiment??'neutral', tech_facilitated:s.tech_facilitated??false,
         tech_platforms:s.tech_platforms??[], content_category:s.content_category??'general',
