@@ -65,7 +65,7 @@ Live data:
     })
 
     const claudeData = await claudeRes.json()
-    const synthesis = claudeData.content?.[0]?.text || ""
+    const synthesis = claudeData.content?.find((b:any)=>b.type==='text')?.text || ""
 
     // Store in saint_synthesis table
     await sb.from("saint_synthesis").insert({

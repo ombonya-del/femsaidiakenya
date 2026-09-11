@@ -188,7 +188,7 @@ async function maybeInsertMOTD(tweet: string, handle: string, tweetUrl: string, 
       body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 120, messages: [{ role: 'user', content: prompt }] })
     })
     const d = await r.json()
-    if (d.content && d.content[0] && d.content[0].text) context = d.content[0].text.trim()
+    if (d.content?.find((b:any)=>b.type==='text')?.text) context = d.content.find((b:any)=>b.type==='text').text.trim()
   } catch (_) {}
   await supabase.from('misogyny_highlights').insert({
     platform: 'x',

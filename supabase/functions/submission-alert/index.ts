@@ -74,7 +74,7 @@ Return only JSON.`
       }),
     })
     const data  = await res.json()
-    const text  = data.content?.[0]?.text || '{}'
+    const text  = data.content?.find((b:any)=>b.type==='text')?.text || '{}'
     const clean = text.replace(/```json|```/g, '').trim()
     return JSON.parse(clean)
   } catch (err) {

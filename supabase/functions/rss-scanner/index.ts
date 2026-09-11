@@ -410,7 +410,7 @@ Return ONLY the JSON array.`
     // scores — otherwise every item silently scores 0 and gets filtered out,
     // freezing the pipeline (the exact "stale for days" failure).
     if (!res.ok || !data.content) throw new Error(data?.error?.message || `Anthropic HTTP ${res.status}`)
-    const text = data.content?.[0]?.text || '[]'
+    const text = data.content?.find((b:any)=>b.type==='text')?.text || '[]'
     const scores = JSON.parse(text.replace(/```json|```/g,'').trim())
     return articles.map((a,i) => {
       const s = scores.find((x:any)=>x.index===i+1)||{}

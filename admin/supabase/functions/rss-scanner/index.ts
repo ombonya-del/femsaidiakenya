@@ -106,7 +106,7 @@ Return only the JSON array.`
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-6',
+        model: 'claude-opus-5',
         max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }],
       }),

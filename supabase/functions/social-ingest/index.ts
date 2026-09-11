@@ -53,7 +53,7 @@ Return only JSON.`
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', { method:'POST', headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_KEY,'anthropic-version':'2023-06-01'}, body:JSON.stringify({ model:'claude-opus-5', max_tokens:400, messages:[{role:'user',content:prompt}] }) })
     const data = await res.json()
-    const text = data.content?.[0]?.text || '{}'
+    const text = data.content?.find((b:any)=>b.type==='text')?.text || '{}'
     return JSON.parse(text.replace(/```json|```/g,'').trim())
   } catch {
     return { gbv_relevance:isKibe?7:5, misogyny_score:isKibe?8:3, sentiment:isKibe?'alarming':'neutral', tech_facilitated:false, tech_platforms:[], content_category:isKibe?'manosphere':'general', is_kibe_related:isKibe, is_protest:false, summary:'' }

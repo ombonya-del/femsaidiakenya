@@ -49,7 +49,7 @@ Return ONLY the JSON array. No preamble, no markdown fences.`
 
     const data = await res.json()
     console.log('Claude response type:', data.content?.[0]?.type)
-    const raw  = data.content?.[0]?.text || '[]'
+    const raw  = data.content?.find((b:any)=>b.type==='text')?.text || '[]'
     console.log('Raw response (first 200):', raw.slice(0, 200))
 
     const clean  = raw.replace(/```json|```/g, '').trim()
