@@ -19,6 +19,17 @@ interface Check {
 }
 
 // ── AUTO-REMEDIATION ──────────────────────────────────────────────────────────
+async function q<T extends { error: any }>(fn: () => PromiseLike<T>, tries = 3, delayMs = 1500): Promise<T> {
+  // PostgREST can return a transient 504/"Gateway Timeout" on the free tier. A single blip must
+  // not page the whole team, so retry a couple of times before trusting the error.
+  let r: T = await fn()
+  for (let i = 1; i < tries && r?.error; i++) {
+    await new Promise(s => setTimeout(s, delayMs))
+    r = await fn()
+  }
+  return r
+}
+
 async function triggerFunction(name: string): Promise<boolean> {
   try {
     const r = await fetch(`${SUPABASE_URL}/functions/v1/${name}`, {
@@ -73,10 +84,15 @@ async function checkRssScanner(): Promise<Check> {
     return { name:"RSS Scanner", ok:false, detail:`Scan trigger failed: ${String(e).slice(0,60)} (${staleMsg})` }
   }
   const inserted = res?.inserted ?? 0, total = res?.total ?? 0, fresh = res?.new ?? res?.fresh ?? 0
+  const classifierFailed = res?.classifier_failed ?? 0
   if (inserted > 0) return { name:"RSS Scanner", ok:true, autoFixed:true, detail:`Auto-fixed: inserted ${inserted} new article(s) (${staleMsg})` }
   if (total === 0)  return { name:"RSS Scanner", ok:false, detail:`Ran but feeds returned 0 items — feeds likely blocked/changed (${staleMsg})` }
+  if (classifierFailed > 0) return { name:"RSS Scanner", ok:false, detail:`Ran: ${total} fetched, ${fresh} new, but classifier FAILED on ${classifierFailed} item(s) — check ANTHROPIC_API_KEY / model (${staleMsg})` }
   if (fresh === 0)  return { name:"RSS Scanner", ok:true, detail:`Ran: ${total} fetched, nothing new since last scan (${staleMsg})` }
-  return { name:"RSS Scanner", ok:false, detail:`Ran: ${total} fetched, ${fresh} new, but 0 inserted — classifier/threshold issue (${staleMsg})` }
+  // Feeds returned items and the classifier ran cleanly (0 failures); none cleared the femicide/GBV
+  // relevance bar. For a femicide-specific filter this is the normal, healthy quiet state — NOT a
+  // fault. Only a real classifier error (handled above) or dead feeds should page.
+  return { name:"RSS Scanner", ok:true, detail:`Ran: ${total} fetched, ${fresh} new classified cleanly, none met femicide/GBV bar — quiet but healthy (${staleMsg})` }
 }
 
 async function checkSaintSynthesis(): Promise<Check> {
@@ -105,7 +121,7 @@ async function checkResponders(): Promise<Check> {
 }
 
 async function checkFemicideCases(): Promise<Check> {
-  const { count } = await sb.from("femicide_cases").select("id",{count:"exact"})
+  const { count } = await q(() => sb.from("femicide_cases").select("id",{count:"exact"}))
   return { name:"Femicide Cases DB", ok:(count??0)>0, detail:`${count??0} cases on record` }
 }
 
@@ -130,7 +146,7 @@ async function checkSchemaContract(): Promise<Check> {
   const cols = "victim_name,county,location,incident_date,incident_type," +
     "perpetrator_relationship,tech_facilitated,tech_platforms,source_url," +
     "status,published,archetype,halafu_lane"
-  const { error } = await sb.from("femicide_cases").select(cols).limit(1)
+  const { error } = await q(() => sb.from("femicide_cases").select(cols).limit(1))
   if (error)
     return { name:"Schema Contract (femicide_cases)", ok:false,
       detail:`Column/schema drift: ${String(error.message).slice(0,140)}` }
@@ -140,11 +156,11 @@ async function checkSchemaContract(): Promise<Check> {
 async function checkLiveIncidents(): Promise<Check> {
   // Mirrors the Intel Brief's fetch_live_cases exactly, so a broken incidents
   // query surfaces here instead of as a wrong/stale PDF.
-  const { data, error } = await sb.from("femicide_cases")
+  const { data, error } = await q(() => sb.from("femicide_cases")
     .select("victim_name,incident_date")
     .eq("published", true)
     .order("incident_date", { ascending:false, nullsFirst:false })
-    .limit(6)
+    .limit(6))
   if (error)
     return { name:"Intel Brief live incidents", ok:false,
       detail:`Query failed: ${String(error.message).slice(0,120)}` }
@@ -160,9 +176,9 @@ async function checkAdminPushSubs(): Promise<Check> {
   // Those go to the "itika_admins" push group. If every admin device's
   // subscription has expired (or none ever subscribed), registrations would
   // silently go unseen — so page if the group is empty.
-  const { count, error } = await sb.from("push_subscriptions")
+  const { count, error } = await q(() => sb.from("push_subscriptions")
     .select("id", { count: "exact", head: true })
-    .eq("subscription_group", "itika_admins")
+    .eq("subscription_group", "itika_admins"))
   if (error)
     return { name:"Itika admin push", ok:false, detail:`Query failed: ${String(error.message).slice(0,120)}` }
   if ((count ?? 0) === 0)

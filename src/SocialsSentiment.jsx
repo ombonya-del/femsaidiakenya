@@ -1,4 +1,13 @@
 const stripHtml = (v) => !v ? '' : String(v).replace(/<[^>]*>/g, '').replace(/&[a-z#0-9]+;/gi, ' ').trim()
+// Strip an internal reviewer annotation (a trailing "NOTE: ..." instruction) so it can
+// never leak onto the public dashboard, whatever curation source produced the row.
+const stripReviewerNote = (v) => {
+  if (!v) return v
+  const s = String(v)
+  const m = s.match(/\s*(?:[\u2014\u2013-]\s*)?\bNOTE\s*:?\s[\s\S]*$/i)
+  if (m && /\b(publish|review|sweep|verif|internal|draft|do not|todo|tone)\b/i.test(m[0])) return s.slice(0, m.index).trim()
+  return s.trim()
+}
 
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
@@ -464,6 +473,7 @@ export default function SocialsSentimentTab() {
   const pulseFeed = articles
     .filter(a => isCommunity(a))
     .filter(a => !offTopicKibe(a))
+    .filter(a => a.review_status !== 'pending' && a.review_status !== 'rejected')  // high-signal drafts await admin approval
     .sort((a,b) => new Date(b.scanned_at) - new Date(a.scanned_at))
 
   const total       = articles.length
@@ -670,11 +680,11 @@ export default function SocialsSentimentTab() {
                   </div>
                   <p style={{ fontFamily:"'Lora',serif", fontSize: featured?14:12,
                     color:TXT, lineHeight:1.8, margin:0, fontStyle:'italic', overflowWrap:'anywhere' }}>
-                    "{h.content}"
+                    "{stripReviewerNote(h.content)}"
                   </p>
                   {h.context && (
                     <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
-                      color:A, marginTop:8, lineHeight:1.6 }}>↳ {h.context}</p>
+                      color:A, marginTop:8, lineHeight:1.6 }}>↳ {stripReviewerNote(h.context)}</p>
                   )}
                   {/* Source link kept visible */}
                   {srcUrl && (

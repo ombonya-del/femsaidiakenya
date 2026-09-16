@@ -597,6 +597,7 @@ Deno.serve(async (req: Request) => {
         content_category:a.content_category||'general',
         is_kibe_related:a.is_kibe_related||false,
         is_protest:a.is_protest||false,
+        review_status: (a.is_kibe_related || a.content_category==='manosphere' || ((a.content_type==='social_post'||a.content_type==='video'||a.content_type==='podcast') && a.misogyny_score>=7)) ? 'pending' : null,
         is_femicide:a.is_femicide||false,   // in-memory only (not a DB column)
         scanned_at:new Date().toISOString(),
       }))

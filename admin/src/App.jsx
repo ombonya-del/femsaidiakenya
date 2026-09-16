@@ -3221,6 +3221,7 @@ function CommunityPulseTab() {
   const CATEGORIES = ['march','community','podcast','video','testimony','statement']
 
   const [items, setItems]   = useState([])
+  const [pending, setPending] = useState([])
   const [saving, setSaving] = useState(false)
   const [f, setF] = useState({
     platform:'X', handle:'', content:'', source_url:'',
@@ -3231,6 +3232,9 @@ function CommunityPulseTab() {
     supabase.from('sentiment_articles').select('*')
       .eq('content_type','social_post').order('scanned_at',{ascending:false}).limit(20)
       .then(({data})=>setItems(data||[]))
+    supabase.from('sentiment_articles').select('*')
+      .eq('review_status','pending').order('scanned_at',{ascending:false}).limit(50)
+      .then(({data})=>setPending(data||[]))
   }
   useEffect(()=>{ load() },[])
 
@@ -3252,7 +3256,7 @@ function CommunityPulseTab() {
       scanned_at: new Date().toISOString(),
       sentiment: f.sentiment,
       gbv_relevance: 7, misogyny_score: 0,
-      verified: true, published: true,
+      verified: true, published: true, review_status:'approved',
       is_protest: f.is_protest, is_kibe_related: false,
       content_category: f.category, tech_facilitated: false
     }
@@ -3269,6 +3273,15 @@ function CommunityPulseTab() {
     load()
   }
 
+  const approve = async (id) => {
+    await supabase.from('sentiment_articles').update({ review_status:'approved', published:true, verified:true }).eq('id', id)
+    load()
+  }
+  const reject = async (id) => {
+    await supabase.from('sentiment_articles').update({ review_status:'rejected', published:false }).eq('id', id)
+    load()
+  }
+
   return (
     <div>
       <div style={{marginBottom:20}}>
@@ -3277,6 +3290,33 @@ function CommunityPulseTab() {
           Hand-pick street-level posts — marches, testimonies, CSO statements — to surface in the Community Pulse feed on Socials &amp; Sentiment.
         </p>
       </div>
+
+      {pending.length > 0 && (
+        <div style={{background:'#FFF8E1',border:`1px solid #CA8A04`,borderLeft:`4px solid #CA8A04`,padding:16,marginBottom:16}}>
+          <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,color:'#8A6A04',marginBottom:4}}>
+            Review queue · {pending.length} awaiting approval
+          </div>
+          <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:11,color:MUT,margin:'0 0 12px'}}>
+            High-signal posts the scanners flagged. Approve to publish to the public Community Pulse, or hide to keep them off the feed.
+          </p>
+          <div style={{display:'flex',flexDirection:'column',gap:6}}>
+            {pending.map(it=>(
+              <div key={it.id} style={{display:'flex',alignItems:'flex-start',gap:8,padding:'8px 12px',background:'#fff',border:`1px solid ${BD}`}}>
+                <span style={{fontSize:9,fontWeight:700,padding:'2px 6px',background:'#1A3F6F',color:'#fff',flexShrink:0,textTransform:'uppercase'}}>{it.platform||'—'}</span>
+                <div style={{flex:1,minWidth:0}}>
+                  <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,color:TXT,margin:0}}>{(it.article_title||it.article_snippet||it.summary||'').slice(0,220)}</p>
+                  <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,color:MUT,margin:'2px 0 0'}}>
+                    {it.source_name||it.source||'—'}{it.content_category?' · '+it.content_category:''}{it.misogyny_score?' · miso '+it.misogyny_score:''}
+                    {it.source_url&&<> · <a href={it.source_url} target="_blank" rel="noopener noreferrer" style={{color:A}}>source ↗</a></>}
+                  </p>
+                </div>
+                <button onClick={()=>approve(it.id)} style={{fontSize:10,fontWeight:700,padding:'4px 10px',background:A,color:'#fff',border:'none',cursor:'pointer',flexShrink:0}}>Approve</button>
+                <button onClick={()=>reject(it.id)} style={{fontSize:10,padding:'4px 10px',background:'#8A1030',color:'#fff',border:'none',cursor:'pointer',flexShrink:0}}>Hide</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div style={{background:'#E8F5E9',border:`1px solid ${A}`,borderLeft:`4px solid ${A}`,padding:16,marginBottom:16}}>
         <div style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:12,fontWeight:700,color:A,marginBottom:12}}>Add a pulse post</div>

@@ -81,6 +81,7 @@ async function pollHandle(handle: string) {
       is_kibe_related:  isKibe,
       is_protest:       false,
       content_category: isKibe ? 'manosphere' : 'gbv',
+      review_status:    isKibe ? 'pending' : null,   // high-signal -> hold for admin review
     }, { onConflict: 'article_url' })
     if (!error) {
       results.inserted++
@@ -124,6 +125,7 @@ async function pollList(listId: string) {
       is_kibe_related:  isKibe,
       is_protest:       false,
       content_category: isKibe ? 'manosphere' : 'gbv',
+      review_status:    isKibe ? 'pending' : null,   // high-signal -> hold for admin review
     }, { onConflict: 'article_url' })
     if (!error) { results.inserted++; await maybeInsertMOTD(text, handle, link, isKibe ? 8 : 5) }
   }
@@ -160,6 +162,7 @@ async function pollKeyword(searchQuery: string) {
       is_kibe_related:  isKibeQuery,
       is_protest:       isProtestQuery,
       content_category: isKibeQuery ? 'manosphere' : isProtestQuery ? 'protest' : 'gbv',
+      review_status:    (isKibeQuery || isProtestQuery) ? 'pending' : null,
     }, { onConflict: 'article_url' })
     if (!error) results.inserted++
   }
