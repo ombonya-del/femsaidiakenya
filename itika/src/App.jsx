@@ -158,6 +158,7 @@ function RegisterScreen({ onDone }) {
     <div style={{minHeight:'100vh',background:BG,paddingBottom:40}}>
       {/* Header */}
       <div style={{background:SURF,padding:'20px 20px 16px',borderBottom:`1px solid ${BD}`}}>
+        <img src="/icon-192.png" alt="" width="40" height="40" style={{borderRadius:10,marginBottom:12,display:'block'}}/>
         <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
           letterSpacing:'.2em',textTransform:'uppercase',color:BGRN,marginBottom:6}}>
           Itika · First Responder Network

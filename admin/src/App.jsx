@@ -3662,8 +3662,9 @@ export default function App() {
   return (
     <div style={{ fontFamily:"'Nunito Sans',sans-serif", color:TXT, minHeight:'100vh', background:BG, width:'100%', overflowX:'hidden' }}>
       <header style={{ background:'#6B3A50', padding: isMobile ? '0 12px' : '0 12px', display:'flex', alignItems:'center', gap:0, flexWrap:'wrap', rowGap:2 }}>
-        <div style={{ padding:'14px 0', marginRight:16, fontFamily:"'Lora',serif", fontSize: isMobile ? 17 : 16, fontWeight:700, color:'#fff', whiteSpace:'nowrap' }}>
-          FemSaidia Admin
+        <div style={{ padding:'14px 0', marginRight:16, fontFamily:"'Lora',serif", fontSize: isMobile ? 17 : 16, fontWeight:700, color:'#fff', whiteSpace:'nowrap', display:'flex', alignItems:'center', gap:8 }}>
+          <img src="/icon-192.png" alt="" width="24" height="24" style={{borderRadius:6,flexShrink:0}}/>
+          <span>FemSaidia Admin</span>
         </div>
         {!isMobile && TAB_GROUPS.map(g => {
           const groupActive = g.tabs.some(t => t.id === tab)

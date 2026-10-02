@@ -197,7 +197,7 @@ function Dashboard({ session }) {
       <div style={{ position:'sticky', top:0, zIndex:5, background:SURF, borderBottom:`2px solid ${GRN}`,
         padding:'14px 18px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div>
-          <div style={{ fontFamily:serif, fontSize:19, fontWeight:700 }}>Itika Command 🛰️</div>
+          <div style={{ fontFamily:serif, fontSize:19, fontWeight:700, display:'flex', alignItems:'center', gap:8 }}><img src="/icon-192.png" alt="" width="26" height="26" style={{borderRadius:6,flexShrink:0}}/><span>Itika Command 🛰️</span></div>
           <div style={{ fontSize:10, color:MUT }}>{session.user?.email}</div>
         </div>
         <button onClick={()=>sb.auth.signOut()} style={{ background:'none', border:`1px solid ${BD}`,

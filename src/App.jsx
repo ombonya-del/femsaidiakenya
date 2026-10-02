@@ -1708,8 +1708,9 @@ export default function App() {
           <header style={{background:HDR,borderBottom:`1px solid ${BD}`,padding:'0 32px',width:'100%'}}>
             <div style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',padding:'28px 0 20px',borderBottom:`1px solid ${BD}`}}>
               <div>
-                <div className="serif" style={{fontSize:56,fontWeight:700,color:TXT,letterSpacing:'-.02em',lineHeight:1}}>
-                  Fem<span style={{color:A}}>Saidia</span> Kenya
+                <div className="serif" style={{fontSize:56,fontWeight:700,color:TXT,letterSpacing:'-.02em',lineHeight:1,display:'flex',alignItems:'center',gap:14}}>
+                  <img src="/icon-192.png" alt="" width="54" height="54" style={{borderRadius:12,flexShrink:0}}/>
+                  <span>Fem<span style={{color:A}}>Saidia</span> Kenya</span>
                 </div>
                 <p style={{fontSize:11,color:MUT,marginTop:8,fontFamily:"'Lora',serif",fontStyle:'italic',fontWeight:400,letterSpacing:'.01em'}}>
                   A Woman is Killed Every 47 Hours in Kenya
@@ -1751,8 +1752,9 @@ export default function App() {
             alignItems:'center',
             justifyContent:'space-between',
           }}>
-            <div className="serif" style={{fontSize:26,fontWeight:700,color:TXT,letterSpacing:'-.02em',lineHeight:1}}>
-              Fem<span style={{color:A}}>Saidia</span> Kenya
+            <div className="serif" style={{fontSize:26,fontWeight:700,color:TXT,letterSpacing:'-.02em',lineHeight:1,display:'flex',alignItems:'center',gap:8}}>
+              <img src="/icon-192.png" alt="" width="30" height="30" style={{borderRadius:7,flexShrink:0}}/>
+              <span>Fem<span style={{color:A}}>Saidia</span> Kenya</span>
             </div>
             <p style={{fontSize:10,color:MUT,fontFamily:"'Lora',serif",fontStyle:'italic',maxWidth:140,textAlign:'right',lineHeight:1.3}}>
               A Woman is Killed<br/>Every 47 Hours

@@ -979,7 +979,7 @@ function App() {
     <div className="hepa-root">
       {/* Header */}
       <div className="hepa-header">
-        <div className="hepa-logo"><span style={{letterSpacing:0,display:"inline-flex",alignItems:"center",color:"inherit"}}><span className="logo-h" style={{fontWeight:700}}>h</span><span className="logo-epa">epa</span></span><span className="logo-tagline" style={{marginLeft:8,fontSize:11}}>Get away · Stay safe</span></div>
+        <div className="hepa-logo"><img src="/brand-mark.png" alt="" width="30" height="30" style={{borderRadius:7,marginRight:10,flexShrink:0}}/><span style={{letterSpacing:0,display:"inline-flex",alignItems:"center",color:"inherit"}}><span className="logo-h" style={{fontWeight:700}}>h</span><span className="logo-epa">epa</span></span><span className="logo-tagline" style={{marginLeft:8,fontSize:11}}>Get away · Stay safe</span></div>
         <button className="hepa-calc-btn" onClick={()=>setScreen('calc')}>
           🔢 Calculator
         </button>
