@@ -699,11 +699,8 @@ export default function App() {
         padding:'0 24px', display:'flex', justifyContent:'space-between',
         alignItems:'center', height:52, position:'sticky', top:0, zIndex:100 }}>
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <img src="/icon-192.png" alt="" width="26" height="26" style={{borderRadius:6,flexShrink:0}}/>
-          <span style={{ fontFamily:"'Lora',serif", fontSize:20, fontWeight:700, cursor:'pointer' }}
-            onClick={()=>setActiveTab('intel')}>
-            <span style={{ color:TXT }}>Sa</span><span style={{ color:RED }}><span style={{ position:'relative', display:'inline-block' }}>I<span style={{ position:'absolute', top:'0em', left:'50%', transform:'translateX(-50%)', width:'0.18em', height:'0.18em', borderRadius:'50%', background:'#FFFFFF', display:'block' }}/></span>nt</span>
-          </span>
+          <img src="/icon-192.png" alt="" width="26" height="26" style={{borderRadius:6,flexShrink:0,cursor:'pointer'}}
+            onClick={()=>setActiveTab('intel')}/>
           <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:8,
             fontWeight:700, letterSpacing:'.2em', color:MUT,
             borderLeft:`1px solid ${BD}`, paddingLeft:8 }}>
