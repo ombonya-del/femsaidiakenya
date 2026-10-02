@@ -1308,6 +1308,7 @@ function InviteGate({ children }) {
     <div style={{minHeight:'100vh',background:'#D4BEC4',display:'flex',alignItems:'center',justifyContent:'center',padding:24,fontFamily:"'Nunito Sans',sans-serif"}}>
       <div style={{width:'100%',maxWidth:400}}>
         <div style={{textAlign:'center',marginBottom:32}}>
+          <img src="/icon-192.png" alt="" width="64" height="64" style={{borderRadius:15,marginBottom:14,display:'inline-block'}}/>
           <div style={{fontFamily:"'Lora',serif",fontSize:32,fontWeight:700,color:'#180410'}}>
             Fem<span style={{color:'#8A1030'}}>Saidia</span> Kenya
           </div>

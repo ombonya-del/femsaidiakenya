@@ -64,7 +64,7 @@ function Login() {
     <div style={{ minHeight:'100vh', background:BG, display:'flex', alignItems:'center',
       justifyContent:'center', padding:24 }}>
       <div style={{ width:'100%', maxWidth:360, textAlign:'center' }}>
-        <div style={{ fontSize:44, marginBottom:12 }}>🛰️</div>
+        <img src="/icon-192.png" alt="" width="56" height="56" style={{ borderRadius:13, marginBottom:12, display:"inline-block" }}/>
         <h1 style={{ fontFamily:serif, fontSize:30, fontWeight:700, color:TXT, marginBottom:6 }}>Itika Command</h1>
         <p style={{ fontFamily:font, fontSize:13, color:MUT, lineHeight:1.6, marginBottom:28 }}>
           Coordinator sign-in. A one-time link will be emailed to you.
