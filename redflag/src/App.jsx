@@ -345,7 +345,7 @@ function HomeScreen({ setTab }) {
   return (
     <div style={{padding:'24px 16px',paddingBottom:32}}>
       <div style={{marginBottom:32}}>
-        <img src="/brand-mark.png" alt="" width="64" height="64" style={{marginBottom:16,marginLeft:-4,display:'block'}}/>
+        <img src="/icon-tile.png" alt="" width="56" height="56" style={{borderRadius:13,marginBottom:16,display:'block'}}/>
         <p style={{fontFamily:"'Nunito Sans',sans-serif",fontSize:10,fontWeight:700,
           letterSpacing:'.2em',textTransform:'uppercase',color:RED,marginBottom:12}}>
           {t('home_kicker')}

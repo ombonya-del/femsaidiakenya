@@ -64,7 +64,7 @@ function Login() {
     <div style={{ minHeight:'100vh', background:BG, display:'flex', alignItems:'center',
       justifyContent:'center', padding:24 }}>
       <div style={{ width:'100%', maxWidth:360, textAlign:'center' }}>
-        <img src="/brand-mark.png" alt="" width="64" height="64" style={{ marginBottom:12, display:"inline-block" }}/>
+        <img src="/icon-tile.png" alt="" width="56" height="56" style={{ borderRadius:13, marginBottom:12, display:"inline-block" }}/>
         <h1 style={{ fontFamily:serif, fontSize:30, fontWeight:700, color:TXT, marginBottom:6 }}>Itika Command</h1>
         <p style={{ fontFamily:font, fontSize:13, color:MUT, lineHeight:1.6, marginBottom:28 }}>
           Coordinator sign-in. A one-time link will be emailed to you.
@@ -197,7 +197,7 @@ function Dashboard({ session }) {
       <div style={{ position:'sticky', top:0, zIndex:5, background:SURF, borderBottom:`2px solid ${GRN}`,
         padding:'14px 18px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div>
-          <div style={{ fontFamily:serif, fontSize:19, fontWeight:700, display:'flex', alignItems:'center', gap:8 }}><img src="/brand-mark.png" alt="" width="30" height="30" style={{flexShrink:0,marginLeft:-3}}/><span>Itika Command 🛰️</span></div>
+          <div style={{ fontFamily:serif, fontSize:19, fontWeight:700, display:'flex', alignItems:'center', gap:8 }}><img src="/icon-tile.png" alt="" width="26" height="26" style={{borderRadius:6,flexShrink:0}}/><span>Itika Command 🛰️</span></div>
           <div style={{ fontSize:10, color:MUT }}>{session.user?.email}</div>
         </div>
         <button onClick={()=>sb.auth.signOut()} style={{ background:'none', border:`1px solid ${BD}`,
