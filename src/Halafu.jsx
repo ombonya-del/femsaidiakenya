@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import ProjectStories, { MbonaSection } from './ProjectStories'
 import { TurnstileWidget, tsInsert, resetTurnstile } from './lib/turnstile'
 import HalafuStrategyBreakdown from './HalafuStrategyBreakdown.jsx'
+import HalafuKitModal from './HalafuKitModal'
 
 const _sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY)
 
@@ -880,148 +881,39 @@ function FundModal({ project, onClose }) {
   )
 }
 
-function ProjectCard({ p, isMobile, kanban = false }) {
-  const [open,      setOpen]      = useState(false)
-  const [donorOpen, setDonorOpen] = useState(false)
-  const [joinType,  setJoinType]  = useState(null)
-  const [fundOpen,  setFundOpen]  = useState(false)
+function ProjectCard({ p, isMobile, kanban = false, onKit }) {
   const statusStyle = STATUS_STYLES[p.status]
-
   return (
-    <>
-      {fundOpen && <FundModal project={p} onClose={() => setFundOpen(false)}/>}
-      <div style={{ background:CRD, border:`1px solid ${BD}`, overflow:'hidden',
-        gridColumn: open ? '1 / -1' : 'auto', display:'flex', flexDirection:'column',
-        flex: kanban && !open && !isMobile ? 1 : undefined,
-        justifyContent: kanban && !open && !isMobile ? 'center' : undefined,
-        minHeight: open ? 'auto' : 0 }}>
-        {/* Header */}
-        <div onClick={() => setOpen(o => !o)}
-          style={{ padding:'14px 16px', cursor:'pointer', display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:10, flex: isMobile ? 1 : 'none' }}>
-          <div style={{ flex:1 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6, flexWrap:'wrap' }}>
-              <span style={{ fontSize:10, padding:'2px 8px', background:statusStyle.bg, color:statusStyle.tc,
-                fontFamily:"'Nunito Sans',sans-serif", fontWeight:700, letterSpacing:'.06em' }}>
-                <span style={{ display:'inline-block', width:6, height:6, borderRadius:'50%',
-                  background:statusStyle.dot, marginRight:4, verticalAlign:'middle' }}/>
-                {p.status.toUpperCase()}
-              </span>
-              <span style={{ fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.06em', textTransform:'uppercase' }}>
-                {p.lane}
-              </span>
-            </div>
-            <div style={{ fontFamily:"'Lora',serif", fontSize:isMobile?16:18, fontWeight:700, color:TXT, marginBottom:4 }}>{p.title}</div>
-            <p style={{ fontSize:12, color:MUT, fontFamily:"'Nunito Sans',sans-serif", fontStyle:'italic' }}>{p.tagline}</p>
+    <div onClick={() => onKit(p)}
+      style={{ background:CRD, border:`1px solid ${BD}`, overflow:'hidden', cursor:'pointer',
+        display:'flex', flexDirection:'column', justifyContent:'space-between',
+        flex: kanban && !isMobile ? 1 : undefined }}>
+      <div style={{ padding:'14px 16px', display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:10 }}>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6, flexWrap:'wrap' }}>
+            <span style={{ fontSize:10, padding:'2px 8px', background:statusStyle.bg, color:statusStyle.tc,
+              fontFamily:"'Nunito Sans',sans-serif", fontWeight:700, letterSpacing:'.06em' }}>
+              <span style={{ display:'inline-block', width:6, height:6, borderRadius:'50%',
+                background:statusStyle.dot, marginRight:4, verticalAlign:'middle' }}/>
+              {p.status.toUpperCase()}
+            </span>
+            <span style={{ fontSize:10, color:MUT, fontFamily:"'Nunito Sans',sans-serif", letterSpacing:'.06em', textTransform:'uppercase' }}>
+              {p.lane}
+            </span>
           </div>
-          {open ? <ChevronUp size={16} color={MUT}/> : <ChevronDown size={16} color={MUT}/>}
+          <div style={{ fontFamily:"'Lora',serif", fontSize:isMobile?16:18, fontWeight:700, color:TXT, marginBottom:4 }}>{p.title}</div>
+          <p style={{ fontSize:12, color:MUT, fontFamily:"'Nunito Sans',sans-serif", fontStyle:'italic' }}>{p.tagline}</p>
         </div>
-
-        {/* Expanded */}
-        {open && (
-          <div style={{ borderTop:`1px solid ${BD}`, padding:'20px 20px 24px' }}>
-            {[
-              { label:'The problem',   text:p.problem },
-              { label:'What we build', text:p.what },
-              { label:'Tech angle',    text:p.tech },
-            ].map(({label,text}) => (
-              <div key={label} style={{ marginBottom:16 }}>
-                <p style={{ fontSize:11, color:A, fontFamily:"'Nunito Sans',sans-serif", fontWeight:700,
-                  letterSpacing:'.1em', textTransform:'uppercase', marginBottom:6 }}>{label}</p>
-                <p style={{ fontSize:13, color:TXT, fontFamily:"'Nunito Sans',sans-serif", lineHeight:1.8 }}>{text}</p>
-              </div>
-            ))}
-
-            {/* Who */}
-            <div style={{ marginBottom:16 }}>
-              <p style={{ fontSize:11, color:A, fontFamily:"'Nunito Sans',sans-serif", fontWeight:700,
-                letterSpacing:'.1em', textTransform:'uppercase', marginBottom:8 }}>Who needs to be in the room</p>
-              <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
-                {p.who.map((w,i) => (
-                  <span key={i} style={{ fontSize:11, padding:'3px 10px', background:HDR, color:TXT,
-                    fontFamily:"'Nunito Sans',sans-serif", fontWeight:600 }}>{w}</span>
-                ))}
-              </div>
-            </div>
-
-            {/* Donors */}
-            <div style={{ marginBottom:20 }}>
-              <button onClick={() => setDonorOpen(d => !d)}
-                style={{ display:'flex', alignItems:'center', gap:8, background:'none', border:`1px solid ${BD}`,
-                  padding:'8px 14px', cursor:'pointer', fontFamily:"'Nunito Sans',sans-serif",
-                  fontSize:11, fontWeight:700, color:MUT, letterSpacing:'.06em', marginBottom:donorOpen?8:0 }}>
-                💰 Funding prospects ({p.donors.length})
-                {donorOpen ? <ChevronUp size={12}/> : <ChevronDown size={12}/>}
-              </button>
-              {donorOpen && (
-                <div style={{ marginTop:8 }}>
-                  <p style={{ fontSize:11, color:MUT, fontFamily:"'Nunito Sans',sans-serif",
-                    fontStyle:'italic', marginBottom:10, lineHeight:1.6 }}>
-                    Best-fit funders based on mandate alignment. Click any name to visit their grants page.
-                  </p>
-                  {p.donors.map((d,i) => <DonorCard key={i} donor={d}/>)}
-                </div>
-              )}
-            </div>
-
-            {/* Real-life stories */}
-            <ProjectStories projectId={p.id}/>
-
-            {/* Actions */}
-            <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-              {/* Fund this project */}
-              <button onClick={() => setFundOpen(true)}
-                style={{ display:'inline-flex', alignItems:'center', gap:8, background:'#1E2D40',
-                  color:'#D4B0B8', fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700,
-                  padding:'10px 18px', border:`1px solid #3A1830`, cursor:'pointer', letterSpacing:'.04em' }}>
-                💰 Fund this project
-              </button>
-
-              {/* Join */}
-              {!joinType ? (
-                <>
-                  <button onClick={() => setJoinType('individual')}
-                    style={{ display:'inline-flex', alignItems:'center', gap:6, background:A, color:'#F0D0D8',
-                      fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700,
-                      padding:'10px 18px', border:'none', cursor:'pointer' }}>
-                    👤 Join as individual
-                  </button>
-                  <button onClick={() => setJoinType('organisation')}
-                    style={{ display:'inline-flex', alignItems:'center', gap:6, background:CRD,
-                      color:A, fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700,
-                      padding:'10px 18px', border:`1px solid ${A}`, cursor:'pointer' }}>
-                    🏢 Join as organisation
-                  </button>
-                </>
-              ) : (
-                <div style={{ width:'100%', background:'#1E2D40', border:`1px solid #3A1830`, padding:16 }}>
-                  <p style={{ fontSize:12, color:'#D4B0B8', fontFamily:"'Nunito Sans',sans-serif", fontWeight:700, marginBottom:4 }}>
-                    {joinType === 'individual' ? '👤 Joining as an individual' : '🏢 Joining as an organisation'}
-                  </p>
-                  <p style={{ fontSize:11, color:'#7A4A60', fontFamily:"'Nunito Sans',sans-serif", lineHeight:1.7, marginBottom:12 }}>
-                    {joinType === 'individual'
-                      ? 'Tell us who you are, what you bring (skills, experience, networks, lived experience) and where you are based.'
-                      : 'Tell us about your organisation, what you can contribute and where you operate.'}
-                  </p>
-                  <div style={{ display:'flex', gap:8 }}>
-                    <a href={`mailto:halafu@femsaidiakenya.org?subject=Halafu? — Joining: ${encodeURIComponent(p.title)} (${joinType})`}
-                      style={{ display:'inline-flex', alignItems:'center', gap:8, background:A, color:'#F0D0D8',
-                        fontFamily:"'Nunito Sans',sans-serif", fontSize:12, fontWeight:700, padding:'10px 18px',
-                        textDecoration:'none' }}>
-                      Send us an email <ArrowRight size={13}/>
-                    </a>
-                    <button onClick={() => setJoinType(null)}
-                      style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, padding:'10px 14px',
-                        background:'none', border:`1px solid ${BD}`, color:MUT, cursor:'pointer' }}>
-                      Back
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+        <ArrowRight size={16} color={MUT} style={{ flexShrink:0, marginTop:2 }}/>
+      </div>
+      <div style={{ borderTop:`1px solid ${BD}`, padding:'9px 16px', display:'flex', alignItems:'center', gap:6 }}>
+        <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, color:A, letterSpacing:'.04em' }}>View proposal kit</span>
+        <ArrowRight size={12} color={A}/>
+        {!isMobile && (
+          <span style={{ marginLeft:'auto', fontFamily:"'Nunito Sans',sans-serif", fontSize:9, color:MUT, letterSpacing:'.06em', whiteSpace:'nowrap' }}>OVERVIEW · SOURCES · FUNDERS · TEMPLATES</span>
         )}
       </div>
-    </>
+    </div>
   )
 }
 
@@ -1031,6 +923,8 @@ export default function HalaFuTab({ isMobile }) {
   const [briefs, setBriefs] = useState([])
   const [showPDF, setShowPDF] = useState(false)
   const [showPrevBriefs, setShowPrevBriefs] = useState(false)
+  const [kitProject, setKitProject]   = useState(null)
+  const [fundProject, setFundProject] = useState(null)
   const filtered = lane === 'all' ? PROJECTS : PROJECTS.filter(p => p.lane === lane)
 
   useState(() => {
@@ -1176,7 +1070,7 @@ export default function HalaFuTab({ isMobile }) {
                 {LANE_STYLES[laneKey].desc}
               </p>
             </div>
-            {PROJECTS.filter(p=>p.lane===laneKey).map(p => <ProjectCard key={p.id} p={p} isMobile={isMobile} kanban/>)}
+            {PROJECTS.filter(p=>p.lane===laneKey).map(p => <ProjectCard key={p.id} p={p} isMobile={isMobile} kanban onKit={setKitProject}/>)}
           </div>
         ))}
       </div>
@@ -1186,6 +1080,16 @@ export default function HalaFuTab({ isMobile }) {
         <MbonaSection projectTitles={Object.fromEntries(PROJECTS.map(p => [p.id, p.title]))}/>
       </div>
       {/* Submit folded into the action band above */}
+      {kitProject && (
+        <HalafuKitModal
+          p={kitProject}
+          onClose={() => setKitProject(null)}
+          onFund={(pr) => { setKitProject(null); setFundProject(pr) }}
+          c={{ A, BD, CRD, TXT, MUT, HDR }}
+          donorMeta={DONOR_META}
+        />
+      )}
+      {fundProject && <FundModal project={fundProject} onClose={() => setFundProject(null)}/>}
       {/* ── PDF Viewer Modal ─────────────────────────────────────────── */}
       {showPDF && (
         <div style={{
