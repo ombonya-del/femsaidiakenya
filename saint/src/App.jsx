@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import ProjectStories from './ProjectStories'
+import ProjectKitModal from './ProjectKitModal'
 import { ArchetypeDonut, StrategyDonut } from './Donuts'
 
 const sb = createClient(
@@ -194,22 +195,17 @@ function LiveBar({ intel }) {
 }
 
 // ── PROJECT CARD ──────────────────────────────────────────────────────────────
-function ProjectCard({ p, intel, onFund }) {
-  const [open, setOpen] = useState(false)
+function ProjectCard({ p, intel, onFund, onKit }) {
   const lm = LANE_META[p.lane]
-  const toggleOpen = () => {
-    const next = !open
-    setOpen(next)
-    if (next) track('project_click', { project_id:p.id, project_title:p.title, lane:p.lane })
-  }
   const statValue = intel ? (intel[p.stat] ?? '—') : '—'
-
+  const openKit = () => {
+    onKit(p)
+    track('project_click', { project_id:p.id, project_title:p.title, lane:p.lane })
+  }
   return (
-    <div style={{ background:CARD, border:`1px solid ${BD}`,
-      borderTop:`3px solid ${p.laneColor}`, animation:'fadeIn .4s both' }}>
-      {/* Card header */}
-      <div onClick={toggleOpen} style={{ padding:'20px 22px',
-        cursor:'pointer', userSelect:'none' }}>
+    <div onClick={openKit} style={{ background:CARD, border:`1px solid ${BD}`,
+      borderTop:`3px solid ${p.laneColor}`, animation:'fadeIn .4s both', cursor:'pointer' }}>
+      <div style={{ padding:'20px 22px', userSelect:'none' }}>
         <div style={{ display:'flex', justifyContent:'space-between',
           alignItems:'flex-start', marginBottom:10 }}>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
@@ -238,56 +234,15 @@ function ProjectCard({ p, intel, onFund }) {
           color:TXT, marginBottom:6, lineHeight:1.3 }}>{p.title}</h3>
         <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12,
           color:MUT, fontStyle:'italic' }}>{p.tagline}</p>
-      </div>
-
-      {open && (
-        <div style={{ padding:'0 22px 20px', borderTop:`1px solid ${BD}` }}>
-          <div style={{ marginTop:16, marginBottom:14 }}>
-            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
-              fontWeight:700, color:RED, letterSpacing:'.1em',
-              textTransform:'uppercase', marginBottom:8 }}>The gap</p>
-            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:13,
-              color:'rgba(240,232,240,0.8)', lineHeight:1.8 }}>{p.problem}</p>
-          </div>
-          <div style={{ marginBottom:14 }}>
-            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11,
-              fontWeight:700, color:GOLD, letterSpacing:'.1em',
-              textTransform:'uppercase', marginBottom:8 }}>The intervention</p>
-            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:13,
-              color:'rgba(240,232,240,0.8)', lineHeight:1.8 }}>{p.what}</p>
-          </div>
-          {/* Frameworks */}
-          <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:14 }}>
-            {p.frameworks.map((f,i) => (
-              <span key={i} style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
-                fontWeight:700, padding:'2px 8px', color:GOLD,
-                border:`1px solid rgba(200,160,64,0.3)`,
-                background:'rgba(200,160,64,0.08)' }}>{f}</span>
-            ))}
-          </div>
-          {/* Funders */}
-          <div style={{ marginBottom:14 }}>
-            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700,
-              letterSpacing:'.12em', color:MUT, marginBottom:8 }}>ALIGNED FUNDERS</p>
-            <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
-              {p.donors.map((d,i) => (
-                <span key={i} style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:10,
-                  padding:'3px 8px', background:'rgba(255,255,255,0.05)',
-                  border:`1px solid ${BD}`, color:TXT }}>{d}</span>
-              ))}
-            </div>
-          </div>
-          {/* Real-life stories */}
-          <ProjectStories projectId={p.id} dark/>
-
-          <button onClick={()=>{ onFund(p); track('fund_modal_open', { project_id:p.id, project_title:p.title, lane:p.lane }) }}
-            style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
-              padding:'10px 20px', background:RED, color:TXT,
-              border:'none', cursor:'pointer', letterSpacing:'.06em' }}>
-            Fund this project →
-          </button>
+        <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:14,
+          paddingTop:12, borderTop:`1px solid ${BD}` }}>
+          <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700,
+            color:p.laneColor, letterSpacing:'.04em' }}>View proposal kit</span>
+          <span style={{ color:p.laneColor, fontSize:13 }}>→</span>
+          <span style={{ marginLeft:'auto', fontFamily:"'Nunito Sans',sans-serif", fontSize:9,
+            color:MUT, letterSpacing:'.06em' }}>OVERVIEW · SOURCES · FUNDERS · TEMPLATES</span>
         </div>
-      )}
+      </div>
     </div>
   )
 }
@@ -660,6 +615,7 @@ export default function App() {
     }
   }
   const [fundProject, setFundProject] = useState(null)
+  const [kitProject, setKitProject] = useState(null)
   const [contactOpen, setContactOpen] = useState(false)
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 
@@ -873,7 +829,7 @@ export default function App() {
           <div style={{ display:'grid',
             gridTemplateColumns: isMobile ? '1fr' : 'repeat(2,1fr)', gap:2 }}>
             {projects.map(p => (
-              <ProjectCard key={p.id} p={p} intel={intel} onFund={setFundProject}/>
+              <ProjectCard key={p.id} p={p} intel={intel} onFund={setFundProject} onKit={setKitProject}/>
             ))}
           </div>
         </div>
@@ -1003,6 +959,7 @@ export default function App() {
 
       {/* Modals */}
       {fundProject && <FundModal project={fundProject} onClose={()=>setFundProject(null)}/>}
+      {kitProject && <ProjectKitModal p={kitProject} onClose={()=>setKitProject(null)} onFund={(pr)=>{ setKitProject(null); setFundProject(pr) }} c={{BG,SURF,CARD,RED,GOLD,GRN,PURP,TXT,MUT,BD}}/>}
       {contactOpen && <FundModal project={{id:'general',title:'FemSaidia Kenya Partnership'}} onClose={()=>setContactOpen(false)}/>}
     </div>
   )
