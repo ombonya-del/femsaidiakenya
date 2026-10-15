@@ -4,6 +4,7 @@ const ANTHROPIC_KEY    = Deno.env.get('ANTHROPIC_API_KEY') || ''
 const SUPABASE_URL     = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 const supabase         = createClient(SUPABASE_URL, SUPABASE_SERVICE)
+const INGEST_SECRET    = Deno.env.get('INGEST_SECRET') || ''  // optional bridge auth
 
 const GBV_KEYWORDS = [
   // Existing
@@ -63,7 +64,7 @@ Return only JSON.`
 function normalise(body: any) {
   if (body.source === 'ifttt') return { source_name:`X / @${(body.user||body.account||'').replace('@','')}`, platform:'x', article_title:(body.text||'').slice(0,140), article_snippet:body.text||'', article_url:body.link||'', content_type:'social_post', thumbnail_url:'', scanned_at:new Date(body.created_at||Date.now()).toISOString() }
   if (body.source === 'rsshub' || body.source === 'rss') return { source_name:body.feed_source||'RSSHub', platform:body.platform||'tiktok', article_title:body.title||(body.description||'').slice(0,140), article_snippet:body.description||body.title||'', article_url:body.link||body.url||'', content_type:body.platform==='tiktok'?'video':'social_post', thumbnail_url:body.image||'', scanned_at:body.pubDate?new Date(body.pubDate).toISOString():new Date().toISOString() }
-  if (body.source === 'manual' || body.source === 'facebook') return { source_name:body.account||body.page_name||body.platform||'Manual', platform:body.platform||'x', article_title:body.title||(body.text||'').slice(0,140), article_snippet:body.text||body.description||'', article_url:body.url||body.link||'', content_type:body.content_type||'social_post', thumbnail_url:body.thumbnail||'', scanned_at:new Date().toISOString() }
+  if (body.source === 'manual' || body.source === 'facebook') return { source_name:body.account||body.page_name||body.platform||'Manual', platform:body.platform||(body.source==='facebook'?'facebook':'x'), article_title:body.title||(body.text||'').slice(0,140), article_snippet:body.text||body.description||'', article_url:body.url||body.link||'', content_type:body.content_type||'social_post', thumbnail_url:body.thumbnail||'', scanned_at:new Date().toISOString() }
   return null
 }
 
@@ -72,6 +73,10 @@ Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return new Response('Method not allowed', {status:405})
   try {
     const body = await req.json()
+    if (INGEST_SECRET) {
+      const provided = req.headers.get('x-ingest-secret') || body.secret || ''
+      if (provided !== INGEST_SECRET) return new Response(JSON.stringify({error:'unauthorized'}), {status:401,headers:{'Content-Type':'application/json'}})
+    }
     const item = normalise(body)
     if (!item) return new Response(JSON.stringify({error:'Unrecognised format'}), {status:400,headers:{'Content-Type':'application/json'}})
     if (item.article_url) {
@@ -104,7 +109,33 @@ Deno.serve(async (req: Request) => {
     }
     const { error } = await supabase.from('sentiment_articles').insert(record)
     if (error) return new Response(JSON.stringify({error:error.message}), {status:500,headers:{'Content-Type':'application/json'}})
-    return new Response(JSON.stringify({status:'inserted',title:record.article_title.slice(0,80),misogyny_score:record.misogyny_score,sentiment:record.sentiment,category:record.content_category}), {headers:{'Content-Type':'application/json'}})
+
+    // Femicide-looking social posts go to the admin review QUEUE (case_candidates),
+    // never straight into femicide_cases. Failure here must not break ingestion.
+    let caseQueued = false
+    try {
+      const femicideSignal = (scores.content_category === 'femicide') ||
+        /femicide|murdered|woman killed|girl killed|killed her|found dead|body found|strangled her|stabbed/i.test(`${item.article_title} ${item.article_snippet}`)
+      if (femicideSignal && (scores.gbv_relevance ?? 0) >= 6) {
+        let dupe = false
+        if (item.article_url) {
+          const { data: cx } = await supabase.from('case_candidates').select('id').eq('source_url', item.article_url).limit(1)
+          dupe = !!cx?.length
+        }
+        if (!dupe) {
+          await supabase.from('case_candidates').insert({
+            source_name: item.source_name, source_url: item.article_url || null, platform: item.platform,
+            raw_text: (item.article_snippet || '').slice(0, 4000), thumbnail_url: item.thumbnail_url || null,
+            ai_summary: scores.summary || '', gbv_relevance: scores.gbv_relevance ?? null,
+            misogyny_score: scores.misogyny_score ?? null, content_category: scores.content_category ?? null,
+            status: 'pending',
+          })
+          caseQueued = true
+        }
+      }
+    } catch (_e) { /* queue is best-effort */ }
+
+    return new Response(JSON.stringify({status:'inserted',title:record.article_title.slice(0,80),misogyny_score:record.misogyny_score,sentiment:record.sentiment,category:record.content_category,case_queued:caseQueued}), {headers:{'Content-Type':'application/json'}})
   } catch (err: any) {
     return new Response(JSON.stringify({error:err.message}), {status:500,headers:{'Content-Type':'application/json'}})
   }
