@@ -3105,6 +3105,119 @@ function RespondersTab() {
   )
 }
 
+// ── CASE REVIEW TAB — femicide case candidates from the social pipeline ───────
+function CaseReviewTab() {
+  const [rows, setRows]       = useState([])
+  const [loading, setLoading] = useState(true)
+  const [filter, setFilter]   = useState('pending')
+  const [editing, setEditing] = useState(null)
+  const [form, setForm]       = useState({})
+
+  const load = () => {
+    setLoading(true)
+    supabase.from('case_candidates').select('*').order('created_at',{ascending:false})
+      .then(({data}) => { setRows(data||[]); setLoading(false) })
+  }
+  useEffect(() => { load() }, [])
+
+  const startReview = (c) => {
+    setEditing(c.id)
+    setForm({
+      victim_name:'', incident_date:'', county:'', location:'',
+      victim_age_range:'unknown', perpetrator_relationship:'unknown',
+      status:'reported', source_type:'social', source_url:c.source_url||'',
+      admin_notes:`From ${c.source_name||'social'}${c.ai_summary?': '+c.ai_summary:''}`,
+    })
+  }
+
+  const reject = async (id) => {
+    const { error } = await supabase.from('case_candidates').update({status:'rejected',reviewed_at:new Date().toISOString()}).eq('id',id).select()
+    if (error) { window.alert('Could not reject:\n'+error.message); return }
+    load()
+  }
+
+  const approve = async (c) => {
+    if (!form.incident_date && !form.victim_name) { window.alert('Add at least a victim name or incident date before approving.'); return }
+    const year = form.incident_date ? new Date(form.incident_date).getFullYear() : new Date().getFullYear()
+    const { data: yc } = await supabase.from('femicide_cases').select('case_ref').like('case_ref',`FSK-${year}-%`)
+    const maxNum = (yc||[]).reduce((m,r)=>{ const n=parseInt(r.case_ref?.split('-')[2]||'0'); return n>m?n:m },0)
+    const caseRef = `FSK-${year}-${String(maxNum+1).padStart(3,'0')}`
+    const clean = Object.fromEntries(Object.entries(form).map(([k,v])=>[k,v===''?null:v]))
+    const { data: ins, error } = await supabase.from('femicide_cases').insert([{
+      ...clean, case_ref:caseRef, verified:false, published:true,
+    }]).select()
+    if (error) { window.alert('Could not create case:\n'+error.message); return }
+    const newId = ins && ins[0] && ins[0].id != null ? String(ins[0].id) : null
+    await supabase.from('case_candidates').update({status:'approved',reviewed_at:new Date().toISOString(),linked_case_id:newId}).eq('id',c.id)
+    setEditing(null); load()
+    window.alert(`Case ${caseRef} created in the Case Tracker.`)
+  }
+
+  const counts = { pending:rows.filter(r=>r.status==='pending').length, approved:rows.filter(r=>r.status==='approved').length, rejected:rows.filter(r=>r.status==='rejected').length, all:rows.length }
+  const filtered = rows.filter(r=> filter==='all'?true:r.status===filter)
+  const lbl = { fontFamily:"'Nunito Sans',sans-serif", fontSize:10, color:MUT, letterSpacing:'.04em', textTransform:'uppercase', display:'block', marginBottom:3 }
+  const inp = { width:'100%', fontFamily:"'Nunito Sans',sans-serif", fontSize:13, padding:'6px 8px', border:`1px solid ${BD}`, background:'#fff', color:TXT, boxSizing:'border-box' }
+
+  return (
+    <div>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:10, flexWrap:'wrap', marginBottom:8 }}>
+        <h2 style={{ fontFamily:"'Lora',serif", fontSize:22, fontWeight:700, color:TXT }}>Case Review Queue</h2>
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+          {['pending','approved','rejected','all'].map(ff=>(
+            <button key={ff} onClick={()=>setFilter(ff)}
+              style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, padding:'6px 12px', border:`1px solid ${BD}`, cursor:'pointer', background:filter===ff?A:CRD, color:filter===ff?'#fff':MUT }}>
+              {ff} ({counts[ff]})
+            </button>
+          ))}
+        </div>
+      </div>
+      <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT, lineHeight:1.6, marginBottom:16 }}>
+        Femicide-looking posts from the social pipeline (e.g. the Facebook analysis page). Verify the facts against the source, then approve to create a Case Tracker entry. <strong style={{color:A}}>If the victim is under 18, enter initials only in Victim name.</strong>
+      </p>
+
+      {loading ? <p style={{ color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>Loading…</p>
+      : filtered.length===0 ? <p style={{ color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>Nothing in this view.</p>
+      : filtered.map(c=>(
+        <div key={c.id} style={{ background:CRD, border:`1px solid ${BD}`, marginBottom:12, padding:16 }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8, gap:10 }}>
+            <div>
+              <div style={{ fontFamily:"'Lora',serif", fontSize:15, fontWeight:700, color:TXT }}>{c.source_name || 'Social post'}</div>
+              <div style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT, marginTop:2 }}>
+                {c.content_category && `${c.content_category} · `}GBV {c.gbv_relevance ?? '—'}/10 · misogyny {c.misogyny_score ?? '—'}/10 · {c.created_at && new Date(c.created_at).toLocaleDateString(['en-KE','en-GB'],{day:'numeric',month:'short',year:'numeric'})}
+              </div>
+            </div>
+            <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:9, fontWeight:700, padding:'2px 8px', letterSpacing:'.08em', textTransform:'uppercase', background:c.status==='approved'?'#1A5A2A':c.status==='rejected'?'#8A1030':'#CA8A04', color:'#fff' }}>{c.status}</span>
+          </div>
+          {c.ai_summary && <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT, fontStyle:'italic', marginBottom:6 }}>{c.ai_summary}</p>}
+          <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:13, color:TXT, lineHeight:1.6, marginBottom:8, whiteSpace:'pre-wrap' }}>{(c.raw_text||'').slice(0,600)}{(c.raw_text||'').length>600?'…':''}</p>
+          {c.source_url && <p style={{ marginBottom:8 }}><a href={c.source_url} target="_blank" rel="noopener noreferrer" style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:A, overflowWrap:'anywhere' }}>↗ View original post</a></p>}
+
+          {editing===c.id ? (
+            <div style={{ borderTop:`1px solid ${BD}`, paddingTop:10 }}>
+              {[['victim_name','Victim name (initials if under 18)'],['incident_date','Date of incident (YYYY-MM-DD)'],['county','County'],['location','Location']].map(([k,l])=>(
+                <div key={k} style={{ marginBottom:8 }}>
+                  <label style={lbl}>{l}</label>
+                  <input value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} style={inp}/>
+                </div>
+              ))}
+              <div style={{ display:'flex', gap:8, marginTop:10, flexWrap:'wrap' }}>
+                <button onClick={()=>approve(c)} style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, padding:'6px 14px', background:'#1A5A2A', color:'#fff', border:'none', cursor:'pointer' }}>Create case</button>
+                <button onClick={()=>setEditing(null)} style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, padding:'6px 14px', background:CRD, color:MUT, border:`1px solid ${BD}`, cursor:'pointer' }}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+              {c.status!=='approved' && <button onClick={()=>startReview(c)} style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, padding:'5px 12px', background:'#1A5A2A', color:'#fff', border:'none', cursor:'pointer' }}>Review → create case</button>}
+              {c.status!=='rejected' && <button onClick={()=>reject(c.id)} style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, padding:'5px 12px', background:A, color:'#fff', border:'none', cursor:'pointer' }}>Reject</button>}
+              {c.linked_case_id && <span style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT, alignSelf:'center' }}>→ linked case</span>}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 const TAB_GROUPS = [
   { id:'submissions', label:'Submissions',  color:'#6B3A50', standalone:true,  tabs:[{ id:'submissions', label:'Submissions',  icon:<Flag size={14}/> }] },
   { id:'analytics',   label:'Analytics',    color:'#6B3A50', standalone:true,  tabs:[{ id:'analytics',   label:'Analytics',    icon:<BarChart2 size={14}/> }] },
@@ -3112,6 +3225,7 @@ const TAB_GROUPS = [
   { id:'contacts', label:'Contacts', color:'#6B3A50', standalone:true, tabs:[{ id:'contacts', label:'Contacts', icon:<Users size={14}/> }] },
   { id:'intelligence', label:'Intelligence', color:'#1A3F6F', standalone:false, tabs:[
       { id:'cases',      label:'Case tracker',    icon:<FileText size={14}/> },
+      { id:'case-review', label:'Case review',     icon:<FileText size={14}/> },
       { id:'highlights', label:'Misogyny of Day', icon:<AlertTriangle size={14}/> },
       { id:'pulse',      label:'Community Pulse',  icon:<MessageSquare size={14}/> },
       { id:'memorial',   label:'We Remember',     icon:<Heart size={14}/> },
@@ -3730,6 +3844,7 @@ export default function App() {
         {tab==='memorial'    && <MemorialTab/>}
         {tab==='analytics'   && <AnalyticsTab/>}
         {tab==='cases'       && <CasesTab/>}
+        {tab==='case-review' && <CaseReviewTab/>}
         {tab==='codes'       && <AccessCodesTab/>}
         {tab==='responders'  && <RespondersTab/>}
         {tab==='highlights'  && <HighlightsTab/>}
