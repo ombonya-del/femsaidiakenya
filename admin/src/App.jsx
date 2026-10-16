@@ -3112,6 +3112,8 @@ function CaseReviewTab() {
   const [filter, setFilter]   = useState('pending')
   const [editing, setEditing] = useState(null)
   const [form, setForm]       = useState({})
+  const [adding, setAdding]   = useState(false)
+  const [np, setNp]           = useState({source_name:'',source_url:'',raw_text:''})
 
   const load = () => {
     setLoading(true)
@@ -3134,6 +3136,16 @@ function CaseReviewTab() {
     const { error } = await supabase.from('case_candidates').update({status:'rejected',reviewed_at:new Date().toISOString()}).eq('id',id).select()
     if (error) { window.alert('Could not reject:\n'+error.message); return }
     load()
+  }
+
+  const submitManual = async () => {
+    if (!np.raw_text.trim()) { window.alert('Paste the post text first.'); return }
+    const { error } = await supabase.from('case_candidates').insert({
+      source_name: np.source_name || 'Manual entry', source_url: np.source_url || null,
+      platform: 'facebook', raw_text: np.raw_text.slice(0,4000), status: 'pending',
+    }).select()
+    if (error) { window.alert('Could not add to the queue:\n'+error.message); return }
+    setNp({source_name:'',source_url:'',raw_text:''}); setAdding(false); load()
   }
 
   const approve = async (c) => {
@@ -3174,6 +3186,18 @@ function CaseReviewTab() {
       <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:12, color:MUT, lineHeight:1.6, marginBottom:16 }}>
         Femicide-looking posts from the social pipeline (e.g. the Facebook analysis page). Verify the facts against the source, then approve to create a Case Tracker entry. <strong style={{color:A}}>If the victim is under 18, enter initials only in Victim name.</strong>
       </p>
+      <div style={{ marginBottom:16 }}>
+        <button onClick={()=>setAdding(v=>!v)} style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, padding:'6px 12px', background:adding?CRD:'#1A5A2A', color:adding?MUT:'#fff', border:adding?`1px solid ${BD}`:'none', cursor:'pointer' }}>{adding?'Cancel':'＋ Add from a post'}</button>
+        {adding && (
+          <div style={{ background:CRD, border:`1px solid ${BD}`, padding:14, marginTop:10 }}>
+            <p style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, color:MUT, marginBottom:10, lineHeight:1.6 }}>Paste a post you want in the review queue (e.g. from the Facebook page). It lands as a pending candidate to verify and approve like any other — no feed or deploy needed.</p>
+            <div style={{ marginBottom:8 }}><label style={lbl}>Source / page name</label><input value={np.source_name} onChange={e=>setNp({...np,source_name:e.target.value})} placeholder="e.g. Facebook / <page>" style={inp}/></div>
+            <div style={{ marginBottom:8 }}><label style={lbl}>Link to the post (optional)</label><input value={np.source_url} onChange={e=>setNp({...np,source_url:e.target.value})} placeholder="https://facebook.com/..." style={inp}/></div>
+            <div style={{ marginBottom:8 }}><label style={lbl}>Post text</label><textarea value={np.raw_text} onChange={e=>setNp({...np,raw_text:e.target.value})} rows={5} style={{...inp, resize:'vertical'}}/></div>
+            <button onClick={submitManual} style={{ fontFamily:"'Nunito Sans',sans-serif", fontSize:11, fontWeight:700, padding:'6px 14px', background:'#1A5A2A', color:'#fff', border:'none', cursor:'pointer' }}>Add to queue</button>
+          </div>
+        )}
+      </div>
 
       {loading ? <p style={{ color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>Loading…</p>
       : filtered.length===0 ? <p style={{ color:MUT, fontFamily:"'Nunito Sans',sans-serif" }}>Nothing in this view.</p>
