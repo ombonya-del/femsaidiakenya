@@ -10,7 +10,8 @@ const supabase         = createClient(SUPABASE_URL, SUPABASE_SERVICE)
 // killing is never missed between manual admin checks. Misogyny/GBV/manosphere
 // content is still scanned and stored for the index — it just doesn't email.
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || ''
-const ALERT_TO       = Deno.env.get('CASE_ALERT_TO')   || 'ombonya@gmail.com'
+const ALERT_TO_LIST  = (Deno.env.get('CASE_ALERT_TO') || 'ombonya@gmail.com,cmt.kenya@gmail.com').split(',').map(s => s.trim()).filter(Boolean)
+const ALERT_TO       = ALERT_TO_LIST[0]   // first address, kept for logging/back-compat
 const ALERT_FROM     = Deno.env.get('CASE_ALERT_FROM') || 'FemSaidia Alert <alerts@femsaidiakenya.org>'
 const ADMIN_URL      = 'https://admin.femsaidiakenya.org'
 const ALERT_THRESHOLD = 8
@@ -69,7 +70,7 @@ async function sendCaseAlert(a: any): Promise<boolean> {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: ALERT_FROM, to: [ALERT_TO],
+        from: ALERT_FROM, to: ALERT_TO_LIST,
         subject: `🚨 New femicide case: ${stripHtml(a.article_title || a.title || '').slice(0, 80)}`,
         html,
       }),
@@ -103,7 +104,7 @@ async function sendClassifierAlert(count: number, err: string): Promise<boolean>
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: ALERT_FROM, to: [ALERT_TO], subject: `FemSaidia scanner: classifier down (${count} items skipped)`, html }),
+      body: JSON.stringify({ from: ALERT_FROM, to: ALERT_TO_LIST, subject: `FemSaidia scanner: classifier down (${count} items skipped)`, html }),
     })
     if (!res.ok) { console.error('Classifier alert send error:', res.status, await res.text()); return false }
     return true
@@ -148,6 +149,18 @@ const FEEDS = [
   'https://news.google.com/rss/search?q=Africa+femicide+gender+violence+women+rights&hl=en&gl=KE&ceid=KE:en',
   // ── Direct outlet ──
   'https://feeds.bbci.co.uk/news/world/africa/rss.xml',
+  // ── Kenyan-outlet coverage (close the Google-indexing gap). Direct feeds are
+  //    verified-live; the rest are outlet-scoped Google News (outlet-specific,
+  //    reliable) for outlets without a usable direct RSS endpoint. The Kenya+GBV
+  //    keyword gate filters each feed before AI scoring; dead feeds skip harmlessly. ──
+  'https://www.standardmedia.co.ke/rss/headlines.php',   // The Standard (direct, verified)
+  'https://capitalfm.africa/news/feed/',                 // Capital FM News (direct, verified)
+  'https://www.kbc.co.ke/feed/',                         // KBC (direct, verified)
+  'https://news.google.com/rss/search?q=(femicide%20OR%20murdered%20OR%20defilement%20OR%20%22woman%20killed%22)%20site:nation.africa&hl=en-KE&gl=KE&ceid=KE:en',       // Nation
+  'https://news.google.com/rss/search?q=(femicide%20OR%20murdered%20OR%20defilement%20OR%20%22woman%20killed%22)%20site:citizen.digital&hl=en-KE&gl=KE&ceid=KE:en',     // Citizen
+  'https://news.google.com/rss/search?q=(femicide%20OR%20murdered%20OR%20defilement%20OR%20%22woman%20killed%22)%20site:the-star.co.ke&hl=en-KE&gl=KE&ceid=KE:en',      // The Star
+  'https://news.google.com/rss/search?q=(femicide%20OR%20murdered%20OR%20defilement%20OR%20%22woman%20killed%22)%20site:tuko.co.ke&hl=en-KE&gl=KE&ceid=KE:en',         // Tuko
+  'https://news.google.com/rss/search?q=(femicide%20OR%20murdered%20OR%20defilement%20OR%20%22woman%20killed%22)%20site:peopledaily.digital&hl=en-KE&gl=KE&ceid=KE:en', // People Daily
   // ── Manosphere / red-pill PIPELINE — this is the misogyny SIGNAL that drives the
   //    index's Community register. Diverse creators (NOT Kibe celebrity gossip); the
   //    de-dupe + AI scoring keep repetition and off-topic uploads out. ──
@@ -288,7 +301,7 @@ function withinMaxAge(pubDate: string): boolean {
 // Should this stored case trigger an EMAIL? Only if it's recent by publish date.
 // Undated / unparseable → false (store, don't email) so resurfaced old cases go quiet.
 function alertFresh(publishedAt: string | null): boolean {
-  if (!publishedAt) return false
+  if (!publishedAt) return true   // undated confirmed femicide: alert (dedup prevents repeats)
   const t = Date.parse(publishedAt)
   if (Number.isNaN(t)) return false
   return (Date.now() - t) <= ALERT_MAX_AGE_DAYS * 24 * 60 * 60 * 1000
@@ -399,7 +412,7 @@ Return ONLY the JSON array.`
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type':'application/json','x-api-key':ANTHROPIC_KEY,'anthropic-version':'2023-06-01' },
-      body: JSON.stringify({ model:'claude-opus-5', max_tokens:2500, messages:[{role:'user',content:prompt}] }),
+      body: JSON.stringify({ model:'claude-sonnet-5-5', max_tokens:2500, messages:[{role:'user',content:prompt}] }),
       // Time-box the model call so a slow/hung batch can't freeze the whole scan
       // (the caller aborts at 55s; keep each batch well under that).
       signal: AbortSignal.timeout(40000),
@@ -494,6 +507,25 @@ Deno.serve(async (req: Request) => {
   // Lets you verify the Resend pipeline end-to-end without waiting for a real case.
   try {
     const body = await req.clone().json().catch(() => ({}))
+    // ── DB-trigger path: a case documented in femicide_cases emails both inboxes ──
+    if (body?.case_row) {
+      const c = body.case_row
+      const a = {
+        article_title: c.victim_name
+          ? `Case documented: ${c.victim_name}${c.victim_age ? ', ' + c.victim_age : ''}`
+          : 'New femicide case documented',
+        source_name: 'Cases database',
+        article_snippet: [c.location, c.county, c.ward, c.circumstances, c.summary]
+          .filter(Boolean).join(' · ').slice(0, 300),
+        article_url: 'https://admin.femsaidiakenya.org',
+        gbv_relevance: 10, misogyny_score: c.misogyny_score ?? '—',
+        sentiment: 'alarming', content_category: 'femicide',
+      }
+      const ok = await sendCaseAlert(a)
+      return new Response(JSON.stringify({ case_alert: true, sent: ok, to: ALERT_TO_LIST }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } })
+    }
+
     if (body?.test_alert) {
       const sample = {
         article_title: 'TEST — Woman killed in Nairobi, partner in custody',
