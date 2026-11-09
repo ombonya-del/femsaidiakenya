@@ -63,36 +63,23 @@ async function checkSites(): Promise<Check[]> {
 }
 
 async function checkRssScanner(): Promise<Check> {
+  // LIGHTWEIGHT staleness check: a pure read of the freshest article's age.
   const { data } = await sb.from("sentiment_articles")
     .select("scanned_at").order("scanned_at",{ascending:false}).limit(1)
   const hoursAgo = data?.[0] ? (Date.now() - new Date(data[0].scanned_at).getTime()) / 3600000 : Infinity
-  if (hoursAgo < 8) return { name:"RSS Scanner", ok:true, detail:`Last scan: ${hoursAgo.toFixed(1)}h ago` }
+  if (hoursAgo < 8) return { name:"RSS Scanner", ok:true, detail:`Last article: ${hoursAgo.toFixed(1)}h ago` }
 
-  // Stale — actually RUN the scanner and read what it did, rather than trusting a
-  // bare HTTP 200 (which hid the failure: it "remediated" while nothing landed).
-  console.log("RSS Scanner stale — auto-triggering and inspecting result...")
-  const staleMsg = data?.[0] ? `was ${hoursAgo.toFixed(1)}h stale` : "no articles yet"
-  let res: any = null
-  try {
-    const r = await fetch(`${SUPABASE_URL}/functions/v1/rss-scanner`, {
-      method:"POST", headers:{ "Content-Type":"application/json", "Authorization":`Bearer ${ANON_KEY}` },
-      body:"{}", signal:AbortSignal.timeout(55000),
-    })
-    res = await r.json().catch(() => ({}))
-    if (!r.ok) return { name:"RSS Scanner", ok:false, detail:`Scan failed: HTTP ${r.status}${res?.error ? ` — ${String(res.error).slice(0,80)}` : ""} (${staleMsg})` }
-  } catch (e) {
-    return { name:"RSS Scanner", ok:false, detail:`Scan trigger failed: ${String(e).slice(0,60)} (${staleMsg})` }
-  }
-  const inserted = res?.inserted ?? 0, total = res?.total ?? 0, fresh = res?.new ?? res?.fresh ?? 0
-  const classifierFailed = res?.classifier_failed ?? 0
-  if (inserted > 0) return { name:"RSS Scanner", ok:true, autoFixed:true, detail:`Auto-fixed: inserted ${inserted} new article(s) (${staleMsg})` }
-  if (total === 0)  return { name:"RSS Scanner", ok:false, detail:`Ran but feeds returned 0 items — feeds likely blocked/changed (${staleMsg})` }
-  if (classifierFailed > 0) return { name:"RSS Scanner", ok:false, detail:`Ran: ${total} fetched, ${fresh} new, but classifier FAILED on ${classifierFailed} item(s) — check ANTHROPIC_API_KEY / model (${staleMsg})` }
-  if (fresh === 0)  return { name:"RSS Scanner", ok:true, detail:`Ran: ${total} fetched, nothing new since last scan (${staleMsg})` }
-  // Feeds returned items and the classifier ran cleanly (0 failures); none cleared the femicide/GBV
-  // relevance bar. For a femicide-specific filter this is the normal, healthy quiet state — NOT a
-  // fault. Only a real classifier error (handled above) or dead feeds should page.
-  return { name:"RSS Scanner", ok:true, detail:`Ran: ${total} fetched, ${fresh} new classified cleanly, none met femicide/GBV bar — quiet but healthy (${staleMsg})` }
+  // Stale. Report PURELY on data freshness and re-kick the scanner fire-and-forget.
+  // We deliberately do NOT await the ~55s scan: that synchronous wait was what
+  // produced the misleading "Scan trigger failed: TimeoutError" pages even when the
+  // scanner was actually running fine. The scan keeps going server-side past this.
+  const staleMsg = data?.[0] ? `${hoursAgo.toFixed(1)}h stale` : "no articles yet"
+  fetch(`${SUPABASE_URL}/functions/v1/rss-scanner`, {
+    method:"POST", headers:{ "Content-Type":"application/json", "Authorization":`Bearer ${ANON_KEY}` },
+    body:"{}", signal:AbortSignal.timeout(3000),
+  }).catch(() => {})
+  return { name:"RSS Scanner", ok:false,
+    detail:`Femicide data is ${staleMsg} \u2014 no new articles are landing. Re-kicked the scanner; if it stays stale the scan itself is failing (check rss-scanner logs).` }
 }
 
 async function checkSaintSynthesis(): Promise<Check> {
@@ -200,7 +187,7 @@ Write exactly 2 sentences: first, a plain-English diagnosis of what likely went 
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "Content-Type":"application/json", "x-api-key":ANTHROPIC_KEY, "anthropic-version":"2023-06-01" },
-      body: JSON.stringify({ model:"claude-sonnet-5", max_tokens:200, messages:[{role:"user",content:prompt}] })
+      body: JSON.stringify({ model:"claude-sonnet-5-5", max_tokens:200, messages:[{role:"user",content:prompt}] })
     })
     const d = await r.json()
     return d.content?.find((b:any)=>b.type==='text')?.text ?? ""
