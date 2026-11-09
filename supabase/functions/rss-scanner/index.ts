@@ -234,7 +234,7 @@ function isKenyaGBV(title: string, snippet: string, source = ''): boolean {
 async function fetchFeed(url: string): Promise<any[]> {
   try {
     const res = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)', 'Accept': 'application/rss+xml,application/xml' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36', 'Accept': 'application/rss+xml,application/xml,text/html;q=0.9,*/*;q=0.8', 'Accept-Language': 'en-US,en;q=0.9' },
       signal: AbortSignal.timeout(15000),
     })
     if (!res.ok) { console.log(`Feed ${url.slice(0,60)}: HTTP ${res.status}`); return [] }
@@ -424,7 +424,11 @@ Return ONLY the JSON array.`
     // freezing the pipeline (the exact "stale for days" failure).
     if (!res.ok || !data.content) throw new Error(data?.error?.message || `Anthropic HTTP ${res.status}`)
     const text = data.content?.find((b:any)=>b.type==='text')?.text || '[]'
-    const scores = JSON.parse(text.replace(/```json|```/g,'').trim())
+    const cleaned = text.replace(/```json|```/g,'').trim()
+    // The model sometimes appends a note after the JSON array; parse only the
+    // bracketed array so trailing prose can't throw and discard the whole batch.
+    const _s = cleaned.indexOf('['), _e = cleaned.lastIndexOf(']')
+    const scores = JSON.parse(_s !== -1 && _e > _s ? cleaned.slice(_s, _e + 1) : cleaned)
     return articles.map((a,i) => {
       const s = scores.find((x:any)=>Number(x.index)===i+1)||scores[i]||{}
       return { ...a, gbv_relevance:s.gbv_relevance??0, misogyny_score:s.misogyny_score??0,
