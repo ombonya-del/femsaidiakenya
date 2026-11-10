@@ -5,6 +5,15 @@ const SUPABASE_URL     = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 const supabase         = createClient(SUPABASE_URL, SUPABASE_SERVICE)
 
+// ── Scan-run telemetry ────────────────────────────────────────────────────────
+// One row per run so the health-check can judge scanner HEALTH (ran recently?
+// classifier ok? feeds returning items?) WITHOUT re-running the ~55s scan. A quiet
+// run with nothing new still records a row, so quiet news never reads as a failure.
+// Wrapped so telemetry can never break a scan.
+async function recordRun(fields: Record<string, unknown>) {
+  try { await supabase.from('scan_runs').insert(fields) } catch (_) { /* ignore */ }
+}
+
 // ── Femicide-alert email (Resend) ────────────────────────────────────────────
 // Fires ONLY when the scanner detects an actual femicide (is_femicide), so a new
 // killing is never missed between manual admin checks. Misogyny/GBV/manosphere
@@ -567,7 +576,10 @@ Deno.serve(async (req: Request) => {
     const relevant = fresh.filter(a => isKenyaGBV(a.title, a.snippet||'', a.source||''))
     console.log(`Total: ${allArticles.length}, unique: ${unique.length}, fresh: ${fresh.length}, Kenya+GBV: ${relevant.length}`)
 
-    if (!relevant.length) return new Response(JSON.stringify({success:true,message:'No relevant content',total:allArticles.length}), {status:200})
+    if (!relevant.length) {
+      await recordRun({ ok:true, total:allArticles.length, new_items:0, classified:0, classifier_failed:0, inserted:0, kenya_gbv:0, note:'no relevant content' })
+      return new Response(JSON.stringify({success:true,message:'No relevant content',total:allArticles.length}), {status:200})
+    }
 
     // 4. Dedup against DB by TITLE (reliable — no URL encoding issues)
     const { titles: existingTitles, urls: existingUrls } = await findExisting(relevant)
@@ -586,6 +598,7 @@ Deno.serve(async (req: Request) => {
 
     if (!newItems.length) {
       await updateMisogynyIndex()
+      await recordRun({ ok:true, total:allArticles.length, new_items:0, classified:0, classifier_failed:0, inserted:0, kenya_gbv:relevant.length, note:'all already stored' })
       return new Response(JSON.stringify({success:true,message:'All already stored',total:allArticles.length,fresh:fresh.length,relevant:relevant.length,dupes_skipped:dupesSkipped,new:0}), {status:200})
     }
 
@@ -664,6 +677,8 @@ Deno.serve(async (req: Request) => {
 
     await updateMisogynyIndex()
 
+    await recordRun({ ok: classifyFailures.length===0, total:allArticles.length, new_items:newItems.length, classified:classified.length, classifier_failed:classifyFailures.length, inserted:toInsert.length, kenya_gbv:relevant.length })
+
     return new Response(JSON.stringify({
       success:true, total:allArticles.length, unique:unique.length,
       fresh:fresh.length, stale_skipped:unique.length-fresh.length,
@@ -678,6 +693,7 @@ Deno.serve(async (req: Request) => {
 
   } catch(e:any) {
     console.error('Scanner error:', e.message)
+    await recordRun({ ok:false, note:(e?.message || 'scanner error').slice(0,300) })
     return new Response(JSON.stringify({error:e.message}), {status:500})
   }
 })

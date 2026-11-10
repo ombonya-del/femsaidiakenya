@@ -63,23 +63,36 @@ async function checkSites(): Promise<Check[]> {
 }
 
 async function checkRssScanner(): Promise<Check> {
-  // LIGHTWEIGHT staleness check: a pure read of the freshest article's age.
-  const { data } = await sb.from("sentiment_articles")
-    .select("scanned_at").order("scanned_at",{ascending:false}).limit(1)
-  const hoursAgo = data?.[0] ? (Date.now() - new Date(data[0].scanned_at).getTime()) / 3600000 : Infinity
-  if (hoursAgo < 8) return { name:"RSS Scanner", ok:true, detail:`Last article: ${hoursAgo.toFixed(1)}h ago` }
+  // HEALTH-based check: read the scanner's own run telemetry (scan_runs), NOT the
+  // age of the newest article. "No new femicide article for a while" is often just a
+  // quiet news period and must not page. A scan that stopped running, a dead feed, or
+  // a failing classifier IS a real fault and must.
+  const { data, error } = await sb.from("scan_runs")
+    .select("ran_at,ok,total,new_items,classified,classifier_failed,inserted,note")
+    .order("ran_at", { ascending:false }).limit(1)
+  if (error) return { name:"RSS Scanner", ok:false, detail:`scan_runs query failed: ${String(error.message).slice(0,100)}` }
+  const run = data?.[0]
+  if (!run) return { name:"RSS Scanner", ok:true, detail:"No run telemetry yet \u2014 awaiting next scheduled scan" }
 
-  // Stale. Report PURELY on data freshness and re-kick the scanner fire-and-forget.
-  // We deliberately do NOT await the ~55s scan: that synchronous wait was what
-  // produced the misleading "Scan trigger failed: TimeoutError" pages even when the
-  // scanner was actually running fine. The scan keeps going server-side past this.
-  const staleMsg = data?.[0] ? `${hoursAgo.toFixed(1)}h stale` : "no articles yet"
-  fetch(`${SUPABASE_URL}/functions/v1/rss-scanner`, {
-    method:"POST", headers:{ "Content-Type":"application/json", "Authorization":`Bearer ${ANON_KEY}` },
-    body:"{}", signal:AbortSignal.timeout(3000),
-  }).catch(() => {})
-  return { name:"RSS Scanner", ok:false,
-    detail:`Femicide data is ${staleMsg} \u2014 no new articles are landing. Re-kicked the scanner; if it stays stale the scan itself is failing (check rss-scanner logs).` }
+  const hoursAgo = (Date.now() - new Date(run.ran_at as string).getTime()) / 3600000
+  // Scanner runs every 2h; >5h means it has silently stopped firing. Re-kick it
+  // fire-and-forget (never block on the ~55s scan).
+  if (hoursAgo > 5) {
+    fetch(`${SUPABASE_URL}/functions/v1/rss-scanner`, {
+      method:"POST", headers:{ "Content-Type":"application/json", "Authorization":`Bearer ${ANON_KEY}` },
+      body:"{}", signal:AbortSignal.timeout(3000),
+    }).catch(() => {})
+    return { name:"RSS Scanner", ok:false,
+      detail:`Scanner has not run for ${hoursAgo.toFixed(1)}h (expected every 2h) \u2014 it may have stopped firing. Re-kicked it; check the cron + rss-scanner logs if this persists.` }
+  }
+  if ((run.classifier_failed ?? 0) > 0)
+    return { name:"RSS Scanner", ok:false,
+      detail:`Last run ${hoursAgo.toFixed(1)}h ago had ${run.classifier_failed} classifier FAILURE(s) \u2014 the AI classifier is erroring (check ANTHROPIC_API_KEY / model / rss-scanner logs).` }
+  if ((run.total ?? 0) === 0)
+    return { name:"RSS Scanner", ok:false,
+      detail:`Last run ${hoursAgo.toFixed(1)}h ago fetched 0 items \u2014 feeds likely blocked or changed (check rss-scanner logs).` }
+  return { name:"RSS Scanner", ok:true,
+    detail:`Healthy \u2014 last run ${hoursAgo.toFixed(1)}h ago: ${run.total} fetched, ${run.new_items ?? 0} new, ${run.inserted ?? 0} stored, 0 classifier errors.` }
 }
 
 async function checkSaintSynthesis(): Promise<Check> {
